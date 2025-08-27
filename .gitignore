@@ -1,0 +1,151 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+automation_logs/
+automation.log
+system_startup.log
+
+# Claude Code System
+.claude/
+.claudecode/
+claudecode2/
+ClaudeCode System/
+
+# API Keys (IMPORTANT: Never commit API keys!)
+*api_key*
+*API_KEY*
+*.key
+.env.local
+.env.production
+.env.staging
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.tmp/
+
+# Personal files
+*.pdf
+*.docx
+*.pptx
+*.xlsx
+*.CV*
+*.Resume*
+*resume*
+*CV*
+
+# System files
+.CFUserTextEncoding
+.bash_history
+.bash_profile
+.zsh_history
+.zshrc
+.zprofile
+.gitconfig
+.npm/
+.nvm/
+.conda/
+.docker/
+.ssh/
+Applications/
+Documents/
+Downloads/
+Library/
+Pictures/
+Movies/
+Music/
+Desktop/
+Public/
+
+# Other development
+.bytertc/
+.claude-server-commander/
+.config/
+.cursor/
+.dbclient/
+.gem/
+.gemini/
+.ipython/
+.lingma/
+.local/
+.matplotlib/
+.ollama/
+.rustup/
+.trae/
+.trae-aicc/
+.wdm/
+
+# Backup files
+*~
+*.bak
+*.backup
+*.swp
+*.swo
+
+# Large data files
+*.json
+!package.json
+!requirements.json
+
+# Specific to this project
+../../*
+../*
+!../PPT*
+*.html
+.localized

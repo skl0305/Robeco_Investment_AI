@@ -1,0 +1,665 @@
+/* ========================================
+   ROBECO PROFESSIONAL DATA VISUALIZATION CSS
+   Ultra-Professional Components for Investment Analysis
+   ======================================== */
+
+:root {
+    /* Enhanced Professional Colors */
+    --robeco-navy: #002147;
+    --robeco-turquoise: #00a3a3;
+    --robeco-dark-turquoise: #008080;
+    --robeco-gold: #d4af37;
+    --robeco-silver: #f5f5f5;
+    --robeco-charcoal: #333333;
+    --robeco-white: #ffffff;
+    --robeco-light-blue: #e8f4f8;
+    
+    /* Data Quality Colors */
+    --quality-excellent: #059669;
+    --quality-good: #16a34a;
+    --quality-fair: #d97706;
+    --quality-poor: #dc2626;
+    --quality-unknown: #6b7280;
+    
+    /* Institutional UI Colors */
+    --border-color: #e5e7eb;
+    --data-bg: #fafbfc;
+    --header-bg: linear-gradient(135deg, var(--robeco-navy) 0%, var(--robeco-dark-turquoise) 100%);
+    --card-shadow: 0 4px 20px rgba(0, 33, 71, 0.12);
+    --data-shadow: 0 2px 8px rgba(0, 163, 163, 0.08);
+}
+
+/* ========================================
+   PROFESSIONAL DATA TABLES
+   ======================================== */
+
+.data-table-container {
+    background: var(--robeco-white);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin: 20px 0;
+    border: 1px solid var(--border-color);
+}
+
+.data-table-header {
+    background: var(--header-bg);
+    color: var(--robeco-white);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.data-table-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.data-table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.data-action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--robeco-white);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.data-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.professional-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.professional-data-table th {
+    background: var(--data-bg);
+    color: var(--robeco-charcoal);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--robeco-turquoise);
+    position: relative;
+}
+
+.professional-data-table th:hover {
+    background: var(--robeco-light-blue);
+    cursor: pointer;
+}
+
+.professional-data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.professional-data-table tr:hover {
+    background: rgba(0, 163, 163, 0.02);
+}
+
+/* Data Quality Indicators */
+.data-quality-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.quality-excellent { background: var(--quality-excellent); }
+.quality-good { background: var(--quality-good); }
+.quality-fair { background: var(--quality-fair); }
+.quality-poor { background: var(--quality-poor); }
+.quality-unknown { background: var(--quality-unknown); }
+
+/* Data Source Attribution */
+.data-source-tag {
+    display: inline-block;
+    background: var(--robeco-light-blue);
+    color: var(--robeco-navy);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    margin-left: 4px;
+    cursor: help;
+    position: relative;
+}
+
+.data-source-tag:hover::after {
+    content: attr(data-source-info);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--robeco-charcoal);
+    color: var(--robeco-white);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: var(--card-shadow);
+}
+
+/* ========================================
+   FINANCIAL METRICS DISPLAY
+   ======================================== */
+
+.financial-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.metric-card {
+    background: var(--robeco-white);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card:hover {
+    border-color: var(--robeco-turquoise);
+    box-shadow: var(--data-shadow);
+    transform: translateY(-1px);
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.metric-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--robeco-charcoal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--robeco-navy);
+    margin-bottom: 4px;
+}
+
+.metric-change {
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.metric-change.positive {
+    color: var(--quality-excellent);
+}
+
+.metric-change.negative {
+    color: var(--quality-poor);
+}
+
+.metric-change.neutral {
+    color: var(--quality-unknown);
+}
+
+.metric-timestamp {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 9px;
+    color: var(--quality-unknown);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* ========================================
+   ENHANCED DATA TRACEABILITY
+   ======================================== */
+
+.data-lineage-panel {
+    background: var(--data-bg);
+    border-left: 4px solid var(--robeco-turquoise);
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.data-lineage-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--robeco-navy);
+    font-size: 13px;
+}
+
+.data-source-chain {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.data-source-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--robeco-white);
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.data-source-node:hover {
+    border-color: var(--robeco-turquoise);
+    box-shadow: 0 2px 4px rgba(0, 163, 163, 0.1);
+}
+
+.data-source-icon {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--robeco-turquoise);
+}
+
+.data-flow-arrow {
+    color: var(--robeco-turquoise);
+    font-size: 14px;
+}
+
+/* ========================================
+   PROFESSIONAL RESEARCH SOURCES
+   ======================================== */
+
+.enhanced-research-sources {
+    background: var(--robeco-white);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.research-sources-header {
+    background: var(--header-bg);
+    color: var(--robeco-white);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.research-sources-title {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sources-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.research-sources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    padding: 20px;
+}
+
+.enhanced-source-card {
+    background: var(--data-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.enhanced-source-card:hover {
+    border-color: var(--robeco-turquoise);
+    box-shadow: var(--data-shadow);
+    transform: translateY(-1px);
+}
+
+.source-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.source-type-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--robeco-white);
+    flex-shrink: 0;
+}
+
+.source-earnings { background: #8b5cf6; }
+.source-analyst { background: #06b6d4; }
+.source-news { background: #10b981; }
+.source-filing { background: #f59e0b; }
+.source-research { background: #ef4444; }
+
+.source-info {
+    flex: 1;
+}
+
+.source-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--robeco-navy);
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+
+.source-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--quality-unknown);
+    margin-bottom: 8px;
+}
+
+.credibility-badge {
+    background: var(--quality-excellent);
+    color: var(--robeco-white);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 9px;
+}
+
+.source-url {
+    font-size: 10px;
+    color: var(--robeco-turquoise);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.source-summary {
+    font-size: 11px;
+    color: var(--robeco-charcoal);
+    line-height: 1.4;
+    margin-top: 8px;
+}
+
+/* ========================================
+   ENHANCED STREAMING INTERFACE
+   ======================================== */
+
+.professional-streaming-container {
+    background: var(--robeco-white);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.streaming-header-enhanced {
+    background: var(--header-bg);
+    color: var(--robeco-white);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.streaming-title-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.streaming-status-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.live-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--quality-excellent);
+    animation: pulse 2s infinite;
+}
+
+.streaming-content-enhanced {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.analysis-section {
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.analysis-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--robeco-turquoise);
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--robeco-navy);
+}
+
+.section-confidence {
+    background: var(--robeco-light-blue);
+    color: var(--robeco-navy);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+/* ========================================
+   DATA EXPORT & ACTIONS
+   ======================================== */
+
+.data-actions-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--data-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
+}
+
+.export-btn {
+    background: var(--robeco-turquoise);
+    color: var(--robeco-white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.export-btn:hover {
+    background: var(--robeco-dark-turquoise);
+    transform: translateY(-1px);
+}
+
+.filter-input {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.filter-input:focus {
+    border-color: var(--robeco-turquoise);
+}
+
+/* ========================================
+   RESPONSIVE ENHANCEMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .financial-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .research-sources-grid {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+    
+    .data-table-container {
+        overflow-x: auto;
+    }
+    
+    .professional-data-table {
+        min-width: 600px;
+    }
+}
+
+/* ========================================
+   ANIMATION ENHANCEMENTS
+   ======================================== */
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.7; 
+        transform: scale(1.1);
+    }
+}
+
+@keyframes dataRefresh {
+    0% { 
+        opacity: 1; 
+    }
+    50% { 
+        opacity: 0.5; 
+        background: var(--robeco-light-blue);
+    }
+    100% { 
+        opacity: 1; 
+    }
+}
+
+.data-refresh-animation {
+    animation: dataRefresh 0.8s ease-in-out;
+}
+
+/* ========================================
+   TOOLTIPS & INTERACTIVE ELEMENTS
+   ======================================== */
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--robeco-charcoal);
+    color: var(--robeco-white);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: var(--card-shadow);
+}
+
+/* ========================================
+   PROFESSIONAL LOADING STATES
+   ======================================== */
+
+.data-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--robeco-turquoise);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--robeco-turquoise);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
