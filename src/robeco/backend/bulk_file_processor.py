@@ -214,9 +214,7 @@ class BulkFileProcessor:
                         if key_match and self.get_api_key:
                             suspended_key = key_match.group(1)
                             try:
-                                from .api_key.gemini_api_key import suspend_api_key
-                                suspend_api_key(suspended_key)
-                                logger.info(f"🚫 Auto-suspended API key from bulk upload: {suspended_key[:8]}...{suspended_key[-4:]}")
+                                logger.info(f"🔄 API key failed (pure rotation will retry): {suspended_key[:8]}...{suspended_key[-4:]}")
                             except Exception as suspend_error:
                                 logger.error(f"❌ Failed to suspend API key: {suspend_error}")
                     
@@ -432,7 +430,7 @@ Analyze the uploaded documents and provide detailed insights for portfolio manag
                     generate_config = types.GenerateContentConfig(
                         temperature=0.1,
                         top_p=0.8,
-                        max_output_tokens=32000,
+                        max_output_tokens=65536,  # Maximum tokens for complete analysis without truncation
                         response_mime_type="text/plain"
                     )
                     

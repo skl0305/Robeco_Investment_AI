@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Set
+from typing import Dict, Set, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,6 +32,9 @@ from robeco.backend.ultra_sophisticated_multi_agent_engine import (
 
 # Import bulk file processor
 from robeco.backend.bulk_file_processor import bulk_processor, BulkAnalysisSession
+
+# Import template report generator
+from robeco.backend.template_report_generator import template_report_generator
 
 # Import for chat functionality
 try:
@@ -188,6 +191,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Handle bulk file analysis with real-time streaming
                 await handle_bulk_analysis_streaming(websocket, connection_id, message)
             
+            elif message_type == 'generate_report':
+                # Handle report generation request
+                await handle_report_generation(websocket, connection_id, message)
+            
             elif message_type == 'ping':
                 # Handle ping for connection health
                 await websocket.send_text(json.dumps({
@@ -327,6 +334,158 @@ async def fetch_stock_data_internal(ticker: str) -> Dict:
             "raw_data": info  # Complete raw data for agents
         }
         
+        # Fetch complete 3-statements for comprehensive analysis
+        try:
+            logger.info(f"📊 Fetching complete 3-statements for {working_ticker}")
+            
+            # Income Statement (annual and quarterly)
+            try:
+                income_stmt_annual = stock.financials  # Annual income statement
+                income_stmt_quarterly = stock.quarterly_financials  # Quarterly income statement
+                
+                if not income_stmt_annual.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    income_annual_dict = income_stmt_annual.to_dict()
+                    income_annual_clean = {}
+                    for date_key, values in income_annual_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        income_annual_clean[date_str] = values
+                    stock_data["income_statement_annual"] = income_annual_clean
+                    logger.info(f"✅ Annual Income Statement: {len(income_stmt_annual.columns)} periods, {len(income_stmt_annual.index)} line items")
+                
+                if not income_stmt_quarterly.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    income_quarterly_dict = income_stmt_quarterly.to_dict()
+                    income_quarterly_clean = {}
+                    for date_key, values in income_quarterly_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        income_quarterly_clean[date_str] = values
+                    stock_data["income_statement_quarterly"] = income_quarterly_clean
+                    logger.info(f"✅ Quarterly Income Statement: {len(income_stmt_quarterly.columns)} periods, {len(income_stmt_quarterly.index)} line items")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Income Statement fetch failed: {e}")
+            
+            # Balance Sheet (annual and quarterly)
+            try:
+                balance_sheet_annual = stock.balance_sheet  # Annual balance sheet
+                balance_sheet_quarterly = stock.quarterly_balance_sheet  # Quarterly balance sheet
+                
+                if not balance_sheet_annual.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    balance_annual_dict = balance_sheet_annual.to_dict()
+                    balance_annual_clean = {}
+                    for date_key, values in balance_annual_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        balance_annual_clean[date_str] = values
+                    stock_data["balance_sheet_annual"] = balance_annual_clean
+                    logger.info(f"✅ Annual Balance Sheet: {len(balance_sheet_annual.columns)} periods, {len(balance_sheet_annual.index)} line items")
+                
+                if not balance_sheet_quarterly.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    balance_quarterly_dict = balance_sheet_quarterly.to_dict()
+                    balance_quarterly_clean = {}
+                    for date_key, values in balance_quarterly_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        balance_quarterly_clean[date_str] = values
+                    stock_data["balance_sheet_quarterly"] = balance_quarterly_clean
+                    logger.info(f"✅ Quarterly Balance Sheet: {len(balance_sheet_quarterly.columns)} periods, {len(balance_sheet_quarterly.index)} line items")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Balance Sheet fetch failed: {e}")
+            
+            # Cash Flow Statement (annual and quarterly)
+            try:
+                cashflow_annual = stock.cashflow  # Annual cash flow statement
+                cashflow_quarterly = stock.quarterly_cashflow  # Quarterly cash flow statement
+                
+                if not cashflow_annual.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    cashflow_annual_dict = cashflow_annual.to_dict()
+                    cashflow_annual_clean = {}
+                    for date_key, values in cashflow_annual_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        cashflow_annual_clean[date_str] = values
+                    stock_data["cashflow_annual"] = cashflow_annual_clean
+                    logger.info(f"✅ Annual Cash Flow: {len(cashflow_annual.columns)} periods, {len(cashflow_annual.index)} line items")
+                
+                if not cashflow_quarterly.empty:
+                    # Convert Timestamp columns to strings for JSON serialization
+                    cashflow_quarterly_dict = cashflow_quarterly.to_dict()
+                    cashflow_quarterly_clean = {}
+                    for date_key, values in cashflow_quarterly_dict.items():
+                        date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                        cashflow_quarterly_clean[date_str] = values
+                    stock_data["cashflow_quarterly"] = cashflow_quarterly_clean
+                    logger.info(f"✅ Quarterly Cash Flow: {len(cashflow_quarterly.columns)} periods, {len(cashflow_quarterly.index)} line items")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Cash Flow Statement fetch failed: {e}")
+            
+            # Additional financial metrics - handle deprecation warnings
+            try:
+                # Revenue and earnings from income statement (more reliable)
+                if "income_statement_annual" in stock_data:
+                    logger.info(f"✅ Earnings data available from Income Statement")
+                else:
+                    logger.warning(f"⚠️ Using fallback earnings data method")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Earnings data processing failed: {e}")
+            
+            # Additional key financial ratios and metrics
+            try:
+                # Key financial metrics that may not be in basic info
+                additional_metrics = {
+                    "beta": info.get("beta"),
+                    "dividend_yield": info.get("dividendYield"),
+                    "payout_ratio": info.get("payoutRatio"),
+                    "book_value": info.get("bookValue"),
+                    "price_to_book": info.get("priceToBook"),
+                    "trailing_eps": info.get("trailingEps"),
+                    "forward_eps": info.get("forwardEps"),
+                    "revenue_per_share": info.get("revenuePerShare"),
+                    "free_cashflow": info.get("freeCashflow"),
+                    "operating_cashflow": info.get("operatingCashflow"),
+                    "revenue_growth": info.get("revenueGrowth"),
+                    "earnings_growth": info.get("earningsGrowth")
+                }
+                
+                # Add non-null additional metrics
+                for key, value in additional_metrics.items():
+                    if value is not None:
+                        stock_data[f"additional_{key}"] = value
+                        
+                logger.info(f"✅ Additional financial metrics: {len([v for v in additional_metrics.values() if v is not None])} metrics")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Additional metrics fetch failed: {e}")
+            
+            # Historical price data for comprehensive analysis
+            try:
+                # 5-year historical data
+                hist_5y = stock.history(period="5y")
+                if not hist_5y.empty:
+                    # Convert Timestamp index to strings for JSON serialization
+                    hist_5y_dict = hist_5y.to_dict()
+                    hist_5y_clean = {}
+                    for column, values in hist_5y_dict.items():
+                        clean_values = {}
+                        for date_key, value in values.items():
+                            date_str = date_key.strftime('%Y-%m-%d') if hasattr(date_key, 'strftime') else str(date_key)
+                            clean_values[date_str] = value
+                        hist_5y_clean[column] = clean_values
+                    stock_data["price_history_5y"] = hist_5y_clean
+                    logger.info(f"✅ 5-Year Price History: {len(hist_5y)} trading days")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Price history fetch failed: {e}")
+                
+            logger.info(f"🎯 Complete financial dataset prepared: {len(stock_data)} total fields including 3-statements")
+            
+        except Exception as e:
+            logger.error(f"❌ Error fetching 3-statements: {e}")
+        
         return {"success": True, "data": stock_data}
         
     except Exception as e:
@@ -463,6 +622,37 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
                 logger.info(f"   📄 Content length: {len(update['data'].get('content_complete', ''))}")
                 logger.info(f"   📚 Citations: {update['data'].get('citations_count', 0)}")
                 
+                # COMPREHENSIVE WEBSOCKET STREAMING DEBUG TRACE
+                logger.info(f"🔍 *** WEBSOCKET STREAMING SERVER DEBUG TRACE START ***")
+                logger.info(f"   📨 Update received at: {datetime.now().isoformat()}")
+                logger.info(f"   📊 Update keys: {list(update.keys())}")
+                logger.info(f"   📊 Update data keys: {list(update.get('data', {}).keys())}")
+                
+                # Check content before any processing
+                raw_content = update['data'].get('content_complete', '')
+                raw_citations_count = update['data'].get('citations_count', 0)
+                
+                import re
+                citations_in_raw = re.findall(r'\[(\d+)\]', raw_content)
+                logger.info(f"   📚 Citations in raw content from agent: {len(citations_in_raw)} patterns: {citations_in_raw[:10]}")
+                logger.info(f"   📄 Raw content preview (first 300): {raw_content[:300]}")
+                logger.info(f"   📄 Raw content preview (last 300): {raw_content[-300:]}")
+                
+                if len(citations_in_raw) == 0 and raw_citations_count > 0:
+                    logger.error(f"   ❌ CRITICAL: Agent claims {raw_citations_count} citations but content has NONE!")
+                elif len(citations_in_raw) != raw_citations_count:
+                    logger.warning(f"   ⚠️ Citation count mismatch: found {len(citations_in_raw)}, expected {raw_citations_count}")
+                
+                # Sample content at different positions to verify citation distribution
+                content_samples = []
+                for pos in [0, len(raw_content)//4, len(raw_content)//2, 3*len(raw_content)//4, max(0, len(raw_content)-500)]:
+                    if pos < len(raw_content):
+                        sample = raw_content[pos:pos+100].replace('\n', '\\n')
+                        sample_citations = len(re.findall(r'\[(\d+)\]', sample))
+                        if sample_citations > 0:
+                            content_samples.append(f"pos {pos}: {sample_citations} citations in '{sample[:50]}...'")
+                logger.info(f"   📍 Content distribution samples: {content_samples}")
+                
                 try:
                     logger.info(f"🚀 WEBSOCKET: Preparing final content message...")
                     
@@ -478,6 +668,17 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
                             "content_complete": safe_content
                         }
                     }
+                    
+                    # VERIFY CITATIONS IN SAFE MESSAGE
+                    citations_in_safe = re.findall(r'\[(\d+)\]', safe_message['data']['content_complete'])
+                    logger.info(f"   🔧 Citations in safe_message: {len(citations_in_safe)} patterns: {citations_in_safe[:10]}")
+                    
+                    if len(citations_in_safe) != len(citations_in_raw):
+                        logger.error(f"   ❌ CITATIONS LOST IN SAFE MESSAGE CREATION: {len(citations_in_raw)} → {len(citations_in_safe)}")
+                    elif len(citations_in_safe) == 0:
+                        logger.warning(f"   🔍 Safe message has NO citations - checking content cleaning...")
+                        logger.info(f"   📄 Original length: {len(content_complete)}, Safe length: {len(safe_content)}")
+                        logger.info(f"   📄 Content cleaning removed: {len(content_complete) - len(safe_content)} chars")
                     
                     # Test JSON serialization first
                     json_string = json.dumps(safe_message)
@@ -497,6 +698,18 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
                             content_chunks.append(chunk)
                         
                         logger.info(f"📦 WEBSOCKET: Splitting into {len(content_chunks)} chunks")
+                        
+                        # DEBUG CHUNKED CITATIONS
+                        total_chunked_citations = 0
+                        for i, chunk in enumerate(content_chunks):
+                            chunk_citations = len(re.findall(r'\[(\d+)\]', chunk))
+                            total_chunked_citations += chunk_citations
+                            if chunk_citations > 0:
+                                logger.info(f"   📦 Chunk {i+1} has {chunk_citations} citations")
+                        
+                        logger.info(f"   📚 Total citations across all chunks: {total_chunked_citations}")
+                        if total_chunked_citations != len(citations_in_safe):
+                            logger.error(f"   ❌ CITATIONS LOST IN CHUNKING: {len(citations_in_safe)} → {total_chunked_citations}")
                         
                         # Send chunk header
                         chunk_header = {
@@ -539,12 +752,23 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
                         }
                         await websocket.send_text(json.dumps(final_assembly))
                         logger.info(f"✅ WEBSOCKET: Chunked delivery completed ({len(content_chunks)} chunks, {message_size} total bytes)")
+                        logger.info(f"   📚 Chunked delivery sent {total_chunked_citations} citations to frontend")
+                        logger.info(f"🔍 *** WEBSOCKET STREAMING SERVER DEBUG TRACE END (CHUNKED) ***")
                         
                     else:
                         # Standard single message delivery for smaller content
                         logger.info(f"🚀 WEBSOCKET: Sending standard message ({message_size} bytes)...")
+                        
+                        # FINAL WEBSOCKET SEND DEBUG
+                        final_send_citations = re.findall(r'\[(\d+)\]', json_string)
+                        logger.info(f"   📤 About to send WebSocket with {len(final_send_citations)} citations")
+                        logger.info(f"   📄 JSON string preview: {json_string[:200]}...{json_string[-200:]}")
+                        
                         await websocket.send_text(json_string)
+                        
                         logger.info(f"✅ WEBSOCKET: streaming_ai_content_final message sent successfully ({len(json_string)} bytes)")
+                        logger.info(f"   📚 WebSocket delivered {len(final_send_citations)} citations to frontend")
+                        logger.info(f"🔍 *** WEBSOCKET STREAMING SERVER DEBUG TRACE END ***")
                     
                 except Exception as final_error:
                     logger.error(f"❌ WEBSOCKET ERROR: Failed to send streaming_ai_content_final: {final_error}")
@@ -583,6 +807,13 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
             elif update['type'] == 'agent_deployed':
                 await websocket.send_text(json.dumps({
                     "type": "agent_deployed",
+                    "data": update['data']
+                }))
+                
+            elif update['type'] == 'error_notification':
+                # Handle retry and error notifications for frontend popup
+                await websocket.send_text(json.dumps({
+                    "type": "error_notification",
                     "data": update['data']
                 }))
                 
@@ -730,7 +961,7 @@ Respond with institutional-level sophistication:"""
             generate_config = types.GenerateContentConfig(
                 temperature=0.15,  # Lower for more focused, consistent institutional dialogue
                 top_p=0.85,
-                max_output_tokens=32000,  # Enhanced for comprehensive follow-up discussions
+                max_output_tokens=65536,  # Maximum tokens for complete analysis without truncation
                 response_mime_type="text/plain",
                 system_instruction=chat_context
             )
@@ -1357,6 +1588,381 @@ async def handle_bulk_analysis_streaming(websocket: WebSocket, connection_id: st
             }
         }))
 
+async def _build_enhanced_report_prompt(
+    company_name: str,
+    ticker: str, 
+    analyses_data: Dict[str, Any],
+    template_content: str,
+    report_focus: str = "comprehensive"
+) -> str:
+    """Build enhanced prompt with all analyst outputs and template example"""
+    
+    # Extract analysis content from each agent
+    agent_analyses = []
+    for agent_type, analysis in analyses_data.items():
+        if analysis and analysis.get('content'):
+            agent_analyses.append({
+                'agent_type': agent_type,
+                'content': analysis['content'],
+                'timestamp': analysis.get('timestamp', '')
+            })
+    
+    # Build comprehensive prompt with template example and all analyst outputs
+    prompt = f"""
+# ROBECO INVESTMENT REPORT CONTENT GENERATION
+
+You are generating ONLY THE CONTENT PART of a professional investment report for **{company_name} ({ticker})**.
+
+## CRITICAL: CSS IS 100% FIXED - NO STYLING ALLOWED
+
+We already have 100% fixed CSS code at '/Users/skl/Desktop/Robeco Reporting/CSScode.txt'. 
+**ABSOLUTELY NO CSS, STYLING, OR INLINE STYLES ALLOWED.**
+**GENERATE ONLY PURE HTML CONTENT WITH CLASS NAMES - NO STYLE ATTRIBUTES.**
+
+**FORBIDDEN - DO NOT GENERATE:**
+- NO `style="..."` attributes anywhere
+- NO CSS styling code
+- NO color definitions  
+- NO inline styling
+- NO `<style>` tags
+- NO styling properties
+
+**ALLOWED - ONLY GENERATE:**
+- Pure HTML content with class names
+- Text content and data
+- HTML structure using existing classes
+
+## ONE-SHOT TEMPLATE EXAMPLE
+
+Here is the complete Robeco Investment Case Template showing the structure you should follow for content organization:
+
+```html
+{template_content}
+```
+
+**EXTRACT ONLY THE CONTENT STRUCTURE** from this template (ignore all CSS/styling) and generate similar content for {company_name}.
+
+## ALL SPECIALIST ANALYST OUTPUTS
+
+You have comprehensive analysis from {len(agent_analyses)} specialist analysts. Use ALL of these outputs to generate thorough, well-informed content:
+
+"""
+    
+    # Add each agent analysis with full content
+    for i, analysis in enumerate(agent_analyses, 1):
+        prompt += f"""
+### {i}. {analysis['agent_type'].upper()} SPECIALIST ANALYSIS:
+
+**Generated:** {analysis['timestamp']}
+
+**FULL ANALYSIS CONTENT:**
+```
+{analysis['content']}
+```
+
+---
+
+"""
+    
+    prompt += f"""
+
+## GENERATION REQUIREMENTS
+
+**CRITICAL INSTRUCTIONS:**
+1. **CONTENT ONLY:** Generate ONLY the HTML content (body content), NO CSS, NO HTML headers, NO styling
+2. **Follow Content Structure:** Use the template's content organization and structure  
+3. **Integrate ALL Analyst Outputs:** Synthesize insights from all {len(agent_analyses)} specialist analyses
+4. **Professional Language:** Maintain Robeco's institutional investment research style
+5. **Accurate Data:** Use only data and insights from the provided analyst outputs
+
+**WHAT TO GENERATE:**
+- Start with: `<div class="presentation-container">`
+- Generate all slide content using template structure
+- End with: `</div>`
+- Include company metrics, analysis sections, charts, recommendations
+- Use class names from template but DO NOT include any CSS
+
+**WHAT NOT TO GENERATE:**
+- NO CSS styling code
+- NO `<html>`, `<head>`, `<style>` tags  
+- NO styling definitions
+- NO `<!DOCTYPE html>`
+
+**EXAMPLE OUTPUT FORMAT:**
+```html
+<div class="presentation-container">
+    <div class="slide">
+        <div class="slide-content">
+            <!-- Your generated content here -->
+        </div>
+    </div>
+    <!-- More slides with content -->
+</div>
+```
+
+Generate the complete investment report CONTENT now, incorporating all analyst insights and following the template content structure exactly. Remember: CONTENT ONLY, NO CSS!
+"""
+    
+    return prompt
+
+async def _combine_css_with_content(content: str) -> str:
+    """Combine fixed CSS code with AI-generated content"""
+    
+    try:
+        # Load the fixed CSS file (complete HTML with CSS)
+        with open('/Users/skl/Desktop/Robeco Reporting/Report Example/CSScode.txt', 'r', encoding='utf-8') as f:
+            css_file_content = f.read()
+        
+        logger.info(f"✅ Loaded CSS file: {len(css_file_content)} characters")
+        
+        # Extract CSS from between <style> tags
+        import re
+        css_match = re.search(r'<style>(.*?)</style>', css_file_content, re.DOTALL)
+        if css_match:
+            css_code = css_match.group(1).strip()
+        else:
+            # Fallback: use entire file content if no <style> tags found
+            css_code = css_file_content
+        
+        # Extract HTML head section (fonts, scripts, etc.) from CSS file
+        head_match = re.search(r'<head>(.*?)</head>', css_file_content, re.DOTALL)
+        additional_head_content = ""
+        if head_match:
+            head_content = head_match.group(1)
+            # Extract link and script tags (exclude title and style)
+            link_script_pattern = r'(<link[^>]*>|<script[^>]*>.*?</script>)'
+            links_scripts = re.findall(link_script_pattern, head_content, re.DOTALL)
+            additional_head_content = '\n    '.join(links_scripts)
+        
+        # Combine CSS with content
+        combined_report = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco Investment Analysis</title>
+    {additional_head_content}
+    <style>
+{css_code}
+    </style>
+</head>
+<body>
+{content}
+</body>
+</html>"""
+        
+        logger.info(f"✅ Combined CSS + content: {len(combined_report)} total characters")
+        return combined_report
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to combine CSS with content: {e}")
+        return content
+
+async def _generate_template_guided_content(prompt: str) -> str:
+    """Generate ONLY content using AI with template guidance and all analyst outputs"""
+    
+    try:
+        logger.info(f"🤖 Generating content-only with enhanced prompt ({len(prompt)} chars)")
+        
+        # Use the ultra sophisticated engine for content generation
+        from robeco.backend.ultra_sophisticated_multi_agent_engine import ultra_sophisticated_engine
+        
+        # Create context for content generation
+        context = AnalysisContext(
+            company_name="Content Generation",
+            ticker="CONTENT",
+            user_query=prompt,
+            session_id=f"content_gen_{int(datetime.now().timestamp())}",
+            start_time=datetime.now()
+        )
+        
+        # Generate content using the sophisticated AI system
+        # Extract the final content
+        content = ""
+        async for update in ultra_sophisticated_engine.generate_single_agent_analysis('anti_consensus', context):
+            if update.get('type') == 'streaming_ai_content_final':
+                content = update.get('data', {}).get('content_complete', '')
+                break
+            elif update.get('type') == 'streaming_ai_content':
+                # Accumulate streaming content
+                current_content = update.get('data', {}).get('content', '')
+                if current_content:
+                    content += current_content
+        
+        if not content:
+            raise Exception("No content generated by AI system")
+            
+        logger.info(f"✅ AI content generated: {len(content)} characters")
+        return content
+        
+    except Exception as e:
+        logger.error(f"❌ AI content generation failed: {e}")
+        raise e
+
+async def handle_report_generation(websocket: WebSocket, connection_id: str, message: Dict):
+    """Handle comprehensive AI investment report generation with streaming"""
+    
+    try:
+        # Extract report parameters - they should be in message.data
+        data = message.get('data', {})
+        ticker = data.get('ticker', data.get('company_ticker', ''))
+        company = data.get('company_name', data.get('company', ''))
+        report_focus = data.get('report_focus', 'comprehensive')
+        analyses_data = data.get('analyses_data', {})
+        
+        logger.info(f"📊 Starting report generation for {company} ({ticker}) - Focus: {report_focus}")
+        logger.info(f"📋 Received analyses data: {list(analyses_data.keys()) if analyses_data else 'NONE'}")
+        logger.info(f"📋 Message keys: {list(message.keys())}")
+        logger.info(f"📋 Full message data keys: {list(message.get('data', {}).keys()) if message.get('data') else 'NO DATA KEY'}")
+        logger.info(f"🔍 DEBUG: Full message structure: {json.dumps(message, indent=2, default=str)[:1000]}...")
+        logger.info(f"🔍 DEBUG: analyses_data type: {type(analyses_data)}, length: {len(analyses_data) if analyses_data else 0}")
+        
+        # Send report generation started message
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_started",
+            "data": {
+                "ticker": ticker,
+                "company": company,
+                "connection_id": connection_id,
+                "message": f"📊 Generating comprehensive AI investment report for {company}...",
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Report generation using template and all analyst outputs
+        
+        # Generate the report using all analyst outputs and template structure
+        if analyses_data:
+            # Use existing analyses data to generate template-based report with enhanced prompt
+            logger.info(f"📋 Using {len(analyses_data)} stored analyses for report generation")
+            
+            # Load the Robeco template as one-shot example
+            template_content = ""
+            try:
+                with open('/Users/skl/Desktop/Robeco Reporting/Report Example/Robeco_InvestmentCase_Template.txt', 'r', encoding='utf-8') as f:
+                    template_content = f.read()
+                logger.info(f"✅ Loaded Robeco template: {len(template_content)} characters")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not load template file: {e}")
+                template_content = "Template not available"
+            
+            # Send progress update
+            await websocket.send_text(json.dumps({
+                "type": "streaming_ai_content",
+                "data": {
+                    "content": f"📋 Building comprehensive prompt with {len(analyses_data)} analyst outputs...",
+                    "replace_content": False,
+                    "connection_id": connection_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            # Build enhanced prompt with all analyst outputs and template example
+            enhanced_prompt = await _build_enhanced_report_prompt(
+                company_name=company,
+                ticker=ticker,
+                analyses_data=analyses_data,
+                template_content=template_content,
+                report_focus=report_focus
+            )
+            
+            # Send another progress update
+            await websocket.send_text(json.dumps({
+                "type": "streaming_ai_content", 
+                "data": {
+                    "content": f"🤖 Generating content using Robeco template structure (CSS already loaded)...",
+                    "replace_content": False,
+                    "connection_id": connection_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            # Use template report generator instead of complex AI generation
+            
+            # Send progress update
+            await websocket.send_text(json.dumps({
+                "type": "streaming_ai_content",
+                "data": {
+                    "content": f"🔧 Generating report using Robeco template system...",
+                    "replace_content": False,
+                    "connection_id": connection_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            # Generate report using the template system
+            report_content = await template_report_generator.generate_report_from_analyses(
+                company_name=company,
+                ticker=ticker,
+                analyses_data=analyses_data,
+                report_focus=report_focus
+            )
+            
+        else:
+            # No stored analyses - user needs to run analyses first
+            logger.warning(f"⚠️ No stored analyses found for report generation")
+            
+            # Send error message to frontend
+            await websocket.send_text(json.dumps({
+                "type": "report_generation_error",
+                "data": {
+                    "error": "No analyses data available",
+                    "message": "Please run multiple agent analyses first before generating a report",
+                    "suggestion": "Use the various analyst tools (Fundamentals, Technical, Risk, etc.) to generate analyses, then try report generation again",
+                    "connection_id": connection_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            return
+        
+        # Send progress update showing raw HTML generation
+        await websocket.send_text(json.dumps({
+            "type": "streaming_ai_content",
+            "data": {
+                "content": f"🔧 Generated HTML content ({len(report_content)} characters). Combining with CSS...",
+                "replace_content": False,
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Combine with CSS to create final report
+        final_report_html = await _combine_css_with_content(report_content)
+        
+        # Send final report completion message with proper type
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_completed",
+            "data": {
+                "report_html": final_report_html,
+                "raw_content": report_content,
+                "ticker": ticker,
+                "company_name": company,
+                "template_used": "Robeco Professional Template",
+                "analyses_count": len(analyses_data),
+                "content_length": len(report_content),
+                "final_length": len(final_report_html),
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        logger.info(f"✅ Report generation completed for {connection_id}: {len(report_content)} characters")
+        
+    except Exception as e:
+        logger.error(f"❌ Report generation failed for {connection_id}: {e}")
+        import traceback
+        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+        
+        # Send error message
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_error",
+            "data": {
+                "error": f"Report generation failed: {str(e)}",
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+
 def find_available_port(preferred_port=8005, max_attempts=10):
     """Find an available port starting from preferred_port"""
     import socket
@@ -1364,7 +1970,7 @@ def find_available_port(preferred_port=8005, max_attempts=10):
     for port in range(preferred_port, preferred_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('127.0.0.1', port))
+                s.bind(('0.0.0.0', port))
                 return port
         except OSError:
             continue
@@ -1381,14 +1987,14 @@ def main():
     # Find available port, preferring 8005
     try:
         port = find_available_port(8005)
-        logger.info(f"🌐 Server will be available at: http://127.0.0.1:{port}")
+        logger.info(f"🌐 Server will be available at: http://0.0.0.0:{port}")
         
         if port != 8005:
             logger.info(f"💡 Port 8005 was busy, using port {port} instead")
         
         uvicorn.run(
             app,
-            host="127.0.0.1",
+            host="0.0.0.0",
             port=port,
             log_level="info",
             access_log=True,

@@ -33,7 +33,13 @@ def main():
     logger.info("✅ Real-time streaming analysis")
     logger.info("✅ Post-analysis chat functionality")
     logger.info("✅ Professional Robeco UI design")
-    logger.info("📊 Access at: http://127.0.0.1:8005/ (will auto-find available port if busy)")
+    logger.info("📊 Local access: http://127.0.0.1:8005/ (will auto-find available port if busy)")
+    logger.info("🌐 Public access: http://172.20.10.2:8005/ (same port, accessible from network)")
+    logger.info("🔗 Alternative: http://10.14.0.2:8005/ (if on different network segment)")
+    logger.info("")
+    logger.info("📋 REMINDER: Server will auto-select available port (8005, 8006, 8007, etc.)")
+    logger.info("🔧 Update your public URLs accordingly when server starts")
+    logger.info("🌐 Replace '8005' with actual port in your public access URLs")
     
     # Path to the professional streaming server (which uses the sophisticated engine)
     server_path = project_root / "src" / "robeco" / "backend" / "professional_streaming_server.py"
@@ -43,11 +49,34 @@ def main():
         return
     
     try:
+        # Display final public access information
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("🌍 FINAL PUBLIC ACCESS INFORMATION")
+        logger.info("=" * 80)
+        logger.info("📍 Once server starts, access from ANY device on your network:")
+        logger.info("🔗 Main Interface: http://172.20.10.2:[PORT]")
+        logger.info("🔗 Investment Workbench: http://172.20.10.2:[PORT]/workbench")
+        logger.info("🔗 Alternative IP: http://10.14.0.2:[PORT]")
+        logger.info("")
+        logger.info("⚠️  [PORT] will be displayed when server starts (usually 8005-8007)")
+        logger.info("📱 Share these URLs with others to give them access!")
+        logger.info("=" * 80)
+        logger.info("")
+        
         # Launch the professional streaming server with sophisticated engine
         subprocess.run([
             sys.executable, 
             str(server_path)
         ], env=env, check=True)
+        
+        # Post-startup message (this won't execute until server stops)
+        logger.info("")
+        logger.info("🌍 SERVER READY FOR PUBLIC ACCESS!")
+        logger.info("📍 Final accessible URLs:")
+        logger.info("🔗 http://172.20.10.2:8006 (or current port shown above)")
+        logger.info("🔗 http://10.14.0.2:8006 (alternative)")
+        logger.info("📱 Share these URLs for network access!")
         
     except subprocess.CalledProcessError as e:
         logger.error(f"❌ Failed to start professional streaming server: {e}")

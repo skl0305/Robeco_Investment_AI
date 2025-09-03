@@ -204,7 +204,7 @@ class StreamingProfessionalAnalyst(BaseAgent):
             response = model.generate_content(
                 prompt,
                 generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=8000,
+                    max_output_tokens=32000,
                     temperature=0.1
                 ),
                 stream=True  # Enable streaming
@@ -301,7 +301,7 @@ class StreamingProfessionalAnalyst(BaseAgent):
                 model.generate_content,
                 search_prompt,
                 generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=2000,
+                    max_output_tokens=32000,
                     temperature=0.1
                 )
             )

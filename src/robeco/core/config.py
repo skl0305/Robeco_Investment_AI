@@ -73,40 +73,44 @@ class Settings:
         Path(self.REPORT_OUTPUT_DIR).mkdir(exist_ok=True)
         
     def _load_api_keys(self) -> List[str]:
-        """Load API keys from environment or config file"""
+        """Load API keys - primary key first, then backup pool"""
         api_keys = []
         
         # Try environment variables first
-        for i in range(1, 13):  # Support up to 12 API keys
+        for i in range(1, 13):
             key = os.getenv(f'GEMINI_API_KEY_{i}')
             if key:
                 api_keys.append(key)
         
-        # Use available Google Gemini API keys (filtered to avoid suspended ones)
         if not api_keys:
-            # These are the non-suspended keys based on recent tests
-            working_keys = [
-                "AIzaSyAJT7s03fpvCl6Qgk5V2Ixxjs0EnkoCztQ",  # First key - usually has higher limits
-                "AIzaSyDNJLErXWTvKmKMZ7ZNvlEdghqlLZcTOWM",  # Backup key
-                "AIzaSyARmBiThXqdTEDOxT5v--69PFTdKtX7hdo",  # Third backup
-                "AIzaSyDBDuMJ4KMFVqtaO9BuVawe4D9bB7dxha0",  # Additional backup
-                "AIzaSyA_KQ-H-0ygxG8c-LAk57LsD5oTPFu5pEA",  # Alternative key
-                "AIzaSyCA6muFdheEKpBfBBJZq2H2emD6NrdCq74",  # Additional alternative
-                "AIzaSyBpOmo-QJiPL3AM22Kk1N12vZJRJQ61LqQ"   # Final backup
-            ]
-            
-            # Note: Suspended keys (removed from rotation):
-            # "AIzaSyAi6SQ3rItKrUgqcVM60sp9YoVWajilEdY",
-            # "AIzaSyCEfvxtz8seqqXR9saY-5mbCW63zOvEOdQ", 
-            # "AIzaSyDU3XaCJROijwbqi7c6Ux3h4EISVlDF8CY",
-            # "AIzaSyCYBKZFxhaFYIpCX4LE2ZKuTYSwQIIZ1fQ",
-            # "AIzaSyAJAzCC1VqqCvuaHU-H5p42ISV8XMWAPUI",
-            # "AIzaSyBs-65Ad0ajciOZOF0TJq2U8QkAfnEq-MI",
-            # "AIzaSyAYJeA7kJLJ_wSO1DX7tdhFBsPG4Sfo23A",
-            # "AIzaSyCW4zuw-F81nCAAe9BQmkNRkIDuthkRrjk"
-            
-            api_keys = working_keys
+            try:
+                # Load primary key first  
+                primary_key_file = "/Users/skl/Desktop/Robeco Reporting/src/robeco/backend/api_key/primary_gemini_key.txt"
+                
+                if os.path.exists(primary_key_file):
+                    with open(primary_key_file, 'r') as f:
+                        primary_key = f.read().strip()
+                        if primary_key:
+                            api_keys.append(primary_key)
+                            print(f"✅ Loaded primary API key: {primary_key[:8]}...")
+                
+                # Load backup pool
+                backup_file = "/Users/skl/Desktop/Robeco Reporting/src/robeco/backend/api_key/gemini_api_keys.txt"
+                
+                if os.path.exists(backup_file):
+                    with open(backup_file, 'r') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith('#') and line not in api_keys:
+                                api_keys.append(line)
+                    
+                    print(f"✅ Total keys loaded: {len(api_keys)} (1 primary + {len(api_keys)-1} backup)")
+                    
+            except Exception as e:
+                print(f"❌ Error loading API keys: {e}")
         
+        if not api_keys:
+            raise ValueError("❌ No API keys loaded from files!")
         return api_keys
     
     def get_database_url(self) -> str:

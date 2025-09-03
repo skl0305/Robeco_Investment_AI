@@ -259,10 +259,39 @@ class APIKeyManager:
         self.response_times[key].append(response_time)
         if not success:
             self.error_count[key] += 1
+            # For suspended keys, rate limit for 24 hours
+            if "CONSUMER_SUSPENDED" in str(key) or self.error_count[key] > 3:
+                self.rate_limits[key] = datetime.now() + timedelta(hours=24)
+                logger.warning(f"API key suspended or failed multiple times: {key[:8]}...")
             # Rate limit for 30 seconds if too many errors
-            if self.error_count[key] / max(1, self.usage_count[key]) > 0.5:
+            elif self.error_count[key] / max(1, self.usage_count[key]) > 0.5:
                 self.rate_limits[key] = datetime.now() + timedelta(seconds=30)
                 logger.warning(f"API key rate limited due to high error rate: {key[:8]}...")
+    
+    def get_next_working_key(self) -> Optional[str]:
+        """Try each key in rotation until finding a working one"""
+        current_time = datetime.now()
+        
+        # Try all available keys
+        for i in range(len(self.api_keys)):
+            test_index = (self.current_index + i) % len(self.api_keys)
+            key = self.api_keys[test_index]
+            
+            # Skip rate limited keys
+            if current_time <= self.rate_limits[key]:
+                continue
+            
+            # Skip keys with high error rates (likely suspended)
+            error_rate = self.error_count[key] / max(1, self.usage_count[key])
+            if error_rate > 0.8:  # More than 80% failure rate
+                continue
+                
+            # This key might work
+            self.current_index = test_index
+            self.usage_count[key] += 1
+            return key
+            
+        return None
     
     def get_key_stats(self) -> Dict[str, Any]:
         """Get statistics for all API keys"""
