@@ -96,8 +96,8 @@ class BulkFileProcessor:
                 self.model = None
         
         # Storage directories
-        self.upload_dir = Path("/tmp/robeco_uploads")
-        self.upload_dir.mkdir(exist_ok=True)
+        self.upload_dir = Path(__file__).parent / "robeco_uploads"
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
         
         # Supported file types (based on Gemini API capabilities)
         self.supported_extensions = {

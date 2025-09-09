@@ -109,8 +109,8 @@ class Settings:
             except Exception as e:
                 print(f"❌ Error loading API keys: {e}")
         
-        if not api_keys:
-            raise ValueError("❌ No API keys loaded from files!")
+        # if not api_keys:
+        #     raise ValueError("❌ No API keys loaded from files!")
         return api_keys
     
     def get_database_url(self) -> str:
