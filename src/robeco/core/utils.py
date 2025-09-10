@@ -172,21 +172,82 @@ def calculate_quality_score(data: Dict[str, Any], weights: Optional[Dict[str, fl
     return min(max(quality_score, 0.0), 1.0)  # Clamp between 0 and 1
 
 
-def retry_async(max_retries: int = 3, delay: float = 1.0):
-    """Decorator for retrying async functions"""
+def retry_async(max_retries: int = 3, delay: float = 1.0, backoff_factor: float = 2.0, 
+                jitter: bool = True, retryable_exceptions: tuple = None):
+    """Enhanced decorator for retrying async functions with intelligent error handling"""
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
+            import random
             last_exception = None
+            
+            # Default retryable exceptions for Gemini API
+            default_retryable = (
+                ConnectionError, TimeoutError, OSError,
+                # Add common HTTP errors that should be retried
+                Exception  # Will filter more specifically below
+            )
+            
+            exceptions_to_retry = retryable_exceptions or default_retryable
             
             for attempt in range(max_retries + 1):
                 try:
                     return await func(*args, **kwargs)
                 except Exception as e:
                     last_exception = e
-                    if attempt < max_retries:
-                        await asyncio.sleep(delay * (2 ** attempt))  # Exponential backoff
+                    error_msg = str(e).lower()
+                    
+                    # Enhanced error classification for Gemini API
+                    should_retry = False
+                    
+                    # Always retry these specific errors
+                    if any(retryable in error_msg for retryable in [
+                        '500 internal', 'service unavailable', '502 bad gateway', 
+                        '503 service unavailable', '504 gateway timeout',
+                        'connection error', 'timeout', 'temporary failure',
+                        'rate limit', 'quota exceeded', 'resource exhausted'
+                    ]):
+                        should_retry = True
+                    
+                    # Don't retry authentication or permission errors
+                    elif any(non_retryable in error_msg for non_retryable in [
+                        '401 unauthorized', '403 forbidden', 'invalid api key',
+                        '400 bad request', 'permission denied', 'api key not valid'
+                    ]):
+                        should_retry = False
+                        logging.getLogger('robeco.retry').error(
+                            f"Non-retryable error on attempt {attempt + 1}: {e}"
+                        )
+                    
+                    # For other exceptions, check if they match retryable types
                     else:
+                        should_retry = isinstance(e, exceptions_to_retry)
+                    
+                    if attempt < max_retries and should_retry:
+                        # Enhanced backoff with jitter to prevent thundering herd
+                        base_delay = delay * (backoff_factor ** attempt)
+                        if jitter:
+                            # Add random jitter (±25%)
+                            jitter_range = base_delay * 0.25
+                            actual_delay = base_delay + random.uniform(-jitter_range, jitter_range)
+                        else:
+                            actual_delay = base_delay
+                        
+                        # Cap maximum delay at 30 seconds
+                        actual_delay = min(actual_delay, 30.0)
+                        
+                        logging.getLogger('robeco.retry').warning(
+                            f"Attempt {attempt + 1} failed with {type(e).__name__}: {e}. "
+                            f"Retrying in {actual_delay:.2f}s..."
+                        )
+                        
+                        await asyncio.sleep(actual_delay)
+                    else:
+                        # Log final failure
+                        if should_retry:
+                            logging.getLogger('robeco.retry').error(
+                                f"All {max_retries + 1} attempts failed. Final error: {e}"
+                            )
                         raise last_exception
             
         return wrapper

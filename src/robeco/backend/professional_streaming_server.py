@@ -20,9 +20,10 @@ from pathlib import Path
 import yfinance as yf
 import pandas as pd
 
-# Add project root to path
+# Add project root to path and set working directory
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+os.chdir(str(project_root))
 
 from robeco.backend.ultra_sophisticated_multi_agent_engine import (
     ultra_sophisticated_engine,
@@ -947,15 +948,125 @@ You are a Senior {analyst_type.title()} Analyst at Robeco engaged in sophisticat
 
 Respond with institutional-level sophistication:"""
         
-        # Try to get a working API key and generate response
+        # Try to get a working API key and generate response with retry logic
         try:
-            from .api_key.gemini_api_key import get_intelligent_api_key, suspended_keys
+            logger.info(f"🔍 CHAT [{analyst_type}]: Starting chat API key system")
             
-            api_key, key_info = get_intelligent_api_key(agent_type=analyst_type)
-            if not api_key:
-                raise Exception("No API key available")
+            # Send debug to frontend that we're starting
+            await websocket.send_text(json.dumps({
+                "type": "chat_debug",
+                "data": {
+                    "message": f"🔍 Starting chat system for {analyst_type}...",
+                    "analyst": analyst_type,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
             
-            client = genai.Client(api_key=api_key)
+            from robeco.backend.api_key.gemini_api_key import get_intelligent_api_key
+            logger.info(f"✅ CHAT [{analyst_type}]: Successfully imported API key system")
+            
+            # Send debug to frontend about successful import
+            await websocket.send_text(json.dumps({
+                "type": "chat_debug",
+                "data": {
+                    "message": f"✅ API key system imported successfully",
+                    "analyst": analyst_type,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            # Retry logic for API key (same as main analysis system - keep trying until successful)
+            client = None
+            api_key = None
+            
+            logger.info(f"🔑 CHAT [{analyst_type}]: Creating client (will retry until successful)")
+            
+            attempt = 0
+            max_attempts = 100  # Reasonable limit to prevent infinite loop
+            
+            logger.info(f"🔄 CHAT [{analyst_type}]: Starting retry loop with max {max_attempts} attempts")
+            
+            # Send debug to frontend that retry loop is starting
+            await websocket.send_text(json.dumps({
+                "type": "chat_debug",
+                "data": {
+                    "message": f"🔄 Starting API key retry loop (max {max_attempts} attempts)",
+                    "analyst": analyst_type,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            while attempt < max_attempts:
+                attempt += 1
+                try:
+                    api_key, key_info = get_intelligent_api_key(agent_type=analyst_type, attempt=attempt-1)
+                    if not api_key:
+                        logger.error(f"❌ CHAT No API key available on attempt {attempt}")
+                        continue
+                    
+                    logger.info(f"🔑 CHAT [{analyst_type}]: Got API key {api_key[:8]}...{api_key[-4:]} | Key info: {key_info}")
+                    
+                    # Send debug info to frontend user
+                    await websocket.send_text(json.dumps({
+                        "type": "chat_debug",
+                        "data": {
+                            "message": f"🔑 Using API key {api_key[:8]}...{api_key[-4:]} (attempt {attempt})",
+                            "analyst": analyst_type,
+                            "key_info": key_info,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    }))
+                    
+                    # Try to create client
+                    client = genai.Client(api_key=api_key)
+                    logger.info(f"✅ CHAT [{analyst_type}]: Client created successfully with API key {api_key[:8]}...{api_key[-4:]}")
+                    
+                    # Send success debug to frontend
+                    await websocket.send_text(json.dumps({
+                        "type": "chat_debug",
+                        "data": {
+                            "message": f"✅ Client created successfully with {key_info.get('source', 'unknown')} key",
+                            "analyst": analyst_type,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    }))
+                    break
+                    
+                except Exception as client_error:
+                    error_msg = str(client_error)
+                    logger.warning(f"🔄 CHAT Key failed (attempt {attempt}), trying next: {error_msg[:100]}...")
+                    
+                    # Send API key failure debug to frontend user
+                    await websocket.send_text(json.dumps({
+                        "type": "chat_debug",
+                        "data": {
+                            "message": f"🔄 API key failed (attempt {attempt}): {error_msg[:50]}... Trying next key...",
+                            "analyst": analyst_type,
+                            "error": error_msg[:100],
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    }))
+                    
+                    continue  # Try next key
+            
+            # If we get here, all 100 attempts failed
+            if not client:
+                error_msg = f"🚨 ALL API KEYS EXHAUSTED: Tried {max_attempts} attempts across all available keys"
+                logger.error(f"❌ {error_msg}")
+                
+                # Notify frontend user about API key problem
+                await websocket.send_text(json.dumps({
+                    "type": "chat_debug",
+                    "data": {
+                        "message": f"🚨 All {max_attempts} API keys failed! Please add working keys to primary_gemini_key.txt",
+                        "analyst": analyst_type,
+                        "severity": "critical",
+                        "action_needed": "Add working API keys",
+                        "timestamp": datetime.now().isoformat()
+                    }
+                }))
+                
+                raise Exception(error_msg)
             
             # Generate sophisticated portfolio manager discussion response
             generate_config = types.GenerateContentConfig(
@@ -1010,7 +1121,7 @@ Respond with institutional-level sophistication:"""
             await websocket.send_text(json.dumps({
                 "type": "chat_error",
                 "data": {
-                    "error": f"Chat requires working API key. Please set GEMINI_API_KEY environment variable.",
+                    "error": f"🚨 Chat API Key System Failure: All 100 retry attempts exhausted. Please check API key configuration and quota limits.",
                     "analyst": analyst_type,
                     "timestamp": datetime.now().isoformat()
                 }
@@ -1829,9 +1940,9 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
             }
         }))
         
-        # Report generation using template and all analyst outputs
+        # Report generation using template and all analyst outputs with streaming
         
-        # Generate the report using all analyst outputs and template structure
+        # Generate the report using all analyst outputs and template structure with real-time updates
         if analyses_data:
             # Use existing analyses data to generate template-based report with enhanced prompt
             logger.info(f"📋 Using {len(analyses_data)} stored analyses for report generation")
@@ -1846,17 +1957,6 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 logger.warning(f"⚠️ Could not load template file: {e}")
                 template_content = "Template not available"
             
-            # Send progress update
-            await websocket.send_text(json.dumps({
-                "type": "streaming_ai_content",
-                "data": {
-                    "content": f"📋 Building comprehensive prompt with {len(analyses_data)} analyst outputs...",
-                    "replace_content": False,
-                    "connection_id": connection_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            }))
-            
             # Build enhanced prompt with all analyst outputs and template example
             enhanced_prompt = await _build_enhanced_report_prompt(
                 company_name=company,
@@ -1866,32 +1966,10 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 report_focus=report_focus
             )
             
-            # Send another progress update
-            await websocket.send_text(json.dumps({
-                "type": "streaming_ai_content", 
-                "data": {
-                    "content": f"🤖 Generating content using Robeco template structure (CSS already loaded)...",
-                    "replace_content": False,
-                    "connection_id": connection_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            }))
-            
-            # Use template report generator instead of complex AI generation
-            
-            # Send progress update
-            await websocket.send_text(json.dumps({
-                "type": "streaming_ai_content",
-                "data": {
-                    "content": f"🔧 Generating report using Robeco template system...",
-                    "replace_content": False,
-                    "connection_id": connection_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            }))
-            
-            # Generate report using the template system
-            report_content = await template_report_generator.generate_report_from_analyses(
+            # Generate report using the template system with streaming updates
+            report_content = await generate_report_with_streaming(
+                websocket=websocket,
+                connection_id=connection_id,
                 company_name=company,
                 ticker=ticker,
                 analyses_data=analyses_data,
@@ -1914,17 +1992,6 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 }
             }))
             return
-        
-        # Send progress update showing raw HTML generation
-        await websocket.send_text(json.dumps({
-            "type": "streaming_ai_content",
-            "data": {
-                "content": f"🔧 Generated HTML content ({len(report_content)} characters). Combining with CSS...",
-                "replace_content": False,
-                "connection_id": connection_id,
-                "timestamp": datetime.now().isoformat()
-            }
-        }))
         
         # Combine with CSS to create final report
         final_report_html = await _combine_css_with_content(report_content)
@@ -1976,6 +2043,131 @@ def find_available_port(preferred_port=8005, max_attempts=10):
             continue
     
     raise Exception(f"No available ports found in range {preferred_port}-{preferred_port + max_attempts - 1}")
+
+async def generate_report_with_streaming(
+    websocket: WebSocket,
+    connection_id: str,
+    company_name: str,
+    ticker: str,
+    analyses_data: Dict[str, Any],
+    report_focus: str = "comprehensive"
+) -> str:
+    """Generate report with real-time streaming updates to frontend"""
+    
+    from robeco.backend.template_report_generator import RobecoTemplateReportGenerator
+    
+    # Initialize streaming variables
+    accumulated_content = ""
+    total_chunks = 0
+    
+    # Send initial status
+    await websocket.send_text(json.dumps({
+        "type": "report_generation_progress",
+        "data": {
+            "status": "initializing",
+            "message": "🏗️ Initializing report template...",
+            "progress": 0,
+            "connection_id": connection_id,
+            "timestamp": datetime.now().isoformat()
+        }
+    }))
+    
+    try:
+        # Create template generator
+        generator = RobecoTemplateReportGenerator()
+        
+        # Send template loading status
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_progress",
+            "data": {
+                "status": "template_loading",
+                "message": "📋 Loading Robeco investment template...",
+                "progress": 10,
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Fetch yfinance data for the company
+        financial_data = {}
+        try:
+            await websocket.send_text(json.dumps({
+                "type": "report_generation_progress",
+                "data": {
+                    "status": "fetching_data",
+                    "message": f"📊 Fetching yfinance data for {ticker}...",
+                    "progress": 15,
+                    "connection_id": connection_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }))
+            
+            stock = yf.Ticker(ticker)
+            financial_data = {
+                'info': stock.info,
+                'history': stock.history(period="1y").to_dict() if hasattr(stock, 'history') else {},
+                'financials': stock.financials.to_dict() if hasattr(stock, 'financials') else {},
+                'balance_sheet': stock.balance_sheet.to_dict() if hasattr(stock, 'balance_sheet') else {},
+                'cashflow': stock.cashflow.to_dict() if hasattr(stock, 'cashflow') else {}
+            }
+            logger.info(f"✅ Fetched yfinance data for {ticker}: {len(str(financial_data)):,} characters")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not fetch yfinance data for {ticker}: {e}")
+            financial_data = {"error": f"Could not fetch data: {e}"}
+
+        # Send AI generation start
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_progress",
+            "data": {
+                "status": "ai_generating",
+                "message": "🤖 AI generating professional investment report...",
+                "progress": 20,
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Generate the report with real streaming from AI
+        report_content = await generator.generate_report_with_websocket_streaming(
+            company_name=company_name,
+            ticker=ticker,
+            analyses_data=analyses_data,
+            report_focus=report_focus,
+            websocket=websocket,
+            connection_id=connection_id,
+            financial_data=financial_data
+        )
+        
+        # Send final processing status
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_progress",
+            "data": {
+                "status": "finalizing",
+                "message": "✨ Finalizing report formatting...",
+                "progress": 90,
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        logger.info(f"✅ Streaming report generation completed: {len(report_content):,} characters in {total_chunks} chunks")
+        return report_content
+        
+    except Exception as e:
+        logger.error(f"❌ Streaming report generation failed: {e}")
+        
+        # Send error status
+        await websocket.send_text(json.dumps({
+            "type": "report_generation_progress",
+            "data": {
+                "status": "error",
+                "message": f"❌ Report generation failed: {str(e)[:100]}...",
+                "progress": 0,
+                "connection_id": connection_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        raise
 
 def main():
     """Main application entry point"""

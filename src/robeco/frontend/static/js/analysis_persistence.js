@@ -54,8 +54,40 @@ class RobecoAnalysisPersistence {
             analyses.splice(50);
         }
         
-        // Save to localStorage
-        localStorage.setItem(this.storageKey, JSON.stringify(analyses));
+        // Save to localStorage with quota management
+        try {
+            const dataString = JSON.stringify(analyses);
+            const dataSize = new Blob([dataString]).size;
+            console.log(`💾 Saving ${dataSize} bytes to localStorage`);
+            
+            // If data is too large, reduce the number of analyses
+            if (dataSize > 4.5 * 1024 * 1024) { // 4.5MB limit (localStorage is usually 5MB)
+                console.warn('⚠️ Data too large, reducing to last 25 analyses');
+                analyses.splice(25);
+            }
+            
+            localStorage.setItem(this.storageKey, JSON.stringify(analyses));
+        } catch (error) {
+            if (error.name === 'QuotaExceededError') {
+                console.error('❌ Storage quota exceeded, clearing old data and retrying...');
+                
+                // Emergency cleanup - keep only last 10 analyses
+                analyses.splice(10);
+                
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(analyses));
+                    console.log('✅ Saved with reduced data after quota cleanup');
+                } catch (retryError) {
+                    console.error('❌ Still failed after cleanup:', retryError);
+                    // Clear all stored analyses as last resort
+                    localStorage.removeItem(this.storageKey);
+                    analyses.splice(0, analyses.length - 1); // Keep only current analysis
+                    localStorage.setItem(this.storageKey, JSON.stringify(analyses));
+                }
+            } else {
+                throw error; // Re-throw if not quota error
+            }
+        }
         
         // Update UI
         this.updateAnalysisHistoryUI();

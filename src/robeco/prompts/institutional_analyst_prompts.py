@@ -48,6 +48,8 @@ Chief Investment Officer, experienced portfolio managers, investment committees,
 # Source Requirements  
 CRITICAL: You MUST include inline citations throughout your analysis in the format [1], [2], [3] immediately after any factual claims, data points, or specific information. For example: "Revenue grew 15% YoY [1], while margins expanded to 23.5% [2]." Google Search grounding will provide automatic source attribution - you must incorporate these numbered citations directly into your prose. Every significant claim should be immediately followed by a citation number. This is mandatory for institutional analysis standards.
 
+🚨 MANDATORY: You MUST use Google Search grounding for ALL analysis. Search for current market information, recent news, analyst reports, and industry data about this company. DO NOT proceed without Google Search. Always search for recent developments, market sentiment, and expert opinions. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 # Special Requirements
 - **Data-Driven Analysis**: Support all conclusions with factual data from reliable sources, but avoid requiring specific metrics that may not be available
 - **Deep Insights**: Provide non-obvious insights that demonstrate years of experience covering {company}
@@ -126,6 +128,8 @@ Maintain a professional, authoritative, analytical, and insightful tone througho
 Chief Investment Officer, senior portfolio managers, sector specialists, and investment committees requiring sophisticated industry analysis for strategic sector allocation and competitive positioning decisions.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL industry analysis. Search for current industry trends, competitive developments, regulatory changes, market dynamics, and sector-specific data about this company and industry. DO NOT proceed without Google Search. Always search for recent industry developments, market sentiment, and expert opinions. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Ensure all information is factually accurate and derived from trustworthy sources: industry association reports, trade publications, company filings, regulatory databases, market research firms, expert networks, and specialized industry analysis. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -197,6 +201,8 @@ Maintain a professional, authoritative, analytical, and confident tone throughou
 Chief Investment Officer, senior portfolio managers, execution traders, and investment committees requiring sophisticated technical analysis for tactical positioning, entry/exit timing, and risk management decisions.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL technical analysis. Search for current market data, recent technical patterns, trading activity, market sentiment indicators, and technical analysis insights about this company. DO NOT proceed without Google Search. Always search for recent market developments, technical commentary, and trading perspectives. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Ensure all technical information is factually accurate and derived from verified market data sources: real-time price/volume data, technical analysis platforms, market sentiment indicators, and institutional trading analytics. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -268,6 +274,8 @@ Maintain a professional, authoritative, analytical, and measured tone throughout
 Chief Investment Officer, senior portfolio managers, risk managers, and investment committees requiring sophisticated risk analysis for portfolio construction, position sizing, and risk management strategies.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL risk analysis. Search for current risk factors, recent regulatory developments, credit concerns, market volatility indicators, and risk-related news about this company. DO NOT proceed without Google Search. Always search for recent risk developments, analyst risk assessments, and market risk sentiment. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Ensure all risk information is factually accurate and derived from verified sources: company SEC filings, credit rating reports, industry risk assessments, regulatory databases, and market data platforms. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -340,6 +348,8 @@ Maintain a professional, authoritative, analytical, and balanced tone throughout
 Chief Investment Officer, ESG-focused portfolio managers, sustainability committees, and institutional investors requiring sophisticated ESG analysis for responsible investment decisions and stakeholder value assessment.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL ESG analysis. Search for current sustainability developments, ESG ratings, regulatory ESG requirements, environmental impacts, social responsibility initiatives, and governance practices about this company. DO NOT proceed without Google Search. Always search for recent ESG developments, sustainability news, and ESG analyst opinions. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Ensure all ESG information is factually accurate and derived from trustworthy sources: company sustainability reports, ESG rating agencies, regulatory filings, industry ESG assessments, and sustainability databases. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -412,6 +422,8 @@ Maintain a professional, authoritative, analytical, and confident tone throughou
 Chief Investment Officer, senior portfolio managers, investment committees, and institutional investors requiring sophisticated valuation analysis for investment decisions and price target determination.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL valuation analysis. Search for current market valuations, analyst price targets, comparable company multiples, recent financial data, and valuation methodologies about this company. DO NOT proceed without Google Search. Always search for recent valuation developments, analyst estimates, and market pricing perspectives. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Ensure all valuation information is factually accurate and derived from trustworthy sources: company financial statements, analyst estimates, trading data, comparable company information, and valuation research. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -482,6 +494,8 @@ Maintain a professional, confident, and analytically rigorous tone throughout th
 Chief Investment Officer, portfolio managers, investment committees, and institutional investors evaluating long investment opportunities and upside potential assessment.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL bull case analysis. Search for current positive developments, growth opportunities, management initiatives, favorable industry trends, and bullish analyst opinions about this company. DO NOT proceed without Google Search. Always search for recent positive news, growth catalysts, and upside potential indicators. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Support all bull case arguments with factual data from reliable sources: company filings, industry reports, management guidance, analyst estimates, and market data. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -552,7 +566,9 @@ Maintain a professional, analytical, and constructively skeptical tone throughou
 Chief Investment Officer, portfolio managers, risk managers, and investment committees evaluating downside protection and short investment opportunities.
 
 # Source Requirements
-Support all bear case arguments with factual data from reliable sources: company filings, industry reports, competitive analysis, regulatory filings, and market data. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
+🚨 MANDATORY: You MUST use Google Search grounding for ALL bear case analysis. Search for current market information, recent negative news, analyst downgrades, industry headwinds, and competitive threats about this company. DO NOT proceed without Google Search. Always search for recent developments, bearish analyst opinions, and risk factors. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
+Support all bear case arguments with factual data from diverse sources including: recent news articles, analyst reports, industry analysis, competitive intelligence, regulatory developments, and real-time market data. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
 - **Compelling Bear Thesis**: Build the strongest possible case for significant downside
@@ -622,7 +638,9 @@ Maintain a professional, analytical, and precise tone focused on actionable cata
 Chief Investment Officer, portfolio managers, trading desks, and investment committees evaluating event-driven positioning and catalyst-based investment strategies.
 
 # Source Requirements
-Support catalyst analysis with factual data from reliable sources: company calendars, regulatory filings, industry events, earnings schedules, and market data. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
+🚨 MANDATORY: You MUST use Google Search grounding for ALL catalyst analysis. Search for current market information, upcoming earnings dates, recent company announcements, industry events, analyst expectations, and market-moving catalysts about this company. DO NOT proceed without Google Search. Always search for recent developments, upcoming events, and market sentiment. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
+Support catalyst analysis with factual data from diverse sources including: recent news articles, earnings calendars, analyst reports, industry events, management presentations, and real-time market developments. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
 - **Actionable Catalysts**: Focus on tradeable events with quantifiable impact
@@ -692,7 +710,9 @@ Maintain a professional, analytical, and insightful tone focused on business int
 Chief Investment Officer, portfolio managers, fundamental analysts, and investment committees requiring business intelligence and operational insights for investment decision-making.
 
 # Source Requirements
-Support driver analysis with factual data from reliable sources: company earnings calls, management presentations, industry reports, operational metrics, and recent company announcements. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
+🚨 MANDATORY: You MUST use Google Search grounding for ALL business driver analysis. Search for current market information, recent earnings calls, management commentary, industry trends, operational updates, and key business developments about this company. DO NOT proceed without Google Search. Always search for recent developments, management insights, and business performance indicators. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
+Support driver analysis with factual data from diverse sources including: recent earnings transcripts, management presentations, industry analysis, operational metrics, business news, and company announcements. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
 - **Key Driver Focus**: Identify the 3-5 most important business drivers
@@ -762,6 +782,8 @@ Maintain a professional, analytical, and objective tone focused on market intell
 Chief Investment Officer, portfolio managers, fundamental analysts, and investment committees requiring market consensus intelligence for contrarian positioning and expectation management.
 
 # Source Requirements
+🚨 MANDATORY: You MUST use Google Search grounding for ALL consensus analysis. Search for current analyst estimates, broker research reports, market consensus views, institutional sentiment indicators, and prevailing market opinions about this company. DO NOT proceed without Google Search. Always search for recent analyst updates, consensus estimates, and market sentiment developments. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
 Support consensus analysis with factual data from reliable sources: analyst estimates, broker research, institutional surveys, market sentiment indicators, and positioning data. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
@@ -832,7 +854,9 @@ Maintain a professional, confident, and intellectually independent tone focused 
 Chief Investment Officer, portfolio managers, alternative investment teams, and investment committees evaluating contrarian positioning opportunities and alpha generation strategies.
 
 # Source Requirements
-Support anti-consensus analysis with independent research and factual data from diverse sources: alternative data, primary research, industry intelligence, and contrarian indicators. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
+🚨 MANDATORY: You MUST use Google Search grounding for ALL anti-consensus analysis. Search for current market information, recent news, analyst reports, industry data, contrarian indicators, and alternative perspectives about this company. DO NOT proceed without Google Search. Always search for recent developments, market sentiment, contrarian opinions, and overlooked factors. Use numbered citations [1], [2], etc. for ALL external information from Google Search. This is REQUIRED.
+
+Support anti-consensus analysis with independent research and factual data from diverse sources: alternative data, primary research, industry intelligence, contrarian indicators, recent news articles, analyst reports, and real-time market developments. Use [1], [2], [3] format for citations with Google Search providing automatic source attribution.
 
 # Special Requirements
 - **Contrarian Conviction**: Develop compelling arguments against prevailing consensus
@@ -888,7 +912,8 @@ def get_analyst_prompt(analyst_type: str, company: str, ticker: str, user_query:
         'catalysts': InstitutionalAnalystPrompts.get_catalysts_prompt,
         'drivers': InstitutionalAnalystPrompts.get_drivers_prompt,
         'consensus': InstitutionalAnalystPrompts.get_consensus_prompt,
-        'anti_consensus': InstitutionalAnalystPrompts.get_anti_consensus_prompt
+        'anti_consensus': InstitutionalAnalystPrompts.get_anti_consensus_prompt,
+        'anti-consensus': InstitutionalAnalystPrompts.get_anti_consensus_prompt
     }
     
     if analyst_type in prompts:

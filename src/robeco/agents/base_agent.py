@@ -161,7 +161,7 @@ class BaseAgent(ABC):
         return opportunities
     
     @time_execution
-    @retry_async(max_retries=3, delay=1.0)
+    @retry_async(max_retries=5, delay=2.0, backoff_factor=2.0, jitter=True)
     async def call_gemini_api(
         self, 
         prompt: str, 
@@ -203,12 +203,38 @@ class BaseAgent(ABC):
             response_time = (datetime.now() - start_time).total_seconds()
             self.api_manager.record_performance(api_key, response_time, True)
             
+            # Validate response
+            if not hasattr(response, 'text') or not response.text:
+                raise ValueError("Empty or invalid response from Gemini API")
+            
             return response.text
             
         except Exception as e:
             response_time = (datetime.now() - start_time).total_seconds()
             self.api_manager.record_performance(api_key, response_time, False)
-            self.logger.error(f"Gemini API error in {self.agent_id}: {e}")
+            
+            error_msg = str(e).lower()
+            
+            # Enhanced error logging with specific error types
+            if '500 internal' in error_msg:
+                self.logger.warning(f"Gemini API 500 Internal Server Error in {self.agent_id}: {e}")
+            elif 'rate limit' in error_msg or 'quota' in error_msg:
+                self.logger.warning(f"Gemini API rate limit/quota error in {self.agent_id}: {e}")
+            elif 'timeout' in error_msg:
+                self.logger.warning(f"Gemini API timeout in {self.agent_id}: {e}")
+            elif any(auth_error in error_msg for auth_error in ['401', '403', 'unauthorized', 'forbidden']):
+                self.logger.error(f"Gemini API authentication error in {self.agent_id}: {e}")
+            else:
+                self.logger.error(f"Gemini API error in {self.agent_id}: {e}")
+            
+            # Try to get next working key for certain error types
+            if any(retry_worthy in error_msg for retry_worthy in [
+                '500 internal', 'service unavailable', 'timeout', 'rate limit', 'quota'
+            ]):
+                next_key = self.api_manager.get_next_working_key()
+                if next_key and next_key != api_key:
+                    self.logger.info(f"Switching to alternative API key for retry: {next_key[:8]}...")
+            
             raise
     
     async def store_result(

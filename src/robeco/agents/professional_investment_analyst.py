@@ -65,7 +65,7 @@ class ProfessionalInvestmentAnalyst(BaseAgent):
             "risk": {
                 "name": "Senior Risk Management Analyst", 
                 "specialty": "Elite Risk Assessment & Advanced Scenario Modeling",
-                "focus_areas": ["Value-at-Risk Modeling", "Stress Testing & Monte Carlo Simulation", "Tail Risk Analysis", "Correlation Breakdown Analysis", "Volatility Regime Modeling", "Black Swan Event Preparation"],
+                "focus_areas": ["Value-at-Risk Modeling", "Stress Testing & Scenario Analysis", "Tail Risk Analysis", "Correlation Breakdown Analysis", "Volatility Regime Modeling", "Black Swan Event Preparation"],
                 "report_focus": "Hedge fund-grade risk assessment with sophisticated modeling, tail risk analysis, and institutional-quality downside protection strategies",
                 "hedge_fund_standard": "AQR Capital systematic risk management with Millennium Management multi-strategy approach"
             },
@@ -107,7 +107,7 @@ class ProfessionalInvestmentAnalyst(BaseAgent):
             "valuation": {
                 "name": "Senior Valuation & Modeling Analyst",
                 "specialty": "Elite Valuation Modeling & Quantitative Analysis",
-                "focus_areas": ["DCF Model Construction", "Relative Valuation Analysis", "Sum-of-Parts Valuation", "Scenario Analysis", "Monte Carlo Simulation", "Options Valuation Models"],
+                "focus_areas": ["DCF Model Construction", "Relative Valuation Analysis", "Sum-of-Parts Valuation", "Scenario Analysis", "Sensitivity Analysis", "Options Valuation Models"],
                 "report_focus": "Hedge fund-grade valuation analysis with sophisticated modeling techniques and scenario-based price targets",
                 "hedge_fund_standard": "Quantitative valuation with BlackRock and Vanguard institutional modeling standards"
             },
@@ -203,13 +203,36 @@ class ProfessionalInvestmentAnalyst(BaseAgent):
             )
     
     async def _conduct_comprehensive_research(self, context: AnalysisContext) -> Dict[str, Any]:
-        """Enable unlimited AI research capacity with Google search integration"""
+        """Enable unlimited AI research capacity with SECTOR-SPECIFIC Google search integration"""
         try:
-            # Google search for latest information
-            search_queries = [
+            # Get comprehensive industry-specific research queries
+            from ..prompts.comprehensive_industry_prompts import ComprehensiveIndustryDetector
+            
+            # Detect industry from any available financial data
+            financial_data = getattr(context, 'financial_data', {})
+            if not financial_data:
+                # Try to get basic info for industry detection
+                try:
+                    import yfinance as yf
+                    ticker_obj = yf.Ticker(context.ticker)
+                    financial_data = {"info": ticker_obj.info}
+                except Exception:
+                    financial_data = {}
+            
+            industry = ComprehensiveIndustryDetector.detect_industry(financial_data)
+            industry_framework = ComprehensiveIndustryDetector.get_industry_framework(industry)
+            
+            # Get industry-specific research queries
+            industry_queries = [
+                f"{context.company_name} {context.ticker} {' '.join(industry_framework['research_keywords'][:3])} analysis 2024",
+                f"{context.company_name} {industry_framework['name']} competitive positioning market share",
+                f"{context.company_name} {' '.join(industry_framework['key_metrics'][:2])} performance trends",
+                f"{industry_framework['name']} industry trends {context.company_name} outlook catalysts 2024"
+            ]
+            
+            # Combine industry-specific and general queries
+            search_queries = industry_queries + [
                 f"{context.company_name} {context.ticker} latest financial results earnings",
-                f"{context.company_name} analyst ratings upgrades downgrades 2024",
-                f"{context.company_name} competitive analysis market share",
                 f"{context.company_name} management guidance outlook 2024"
             ]
             
@@ -249,7 +272,29 @@ class ProfessionalInvestmentAnalyst(BaseAgent):
         }
     
     def _build_professional_prompt(self, context: AnalysisContext, comprehensive_data: Dict[str, Any], research_data: Dict[str, Any] = None) -> str:
-        """Build sophisticated institutional-grade investment research prompt with MAXIMUM data"""
+        """Build sophisticated institutional-grade investment research prompt with MAXIMUM data and SECTOR ENHANCEMENT"""
+        
+        # Use comprehensive industry-specific prompt system
+        from ..prompts.comprehensive_industry_prompts import get_comprehensive_industry_prompt
+        
+        try:
+            # Generate comprehensive industry-enhanced prompt
+            enhanced_prompt = get_comprehensive_industry_prompt(
+                analyst_type=self.analyst_type,
+                company=context.company_name,
+                ticker=context.ticker,
+                financial_data=comprehensive_data,
+                user_query=context.user_query
+            )
+            return enhanced_prompt
+            
+        except Exception as enhancement_error:
+            logger.warning(f"Sector enhancement failed, using standard prompt: {enhancement_error}")
+            # Fallback to original method
+            return self._build_standard_professional_prompt(context, comprehensive_data, research_data)
+    
+    def _build_standard_professional_prompt(self, context: AnalysisContext, comprehensive_data: Dict[str, Any], research_data: Dict[str, Any] = None) -> str:
+        """Fallback method: Build standard professional prompt"""
         
         config = self.analyst_config.get(self.analyst_type, self.analyst_config["chief"])
         
@@ -330,7 +375,7 @@ ELITE FOCUS AREAS: {', '.join(config['focus_areas'])}
 INSTITUTIONAL MANDATE: {config['report_focus']}
 
 HEDGE FUND ANALYTICAL FRAMEWORK - MAXIMUM SOPHISTICATION:
-- QUANTITATIVE MODELING: Advanced DCF, Monte Carlo simulations, factor models, options pricing
+- QUANTITATIVE MODELING: Advanced DCF, scenario analysis, factor models, options pricing
 - MARKET INTELLIGENCE: Deep industry research, competitive dynamics, disruption analysis
 - ALPHA GENERATION: Catalyst identification, event-driven opportunities, contrarian positioning
 - RISK MANAGEMENT: VaR modeling, stress testing, tail risk assessment, correlation analysis
@@ -352,7 +397,7 @@ PHASE 1 - STRATEGIC INTELLIGENCE & ALPHA HYPOTHESIS:
 - Establish sophisticated analytical framework leveraging {config['specialty']}
 
 PHASE 2 - DEEP-DIVE QUANTITATIVE & QUALITATIVE ANALYSIS:
-- Advanced financial modeling: DCF, LBO, sum-of-parts, Monte Carlo simulations
+- Advanced financial modeling: DCF, LBO, sum-of-parts, scenario analysis
 - Competitive moats analysis: Economic moats, switching costs, network effects
 - Management assessment: Capital allocation track record, strategic vision, execution capability
 - Industry disruption analysis: Technology threats, regulatory changes, market evolution
@@ -398,7 +443,7 @@ SECTION REQUIREMENTS (each section 500-800 words minimum):
    - Management team track record and capital allocation efficiency
 
 3. **ADVANCED FINANCIAL ANALYSIS & VALUATION** (800+ words)
-   - Multi-scenario DCF with Monte Carlo simulation results
+   - Multi-scenario DCF with sensitivity analysis results
    - Peer group analysis with trading and transaction multiples  
    - Sum-of-parts valuation for diversified business models
    - Options-based valuation for high-growth/high-volatility situations
@@ -417,7 +462,7 @@ SECTION REQUIREMENTS (each section 500-800 words minimum):
    - Portfolio construction considerations and correlation analysis
 
 HEDGE FUND ANALYTICAL STANDARDS:
-- Deploy sophisticated quantitative models (Monte Carlo, options pricing, factor models)
+- Deploy sophisticated quantitative models (scenario analysis, options pricing, factor models)
 - Include institutional-grade financial metrics and peer benchmarking
 - Reference hedge fund best practices and investment strategies
 - Maintain objectivity with contrarian analysis where appropriate
@@ -545,22 +590,103 @@ DEPLOY MAXIMUM ANALYTICAL SOPHISTICATION NOW:
             Focus on finding current, credible information about {context.company_name} ({context.ticker}).
             Priority sources: SEC filings, earnings reports, analyst reports, financial news from Bloomberg/Reuters/WSJ.
             
-            Provide factual, data-driven insights based on search results.
+            Provide factual, data-driven insights based on search results with specific sources and URLs when available.
             """
             
-            # This will use Gemini's Google Search grounding if available
-            search_results = await self.call_gemini_api(search_prompt, max_tokens=2000)
-            
-            return {
-                "query": query,
-                "search_results": search_results,
-                "search_timestamp": datetime.now().isoformat(),
-                "method": "gemini_google_search"
-            }
+            # Use Gemini's Google Search grounding with proper tool configuration
+            try:
+                import google.generativeai as genai
+                
+                api_key = self.api_manager.get_optimal_key()
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-2.5-flash')
+                
+                # Configure with Google Search tool for proper grounding
+                search_results = await asyncio.to_thread(
+                    model.generate_content,
+                    search_prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=2000,
+                        temperature=0.1
+                    ),
+                    tools=[genai.types.Tool(google_search=genai.types.GoogleSearch())]
+                )
+                
+                # Extract real sources from Gemini's Google Search response
+                real_sources = []
+                if hasattr(search_results, 'candidates') and search_results.candidates:
+                    for candidate in search_results.candidates:
+                        if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                            for chunk in candidate.grounding_metadata.grounding_chunks:
+                                if hasattr(chunk, 'web') and chunk.web:
+                                    # Calculate credibility based on actual domain
+                                    domain = chunk.web.uri.lower()
+                                    credibility = self._calculate_source_credibility(domain)
+                                    
+                                    real_sources.append({
+                                        "title": chunk.web.title or "Google Search Result",
+                                        "url": chunk.web.uri,
+                                        "source_type": "google_search_result",
+                                        "credibility_score": credibility,
+                                        "domain": domain
+                                    })
+                
+                return {
+                    "query": query,
+                    "search_results": search_results.text,
+                    "search_timestamp": datetime.now().isoformat(),
+                    "method": "gemini_google_grounding",
+                    "sources": real_sources,
+                    "grounding_available": len(real_sources) > 0
+                }
+                
+            except Exception as genai_error:
+                logger.warning(f"Gemini Google Search failed, falling back to call_gemini_api: {genai_error}")
+                # Fallback to original method
+                search_results = await self.call_gemini_api(search_prompt, max_tokens=2000)
+                
+                return {
+                    "query": query,
+                    "search_results": search_results,
+                    "search_timestamp": datetime.now().isoformat(),
+                    "method": "gemini_fallback"
+                }
+                
         except Exception as e:
             logger.error(f"Google search failed: {e}")
             # Instead of demo content, return error
             raise ValueError(f"Research data unavailable - Google Search Error: {str(e)}")
+    
+    def _calculate_source_credibility(self, url: str) -> float:
+        """Calculate credibility score based on actual domain reputation"""
+        url_lower = url.lower()
+        
+        # Tier 1: Official/Regulatory sources
+        if any(domain in url_lower for domain in ['sec.gov', 'edgar.sec.gov', 'investor.gov']):
+            return 0.99
+        
+        # Tier 2: Major financial institutions
+        if any(domain in url_lower for domain in ['bloomberg.com', 'reuters.com', 'wsj.com', 'ft.com']):
+            return 0.95
+        
+        # Tier 3: Financial data providers
+        if any(domain in url_lower for domain in ['yahoo.com/finance', 'finance.yahoo.com', 'morningstar.com', 'marketwatch.com']):
+            return 0.90
+        
+        # Tier 4: Company official sites
+        if any(domain in url_lower for domain in ['investor.', '/investor/', '/ir/', 'investors.']):
+            return 0.88
+        
+        # Tier 5: Major news outlets
+        if any(domain in url_lower for domain in ['cnbc.com', 'cnn.com/business', 'bbc.com/business']):
+            return 0.85
+        
+        # Tier 6: Financial analysis sites
+        if any(domain in url_lower for domain in ['seekingalpha.com', 'fool.com', 'zacks.com']):
+            return 0.75
+        
+        # Default for unknown sources
+        return 0.70
     
     async def _get_research_sources(self, context: AnalysisContext) -> List[Dict[str, Any]]:
         """Get all research sources used in the analysis"""

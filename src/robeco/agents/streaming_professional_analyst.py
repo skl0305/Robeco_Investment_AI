@@ -49,6 +49,9 @@ class StreamingProfessionalAnalyst(BaseAgent):
         self.chunk_size = 50  # Characters per streaming chunk
         self.research_batch_size = 3  # Google search results per batch
         
+        # Enhanced sector-specific analysis
+        self.use_sector_enhancement = True
+        
         # Elite analyst configurations
         self.analyst_config = {
             "chief": {
@@ -114,7 +117,7 @@ class StreamingProfessionalAnalyst(BaseAgent):
             "valuation": {
                 "name": "Senior Valuation & Modeling Analyst",
                 "specialty": "Elite Valuation Modeling & Quantitative Analysis",
-                "focus_areas": ["DCF Construction", "Relative Valuation", "Sum-of-Parts", "Monte Carlo Simulation"],
+                "focus_areas": ["DCF Construction", "Relative Valuation", "Sum-of-Parts", "Sensitivity Analysis"],
                 "streaming_priority": "valuation_models"
             },
             "macro": {
@@ -292,19 +295,43 @@ class StreamingProfessionalAnalyst(BaseAgent):
             Provide factual, data-driven insights based on search results with specific sources and URLs when available.
             """
             
-            # Use Gemini's grounding capabilities
+            # Use Gemini's grounding capabilities with proper Google Search tool
             api_key = self.api_manager.get_optimal_key()
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-2.5-flash')
             
+            # Configure with Google Search tool for proper grounding
             search_results = await asyncio.to_thread(
                 model.generate_content,
                 search_prompt,
                 generation_config=genai.types.GenerationConfig(
                     max_output_tokens=32000,
                     temperature=0.1
-                )
+                ),
+                tools=[genai.types.Tool(google_search=genai.types.GoogleSearch())]
             )
+            
+            # Extract real sources from Gemini's Google Search response
+            real_sources = []
+            grounding_available = False
+            
+            # Check if Google Search grounding provided real sources
+            if hasattr(search_results, 'candidates') and search_results.candidates:
+                for candidate in search_results.candidates:
+                    if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                        grounding_available = True
+                        for chunk in candidate.grounding_metadata.grounding_chunks:
+                            if hasattr(chunk, 'web') and chunk.web:
+                                domain = chunk.web.uri.lower()
+                                credibility = self._calculate_source_credibility(domain)
+                                
+                                real_sources.append({
+                                    "title": chunk.web.title or "Google Search Result",
+                                    "url": chunk.web.uri,
+                                    "source_type": "google_search_result",
+                                    "credibility_score": credibility,
+                                    "domain": domain
+                                })
             
             # Parse and structure results
             return {
@@ -312,7 +339,9 @@ class StreamingProfessionalAnalyst(BaseAgent):
                 "search_results": search_results.text,
                 "search_timestamp": datetime.now().isoformat(),
                 "method": "gemini_google_grounding",
-                "sources": self._extract_sources_from_result(search_results.text, context)
+                "sources": real_sources,
+                "grounding_available": grounding_available,
+                "source_count": len(real_sources)
             }
             
         except Exception as e:
@@ -324,37 +353,36 @@ class StreamingProfessionalAnalyst(BaseAgent):
                 "sources": []
             }
     
-    def _extract_sources_from_result(self, result_text: str, context: AnalysisContext) -> List[Dict[str, Any]]:
-        """Extract credible sources from search results"""
-        # Mock source extraction - in production, this would parse actual search results
-        sources = [
-            {
-                "title": f"{context.company_name} Q3 2024 Earnings Report",
-                "url": f"https://finance.yahoo.com/quote/{context.ticker}",
-                "source_type": "earnings_report",
-                "credibility_score": 0.95,
-                "relevance_score": 0.90,
-                "summary": f"Latest quarterly earnings and financial performance for {context.company_name}"
-            },
-            {
-                "title": f"{context.company_name} Analyst Coverage",
-                "url": f"https://bloomberg.com/quote/{context.ticker}:US",
-                "source_type": "analyst_report",
-                "credibility_score": 0.90,
-                "relevance_score": 0.85,
-                "summary": f"Professional analyst ratings and price targets"
-            },
-            {
-                "title": f"{context.company_name} Industry Analysis",
-                "url": f"https://reuters.com/companies/{context.ticker}",
-                "source_type": "industry_analysis",
-                "credibility_score": 0.85,
-                "relevance_score": 0.80,
-                "summary": f"Industry positioning and competitive analysis"
-            }
-        ]
+    def _calculate_source_credibility(self, url: str) -> float:
+        """Calculate credibility score based on actual domain reputation"""
+        url_lower = url.lower()
         
-        return sources
+        # Tier 1: Official/Regulatory sources
+        if any(domain in url_lower for domain in ['sec.gov', 'edgar.sec.gov', 'investor.gov']):
+            return 0.99
+        
+        # Tier 2: Major financial institutions  
+        if any(domain in url_lower for domain in ['bloomberg.com', 'reuters.com', 'wsj.com', 'ft.com']):
+            return 0.95
+        
+        # Tier 3: Financial data providers
+        if any(domain in url_lower for domain in ['yahoo.com/finance', 'finance.yahoo.com', 'morningstar.com', 'marketwatch.com']):
+            return 0.90
+        
+        # Tier 4: Company official sites
+        if any(domain in url_lower for domain in ['investor.', '/investor/', '/ir/', 'investors.']):
+            return 0.88
+        
+        # Tier 5: Major news outlets
+        if any(domain in url_lower for domain in ['cnbc.com', 'cnn.com/business', 'bbc.com/business']):
+            return 0.85
+        
+        # Tier 6: Financial analysis sites
+        if any(domain in url_lower for domain in ['seekingalpha.com', 'fool.com', 'zacks.com']):
+            return 0.75
+        
+        # Default for unknown sources
+        return 0.70
     
     # Streaming WebSocket Message Methods
     async def broadcast_streaming_start(self, context: AnalysisContext):
