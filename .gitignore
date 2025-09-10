@@ -53,11 +53,17 @@ automation_logs/
 automation.log
 system_startup.log
 
-# Claude Code System
+# Claude Code System - NEVER commit these local files
 .claude/
 .claudecode/
 claudecode2/
 ClaudeCode System/
+claude
+claude-code2
+claude_wrapper.sh
+debug_claude_config.py
+quick_start.sh
+start_claude_local_only.py
 
 # API Keys (IMPORTANT: Never commit API keys!)
 *api_key*
