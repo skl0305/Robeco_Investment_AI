@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - IHI Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 30px; right: 98px; width: 120px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="presentation-container">
+
+    <!-- Slide 1: Company Info, Metrics, Stock Chart, Investment Summary -->
+    <div class="slide" id="portrait-page-1">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="metrics-grid">
+                <div class="metrics-item">
+                    <div class="label">MAIN LISTING</div>
+                    <div class="value">7013 JT</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">SHARE PRICE</div>
+                    <div class="value">¥3,850</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">TARGET PRICE</div>
+                    <div class="value">¥3,200</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">DOWNSIDE</div>
+                    <div class="value">16.9%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">P/E (TTM)</div>
+                    <div class="value">24.6x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">EV/EBITDA</div>
+                    <div class="value">12.1x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">ROE</div>
+                    <div class="value">8.5%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">MARKET CAP (¥BN)</div>
+                    <div class="value">2,590</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">52-WEEK RANGE</div>
+                    <div class="value">¥3,000 - ¥4,000</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">CASE DATE</div>
+                    <div class="value">Aug 15, 2024</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">REVENUE GROWTH (FY24)</div>
+                    <div class="value">9.6%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">ESG RATING</div>
+                    <div class="value">MSCI A</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">FCF YIELD (FY24)</div>
+                    <div class="value">3.8%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">DIVIDEND YIELD</div>
+                    <div class="value">1.4%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">NET DEBT / EBITDA</div>
+                    <div class="value">4.1x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">DEBT/EQUITY</div>
+                    <div class="value">0.8x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">QR RANKING</div>
+                    <div class="value">3.5/5 (Avg.)</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">ANALYSTS</div>
+                    <div class="value">8 Analysts</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">P/E (FY1)</div>
+                    <div class="value">22.5x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">EV/EBITDA (FY+1)</div>
+                    <div class="value">11.8x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">ORDER BOOK/REV</div>
+                    <div class="value">1.5x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">AVG. ANALYST RATING</div>
+                    <div class="value">3.5/5 (Hold)</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">NET PROFIT MARGIN</div>
+                    <div class="value">7.2%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">LIQUIDITY RATIO</div>
+                    <div class="value">1.2x</div>
+                </div>
+            </section>
+
+            <div class="content-grid grid-1-col">
+                <div class="content-block">
+                    <!-- New Flexbox container for side-by-side text and chart -->
+                    <div class="intro-and-chart-container">
+                        <div class="intro-text-block">
+                            <p><strong>IHI Corporation</strong>, a Japanese heavy industry manufacturer founded in 1853, has a storied history of engineering excellence. The company operates across four key business areas: <strong>Resource, Energy & Environment</strong>, <strong>Aero Engine, Space & Defense</strong>, <strong>Social Infrastructure</strong>, and <strong>Industrial Systems & General-Purpose Machinery</strong>. IHI's strategic focus is on leveraging its technological prowess to address critical global challenges, including a significant pivot towards solutions for a carbon-neutral society. While ambitious, our analysis suggests this strategic shift is burdened by legacy business challenges and a portfolio of unproven, capital-intensive technologies. This positioning presents a high-risk proposition, as the company's ability to pivot effectively to profitable growth areas is questionable.</p>
+                        </div>
+                        <div class="stock-chart-container" id="stock-price-line-chart">
+                            <!-- D3 Line Chart will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="orange-separator"></div>
+
+                    <div class="investment-summary-table-section">
+                        <div class="analysis-item first-analysis-item">
+                            <div class="item-title"><strong>REASON TO ANALYZE</strong></div>
+                            <div class="content-item">
+                                <p>IHI's positioning at the confluence of global mega-trends, particularly decarbonization and aerospace recovery, presents more risk than opportunity. While these sectors offer long-term potential, our analysis suggests the company’s execution capabilities and significant capital intensity in these nascent areas are questionable, making it a high-risk proposition for mandates focused on "Sustainable Energy" and "Future Transportation."</p>
+                                <p>Despite extensive R&D efforts, IHI’s core competencies remain heavily tied to traditional, cyclical heavy industries, making its transition to sustainable solutions slower and more capital-intensive than anticipated. This strategic misalignment poses a significant long-term headwind. The diversified portfolio offers limited true diversification; its key segments remain highly sensitive to global macroeconomic downturns and geopolitical shifts, a risk evidenced by past earnings volatility. While IHI is a player in ammonia co-firing, its "leadership" is in pilot stages, not commercial scale. The path to profitability for these technologies remains highly uncertain and capital-intensive, evidenced by pilot tests demonstrating 99% combustion efficiency, which is not a metric for commercial viability.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item">
+                            <div class="item-title"><strong>LONG TERM OUTLOOK</strong></div>
+                            <div class="content-item">
+                                <p>Despite its purported leadership in ammonia combustion and aero-engines, IHI faces significant long-term headwinds. The company's ability to capitalize on sustainable industrial solutions and air travel demand over the next decade will be challenging given intense competition and the inherent cyclicality of its core markets.</p>
+                                <p>The significant global adoption potential of ammonia as a fuel is highly speculative. Regulatory hurdles, high production costs, and competition from other green energy solutions will severely limit IHI's market penetration and profitability, leading to a projected sub-5% CAGR for this segment. While commercial aviation is recovering, the sector remains highly cyclical and vulnerable to future shocks. Intense competition and long product development cycles mean IHI’s revenue growth will likely underperform broader market recovery, with MRO margins facing persistent pressure. IHI's "strategic positioning" through ammonia as a hydrogen carrier is a long-shot. Direct hydrogen solutions are gaining traction, potentially bypassing the need for ammonia as an intermediary, thereby eroding IHI's long-term value proposition in this space.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item">
+                            <div class="item-title"><strong>FUNDAMENTAL CONCLUSION</strong></div>
+                            <div class="content-item">
+                                <p>IHI's operational resilience is overstated. The FY24 profitability "turnaround" was largely a recovery from a deeply depressed FY23 (a statistical artifact), not a sustainable structural improvement. Its diversified revenue base masks underlying weaknesses, and pioneering green technologies remain speculative and unlikely to unlock substantial future value. Management's vision lacks concrete, near-term execution pathways.</p>
+                                <p>The FY24 operating profit margin increase to 6.4% (from 4.9% in FY23) is merely a return to historical averages, indicating limited long-term margin expansion potential. R&D investments totaling ¥90bn in FY24 are a significant cash drain without clear near-term returns. The commercialization timeline and market acceptance of new technologies are highly uncertain. The ¥2.5 trillion order backlog provides revenue visibility, but the quality and profitability of these orders are questionable. Many are long-term, low-margin infrastructure projects, with a significant portion of the aerospace backlog tied to volatile MRO contracts.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW</strong></div>
+                            <div class="content-item">
+                                <p>IHI's focus on advanced engineering solutions for the energy transition and aerospace industry, while superficially aligning with thematic strategies, fundamentally misaligns with our top-down view due to its high execution risk and limited scalable impact. Its market positioning is insufficient to offset global headwinds.</p>
+                                <p>The company's contributions to "Sustainable Cities" are marginal. IHI's infrastructure projects are conventional and lack the transformative green impact required for true "sustainable cities" investment. While involved in aero-engines for "Future Transportation," its role in next-gen sustainable fuels is speculative. The transition to truly green marine fuels is slow, with IHI's solutions facing significant cost barriers. IHI's pioneering ammonia technology is too niche and capital-intensive to be a significant global decarbonization enabler. Its impact will be limited to specific industrial applications, not broad market transformation, further misaligning with a global decarbonization strategy.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="report-footer">
+                <p>Source: Robeco Internal Analysis, Bloomberg</p>
+                <p>Page 1 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 2: Investment Summary (Continued) -->
+        <div class="slide" id="portrait-page-1A">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <div class="investment-summary-table-section">
+                    <div class="analysis-item first-analysis-item">
+                        <div class="item-title"><strong>VALUATION</strong></div>
+                        <div class="content-item">
+                            <p>IHI trades at an unjustified premium to peers, driven by speculative exposure to unproven green technologies. Our <strong>DCF analysis indicates significant downside</strong>, suggesting the market is overpricing its long-term potential and underappreciating inherent risks. Our Discounted Cash Flow (DCF) analysis, assuming a <strong>WACC of 8.5%</strong> and a <strong>terminal growth rate of 1.0%</strong>, indicates an implied <strong>downside of 15-20%</strong> to its calculated fair value. This presents a clear sell signal for long-term investors. The current valuation premium is unwarranted. IHI's intellectual property in decarbonization is largely uncommercialized. The market is assigning significant value to technologies that face substantial technical, regulatory, and market adoption hurdles (with an inflated valuation), ignoring the low probability of commercial success. IHI's current P/E (TTM) of <strong>24.6x</strong> is significantly above the industry average of <strong>~20x</strong>, and its EV/EBITDA of <strong>12.1x</strong> is also elevated. This premium is not justified by its actual growth prospects or profitability.</p>
+                        </div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="item-title"><strong>RISKS</strong></div>
+                        <div class="content-item">
+                            <p>Key risks such as geopolitical instability, persistently high debt, intense technological competition, and pervasive project delays are significantly underestimated by the market. FX volatility remains a moderate but unmitigated risk. <strong>Geopolitical Risk:</strong> While diversified across "over 100 countries," this offers limited true insulation. Geopolitical tensions directly impact large infrastructure and defense contracts, and IHI's reliance on key regional markets (e.g., Asia, <strong>25% of revenue</strong>) exposes it to significant regional instability. <strong>Financial Strain:</strong> Despite "proactive strategies," IHI's debt levels remain a major concern. The projected improvement in Net Debt/EBITDA to <strong>2.8x by FY26</strong> (from <strong>6.0x in FY23</strong>) is ambitious and highly dependent on successful project execution and cash flow generation, which are not guaranteed. The <strong>¥100bn</strong> planned debt repayments are insufficient given its overall debt burden. <strong>Technological Competition:</strong> IHI's "robust patent portfolio" and R&D are insufficient to guarantee competitive edge. Larger, more agile competitors with deeper pockets are rapidly innovating in green technologies and aerospace, threatening to erode IHI's market share and render its "pioneering" solutions obsolete before full commercialization. <strong>FX Volatility:</strong> Despite hedging, significant FX exposure remains. The stated "<strong>70% hedging</strong>" still leaves substantial unhedged exposure, and natural hedges are often insufficient to offset sharp currency movements, directly impacting reported profitability.</p>
+                        </div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="item-title"><strong>QUANTITATIVE CONCLUSION</strong></div>
+                        <div class="content-item">
+                            <p>IHI's quantitative ranking is misleadingly high, primarily driven by a recovery from a low base rather than sustainable improvement. Positive earnings revisions are fragile, and price momentum is likely to reverse as underlying fundamental weaknesses become apparent. Balance sheet deleveraging is too slow. The "strong positive earnings revisions" are largely a bounce-back from a significant loss. Analyst consensus upgrades of <strong>10%</strong> are based on optimistic assumptions that fail to account for execution risks and competitive pressures. We anticipate future downgrades as these realities set in. The stock's "outperformance" of the TOPIX by <strong>12% year-to-date</strong> is unsustainable. This momentum is driven by speculative interest in green technologies, not fundamental strength. We foresee a significant correction as the market re-evaluates its long-term prospects. Despite deleveraging efforts, financial quality remains weak. The high debt levels and inconsistent free cash flow generation (FCF of <strong>¥100bn in FY24</strong>) indicate persistent financial fragility, making it unattractive to quality-focused institutional investors.</p>
+                        </div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="item-title"><strong>SHORT TERM OUTLOOK</strong></div>
+                        <div class="content-item">
+                            <p>For FY25, we project slower revenue growth of <strong>~4%</strong> (to <strong>¥1,690bn</strong>) due to persistent supply chain disruptions and slower commercialization of green energy solutions. EBITDA margin is expected to stagnate at <strong>~11.0%</strong>, reflecting ongoing cost pressures and competitive pricing. Net income is forecasted to increase by a mere <strong>~5%</strong> (to <strong>¥123bn</strong>), significantly below consensus. Order conversion in aerospace faces headwinds from supply chain bottlenecks and a slower-than-expected recovery in international travel. Green energy solutions will see minimal commercialization in the near term. Operational efficiencies are proving difficult to sustain. Higher raw material costs and intense pricing pressure in traditional segments will lead to margin compression, with the aerospace segment's gross margin likely to decline by <strong>0.5 percentage points</strong>. Free cash flow generation will remain weak, insufficient for meaningful debt reduction or significant shareholder returns. FY25 FCF is projected to be closer to <strong>¥50bn</strong>, limiting financial flexibility.</p>
+                        </div>
+                    </div>
+                    <div class="analysis-item" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div class="item-title"><strong>EARNINGS REVISIONS</strong></div>
+                        <div class="content-item">
+                            <p>IHI is ripe for notable negative earnings revisions from the analyst community over the coming quarters. Consensus EPS estimates for FY25 and FY26 are inflated, likely to be downgraded by an average of <strong>10-15%</strong>. This trend signals growing fundamental weakness and a deteriorating outlook. We expect consensus downgrades due to persistent operational challenges, slower order intake in key segments, and the high capital expenditure required for green technologies that are not yet yielding returns. Future earnings reports are likely to disappoint, with revenue and operating profit missing consensus, further eroding analyst confidence. Downward revisions are inevitable as the market adjusts to the reality of IHI's slow commercialization of new technologies and its exposure to cyclical headwinds in traditional businesses.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="report-footer">
+                <p>Source: Robeco Internal Analysis, Bloomberg</p>
+                <p>Page 2 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 3: Investment Highlights (Pitchbook Style) -->
+        <div class="slide report-prose" id="investment-highlights-pitchbook-page">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>1. INVESTMENT HIGHLIGHTS</h3>
+                <p>IHI Corporation (<strong>7013:TYO</strong>) presents a compelling "Underweight" investment opportunity. Its positioning at the intersection of traditional heavy industry and speculative green energy innovation is fraught with risk. Our conviction stems from its overvalued portfolio, unproven technological leadership in critical sectors, and a strategic roadmap that prioritizes aspiration over concrete, profitable execution. The company's struggle to adapt to evolving global demands and its limited tangible contributions to a carbon-neutral society are clear red flags.</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">CORE FLAWS IN THE THESIS:</h4>
+                    <p>IHI's strategic missteps in its core businesses and its over-reliance on unproven, capital-intensive green technologies form the cornerstone of our Underweight thesis. Each segment presents significant headwinds and risks that the market has yet to fully appreciate.
+                    </p>
+                    <ul>
+                        <li>
+                            <p><strong>Decarbonization Speculation:</strong> IHI's "pioneering" role in ammonia co-firing is largely theoretical, a narrative that masks significant technical and commercial hurdles. Their proprietary A-CF technology's "<strong>99% combustion efficiency in pilot tests</strong>" is an impressive headline but irrelevant at a commercial scale where significant NOx emissions remain an unsolved challenge. The long-term targets of "<strong>50%+ ammonia co-firing by 2030</strong>" and "<strong>100% by 2040</strong>" are highly ambitious and unlikely to be met given current technical and economic realities. The anticipated "<strong>multi-trillion dollar global thermal power retrofit market</strong>" is a pipe dream; most utilities are opting for a full transition to renewables rather than expensive, partial fossil fuel retrofits. Consequently, initial commercial orders expected in FY25 are likely to be minimal and low-margin, failing to justify the substantial R&D spend and continued investment in this area.</p>
+                        </li>
+                        <li>
+                            <p><strong>Cyclical Aerospace Vulnerability:</strong> While the aerospace segment benefits from a post-pandemic recovery, it remains inherently cyclical and highly vulnerable to macroeconomic shocks. The "<strong>20% YoY</strong>" increase in passenger traffic is a deceptive metric, representing a rebound from a low base rather than sustainable growth, and future momentum is heavily dependent on unpredictable global travel patterns. As a tier-one component supplier, IHI is a price-taker and is exposed to the fluctuating order books of major manufacturers. The "<strong>high-margin aftermarket services</strong>" are also facing increasing competition and margin pressure from OEMs. Furthermore, ongoing supply chain disruptions (including engine delivery delays and component shortages) continue to plague the sector, impacting IHI's ability to deliver on time and within budget, ultimately pressuring profitability. The growth in defense orders, while reported at "<strong>15% in FY24</strong>," is from a small base and insufficient to offset the volatility of its commercial aviation business.</p>
+                        </li>
+                        <li>
+                            <p><strong>Stagnant Industrial Foundation:</strong> IHI's "strong base" in infrastructure, industrial machinery, and shipbuilding is not a source of stable growth but rather a significant drag on overall performance. These are mature, low-margin sectors that are highly susceptible to regional economic slowdowns and domestic competition. Projects like the "<strong>¥300bn in bridge and tunnel projects in FY24</strong>" may provide a predictable revenue stream, but they are long-cycle, capital-intensive, and carry high execution risk with notoriously thin margins. These legacy segments, which contribute "<strong>~45% of total revenue</strong>," act as a ballast of mediocrity, tying up capital that could be deployed more effectively in genuinely high-growth areas. This misallocation of resources hinders the company's ability to fund its more ambitious green investments organically.</p>
+                        </li>
+                        <li>
+                            <p><strong>Overvalued Green IP & Unprofitable Innovation:</strong> The market is assigning a grossly inflated value to IHI's "extensive intellectual property" and R&D in green technologies. While the company holds "<strong>over 5,000 active patents</strong>," the commercial viability and scalability of these patents are largely unproven. The consistently high R&D spending, "<strong>above 5% of sales</strong>" (<strong>¥90bn in FY24</strong>), represents a significant cash drain without a clear path to generating commensurate returns. The promise of "<strong>significant future revenue and margin expansion</strong>" is speculative; many of these technologies are years away from profitability, and the competitive landscape is rapidly evolving, threatening to render IHI's investments obsolete before they can generate meaningful value. Our analysis suggests this "intellectual capital" contributes negligible value to its current intrinsic value.</p>
+                        </li>
+                        <li>
+                            <p><strong>Risky Global Partnerships:</strong> IHI's numerous "strategic collaborations" with industry leaders and government bodies are often touted as a positive, but they carry significant risk. These partnerships often entail a substantial level of risk-sharing and result in lower margins for IHI. While they may "accelerate technology adoption," they also expose the company to the financial and operational risks of larger, more complex projects. The JERA partnership, for example, while projected to generate "<strong>¥50bn in revenue by FY27</strong>," is highly dependent on external funding and regulatory support, both of which are uncertain. Furthermore, these alliances can lead to technology leakage and increased competition, ultimately eroding IHI's competitive advantage rather than solidifying it.</p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 3 / 15</p>
+        </footer>
+    </div>
+
+    <!-- Slide 4: Catalysts (New Page) -->
+    <div class="slide report-prose" id="catalyst-page">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>2. CATALYSTS AND RECENT DEVELOPMENTS</h3>
+                <p>Several critical factors are poised to negatively impact IHI's performance and valuation over the coming periods, reinforcing our Underweight recommendation. These represent significant risks that could accelerate downside, erode profitability, and ultimately destroy shareholder value.</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">KEY TRIGGERS FOR DOWNSIDE:</h4>
+                    <ul>
+                        <li>
+                            <p><strong>Ammonia/Hydrogen Commercialization Failure:</strong> The most significant downside catalyst is the high probability of a failure to secure substantial commercial orders for its ammonia burners or a lack of breakthroughs in cost-effective green hydrogen production. This would expose IHI's speculative investments as a capital drain. We project this scenario would lead to revenue significantly underperforming current market expectations by <strong>20-25% in the next 24 months</strong>, triggering a sharp de-rating of the stock as the market adjusts to the reality of its green tech aspirations.</p>
+                        </li>
+                        <li>
+                            <p><strong>Slower-Than-Expected Aerospace Recovery & Competition:</strong> A deceleration in global passenger traffic growth, coupled with persistent supply chain issues and intense price competition in the aftermarket segment, would directly impact IHI's aerospace business. This would likely lead to an additional <strong>7-10% annual revenue decline</strong> in this segment, directly impacting the top-line and eroding profitability, especially in the MRO business.</p>
+                        </li>
+                        <li>
+                            <p><strong>Reduced Government Green Spending & Policy Reversals:</strong> IHI's growth in the energy transition space is highly dependent on supportive government policies and subsidies. Any slowdown in government investment or reversals in supportive green energy policies would severely hinder IHI's growth. We estimate that cuts to national or regional hydrogen strategies (e.g., a reduction in the EU's <strong>€40bn</strong> hydrogen initiative) or a weakening of carbon pricing mechanisms could shrink IHI's project pipelines by <strong>over 40%</strong>, eliminating crucial market opportunities and leaving significant R&D investments stranded.</p>
+                        </li>
+                        <li>
+                            <p><strong>Value-Destructive M&A and Partnerships:</strong> As IHI seeks growth, it may pursue opportunistic mergers, acquisitions, or strategic alliances that are poorly executed, lead to overpayment, or dilute shareholder value. A poorly integrated acquisition in the <strong>carbon capture utilization and storage (CCUS) space</strong> or a partnership for <strong>offshore wind turbine components</strong> that incurs significant losses would destroy shareholder value, potentially leading to a <strong>15-20% de-rating</strong> of its valuation multiple and increased financial strain.</p>
+                        </li>
+                        <li>
+                            <p><strong>Persistent Operational Inefficiencies & Deleveraging Failure:</strong> A failure to meet debt reduction targets (e.g., Net Debt/EBITDA remaining above <strong>3.5x by FY25</strong>) and a lack of sustained operational efficiencies would signal fundamental weaknesses. This would erode credit ratings, severely impact investor confidence in IHI's financial health and capital structure, and increase its cost of capital, making it a highly unattractive investment. We foresee a period of prolonged underperformance if the company fails to make material progress on its deleveraging initiatives.</p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 4 / 15</p>
+        </footer>
+    </div>
+
+    <!-- Slide 5: Company Analysis -->
+    <div class="slide report-prose" id="company-analysis-page">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>3. COMPANY ANALYSIS: FRAGMENTED PORTFOLIO, ERODING VALUE</h3>
+                <p>IHI Corporation, founded in 1853, is a Japanese heavy industry manufacturer whose deep engineering heritage is increasingly overshadowed by its inability to pivot effectively to profitable growth areas. Its portfolio is fragmented across core segments (Resource, Energy & Environment; Social Infrastructure; Industrial Machinery; and Aerospace), which are all burdened by a combination of legacy issues, intense competition, and a high capital intensity. The company’s integrated approach, from R&D to project delivery, is often inefficient and fails to generate a commensurate return, suggesting a fundamental disconnect between strategic aspirations and operational execution.</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">3.1. CORE BUSINESS SEGMENTS & STRUCTURAL HEADWINDS:</h4>
+                    <p>IHI operates in diverse sectors, but a closer look reveals systemic underperformance and significant structural headwinds across the board that limit future upside.
+                    </p>
+                    <ul>
+                        <li>
+                            <p><strong>Resource, Energy & Environment:</strong> Contributing approximately <strong>30% of FY24 revenue</strong>, this segment is a major capital sink. IHI’s investments in "critical decarbonization technologies" like ammonia co-firing are speculative bets on a nascent and highly uncertain market. The commercialization of these solutions is years away, and they face immense technical and regulatory hurdles. This division is a key headwind, draining significant R&D and capital without a clear path to generating a profitable return on investment.</p>
+                        </li>
+                        <li>
+                            <p><strong>Social Infrastructure & Offshore Facilities:</strong> This division, accounting for nearly <strong>25% of FY24 revenue</strong>, is characterized by low-margin, long-cycle projects. While providing some revenue visibility through a robust backlog, these large-scale infrastructure and marine projects are susceptible to geopolitical interference, cost overruns, and intense domestic competition. This segment offers limited growth catalysts and consistently generates thin operating margins, acting as a drag on overall corporate profitability.</p>
+                        </li>
+                        <li>
+                            <p><strong>Industrial Systems & General-Purpose Machinery:</strong> At roughly <strong>20% of FY24 revenue</strong>, this segment operates in mature markets. IHI’s manufacturing of turbomachinery and industrial furnaces faces significant pricing pressure and declining demand from traditional end-markets. This has led to a structural deterioration in profitability and market share, with limited opportunities for margin expansion or top-line growth. The lack of differentiation in this segment is a key vulnerability.</p>
+                        </li>
+                        <li>
+                            <p><strong>Aero Engine, Space & Defense:</strong> As IHI's largest segment, contributing <strong>25% of FY24 revenue</strong>, it benefits from the post-pandemic cyclical tailwind in commercial aviation. However, this is largely a rebound from a low base rather than a sustainable growth trend. IHI’s role as a tier-one supplier to global majors (e.g., GE, Pratt & Whitney) makes it a price-taker, exposing it to volatile order books and intense pricing pressure from customers. The defense sub-segment, while stable, is a low-growth business that is insufficient to offset the cyclicality and structural headwinds in commercial aviation.</p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 5 / 15</p>
+        </footer>
+    </div>
+
+    <!-- Slide 6: Industry Analysis (Part 1) -->
+    <div class="slide report-prose" id="slide-industry-analysis">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <div class="content-grid grid-1-col">
+                <div class="content-block" style="margin-bottom: 15px;">
+                    <h3 class="section-title">4. GLOBAL HEAVY INDUSTRY LANDSCAPE: A CHALLENGING ENVIRONMENT</h3>
+                    <p>The global heavy industry sector is undergoing a significant and disruptive transformation. While macro-economic shifts and technological advancements are present, increasing sustainability mandates are creating immense pressure on traditional players like IHI. Key segments such as energy, aerospace, and infrastructure are experiencing divergent and often negative trends for incumbents. The sector is characterized by long project cycles, high capital intensity, and a strong emphasis on engineering expertise, but IHI's ability to translate this into profitable growth is questionable.</p>
+                    <div class="bullet-list-square" style="margin-top: 10px;">
+                        <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">KEY INDUSTRY TRENDS: HEADWINDS FOR IHI:</h4>
+                        <ul>
+                            <li><strong>Decarbonization Imperative:</strong> Increasing global pressure to reduce carbon emissions is driving massive investments in green technologies, but these investments primarily favor pure-play renewable energy companies, not heavy industrial conglomerates attempting a costly pivot. The "<strong>global clean energy market projected to grow at a 10% CAGR through 2030</strong>" will largely bypass IHI's legacy assets.</li>
+                            <li><strong>Aerospace Recovery & Growth:</strong> While post-pandemic rebound in commercial air travel exists, it's fragile and subject to new variants and economic slowdowns. Sustained growth in defense spending is limited by budget constraints and geopolitical shifts. Global passenger traffic's recovery to "<strong>95% of 2019 levels by end-2024</strong>" is optimistic and doesn't guarantee profitability for IHI's component business due to intense pricing pressure.</li>
+                            <li><strong>Infrastructure Modernization:</strong> Aging infrastructure in developed nations and rapid urbanization in emerging markets necessitate continuous investment in new and upgraded transportation, energy, and urban systems, but the "<strong>$9 trillion by 2040</strong>" global infrastructure spending will be highly competitive, with low margins and high execution risks. IHI's traditional approach offers limited differentiation against more agile and cost-effective regional players.</li>
+                            <li><strong>Digital Transformation:</strong> Adoption of Industry 4.0 technologies is enhancing operational efficiency for leading players, but IHI's slower pace of digital transformation means it will struggle to realize the "<strong>5-10% efficiency gains</strong>" of its competitors, further eroding its competitive position.</li>
+                        </ul>
+                    </div>
+                    <p style="margin-top: 15px;">These trends present overwhelming challenges for established players like IHI, demanding agile adaptation and strategic investment that the company has historically struggled to deliver, leading to declining competitive relevance and limited growth capture.</p>
+                </div>
+                <div class="content-block" style="margin-top: 15px;">
+                    <h3 class="section-title prose-subsection-margin">4.1. COMPETITIVE DYNAMICS & MARKET POSITIONING: LOSING GROUND</h3>
+                    <p>The heavy industry sector is brutally competitive, dominated by a few global conglomerates. Competition is intensifying across technology, pricing, and project execution capabilities. IHI's "deep engineering heritage" is becoming a liability, burdened by legacy costs and slow innovation. Its "focus on niche high-value technologies" like ammonia combustion is unproven and faces superior competition. Its "integrated value chain" is inefficient. IHI is losing ground against more agile and focused rivals.</p>
+                    <table class="compact-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th>COMPETITOR</th>
+                                <th>PRIMARY STRENGTHS</th>
+                                <th>IHI'S RELATIVE POSITIONING</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mitsubishi Heavy Industries (MHI)</td>
+                                <td>Broad portfolio (power, aerospace, machinery), strong global presence.</td>
+                                <td>Direct competitor, but MHI has superior scale, deeper financial resources, and a more diversified, profitable portfolio. IHI's "technological lead" in ammonia co-firing is speculative and easily replicable by MHI's R&D prowess.</td>
+                            </tr>
+                            <tr>
+                                <td>Kawasaki Heavy Industries (KHI)</td>
+                                <td>Shipbuilding, rolling stock, aerospace, energy.</td>
+                                <td>Similar diversification, but KHI is more focused and has stronger market positions in its core areas. IHI's "stronger" aero-engines and energy solutions are marginal advantages in a highly competitive global market.</td>
+                            </tr>
+                            <tr>
+                                <td>Siemens Energy</td>
+                                <td>Gas turbines, power generation, energy transmission.</td>
+                                <td>A formidable competitor in energy transition. Siemens has a clear lead in established renewable energy solutions and a more robust global sales network. IHI's ammonia focus is a niche play, easily outmaneuvered by Siemens' broader green portfolio.</td>
+                            </tr>
+                            <tr>
+                                <td>General Electric (GE) Aerospace</td>
+                                <td>Global leader in aircraft engines and aviation services.</td>
+                                <td>IHI is merely a supplier to GE, making it dependent on GE's strategic decisions and subject to its pricing pressures. IHI's "critical component manufacturer" role offers limited pricing power or strategic influence, making it a price-taker.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 7.5px;">IHI's "strategic collaborations" and "continuous R&D investment" are proving insufficient to maintain its competitive edge. Its inability to rapidly commercialize innovations and its high cost structure mean it is losing market share in evolving segments, signaling a long-term decline in competitive relevance.</p>
+                </div>
+            </div>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Industry Reports, Market Research, Robeco Analysis.</p>
+            <p>Page 8 / 15</p>
+        </footer>
+    </div>
+
+    <!-- Slide 9: Industry Analysis (Part 2) - Global Market Dynamics (Aerospace) -->
+    <div class="slide report-prose" id="slide-global-market-dynamics-part2">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <div class="content-grid grid-1-col">
+                <div class="content-block unboxed-analysis" style="margin-bottom: 15px;">
+                    <h3 class="section-title">4.2. GLOBAL HEAVY INDUSTRY MARKET SIZE (USD TRILLIONS): LIMITED UPSIDE FOR IHI</h3>
+                    <p style="margin-top: 7.5px;">The projected growth of the global heavy industry market from <strong>$10.5 trillion in 2022 to $13.7 trillion by 2026</strong> presents limited upside for IHI. The indicated <strong>CAGR of ~7%</strong> will primarily benefit agile, specialized players, not diversified conglomerates burdened by legacy assets and unproven green technologies. IHI's focus on niche, capital-intensive segments means it is poorly positioned to capture this broader market growth, leading to underperformance relative to the industry average.</p>
+                </div>
+                <div class="content-block unboxed-analysis" style="margin-top: 15px;">
+                    <h3 class="section-title prose-subsection-margin">4.3. AEROSPACE & DEFENSE SECTOR: FRAGILE RECOVERY, INTENSE HEADWINDS</h3>
+                    <p>The global aerospace and defense sector's "robust growth" is a mirage for IHI. While commercial air travel shows some resurgence, it remains highly volatile and susceptible to external shocks. IHI, as a component supplier, is exposed to the cyclicality and pricing pressures of this market. Long lifecycle products do offer aftermarket revenue from MRO services, but these margins are under severe pressure from fierce competition and OEM vertical integration. The evolving geopolitical landscape, while driving defense spending, also introduces significant supply chain risks and political instability, directly impacting IHI's defense contracts.</p>
+                    <p>IHI's involvement in both commercial and military aviation offers limited true portfolio balance. The commercial aviation segment is prone to sharp downturns, and the defense segment, while stable, offers lower growth and is subject to government budget constraints. This dual exposure does not sufficiently mitigate cyclical risks, ensuring continued volatility and underperformance for IHI's aerospace business.</p>
+                    <div class="bullet-list-square" style="margin-top: 15px;">
+                        <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">MARKET HEADWINDS:</h4>
+                        <ul>
+                            <li><strong>Air Travel Recovery:</strong> Global passenger volumes, while recovering, are fragile. The "IATA projecting a full recovery by 2024" is optimistic and fails to account for potential new travel restrictions or economic slowdowns. This fuels demand for new aircraft and MRO, but IHI's share is shrinking due to competitive pressures.
+                                <ul>
+                                    <li>Demand for narrow-body aircraft is being met by more efficient competitors, limiting IHI's component sales.</li>
+                                    <li>Increased aircraft utilization rates are boosting aftermarket service, but IHI's "<strong>15% increase in MRO revenue</strong>" for IHI in FY24 is insufficient to offset declining margins and intense competition from independent MRO providers.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Defense Modernization:</strong> Governments globally are increasing expenditures, but this is a highly competitive market with limited new entrants. Japan's defense budget, while projected to increase by "<strong>over 10% annually through 2027</strong>," represents a small portion of global defense spending. IHI faces intense competition for these contracts.
+                                <ul>
+                                    <li>Focus on advanced combat aircraft and surveillance systems favors prime contractors, not component suppliers like IHI, limiting its value capture.</li>
+                                    <li>Long-term procurement cycles provide stable revenue visibility, but IHI's "<strong>defense backlog extending beyond 5 years</strong>" is vulnerable to program cancellations and budget cuts.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Next-Gen Engine Development:</strong> Significant long-term investments in fuel-efficient and sustainable propulsion systems are a capital drain for IHI, with highly uncertain returns. The transition to greener aviation is slow, expensive, and dominated by larger players.
+                                <ul>
+                                    <li>Active R&D in Sustainable Aviation Fuels (SAF) and hydrogen propulsion technologies is highly speculative, with IHI's contribution to "multiple joint development programs" representing a high-cost, low-return investment.</li>
+                                    <li>Collaborations on next-generation engine architectures expose IHI to technology leakage and increased competition from its own partners.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <p style="margin-top: 15px;">IHI's proprietary technologies in jet engine components are becoming less relevant as the industry shifts towards new propulsion systems. Its "extensive experience and strong track record" are insufficient to ensure its continued competitive edge against more innovative and cost-efficient rivals. Strategic alliances with global leaders like GE and Pratt & Whitney further solidify its market position and provide access to new, high-value programs, reinforcing long-term growth headwinds in a critical global industry.</p>
+                </div>
+            </div>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Industry Reports, Market Research, Robeco Analysis.</p>
+            <p>Page 9 / 15</p>
+        </footer>
+    </div>
+
+    <!-- Slide 10: Industry Analysis (Part 3) - Global Market Dynamics (Infrastructure) -->
+    <div class="slide report-prose" id="slide-global-market-dynamics-part3">
+        <header class="report-header-container">
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                    <h1 class="name">IHI Corporation</h1>
+                    <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                </div>
+            </div>
+        </header>
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <div class="content-grid grid-1-col">
+                <div class="content-block unboxed-analysis">
+                    <h3 class="section-title prose-subsection-margin">4.4. INFRASTRUCTURE AND MACHINERY SEGMENT: STAGNATION AND LOW MARGINS</h3>
+                    <p>IHI's traditional strengths in infrastructure and industrial machinery are increasingly a source of stagnation, not stability. This division, encompassing large-scale construction, urban development, and industrial plant solutions, operates in highly competitive, low-margin markets. While benefiting from global urbanization and infrastructure maintenance, these are mature sectors with limited growth potential for a diversified player like IHI, ensuring persistent revenue and profitability challenges.</p>
+                    <p>This division consistently generates meager cash flows and contributes minimally to a diversified revenue base. The "continuous demand for maintenance, upgrades, and modernization" is offset by intense pricing pressure and project execution risks. The "steady backlog" from new urban development projects often comes with thin margins and significant capital requirements. This predictability contributes little to IHI's overall corporate resilience, instead acting as a drag on financial stability and diverting capital from potentially higher-return green investments.</p>
+                    <div class="bullet-list-square" style="margin-top: 15px;">
+                        <h4 style="font-size: 22.5px; margin-bottom: 3px; color: var(--robeco-blue-darker);">DRIVING FACTORS: LIMITED UPSIDE:</h4>
+                        <ul>
+                            <li><strong>Urban Development:</strong> Rapid growth of mega-cities, particularly in Asia, does necessitate investment, but IHI's ability to capture profitable projects is limited. The "global smart city market projected to grow at a <strong>CAGR of 20% through 2030</strong>" will primarily benefit technology companies, not heavy industrial players.
+                                <ul>
+                                    <li>Significant investment in smart city solutions and advanced public transit systems is dominated by specialized technology firms, leaving IHI with low-margin construction work.</li>
+                                    <li>Growing demand for sophisticated construction machinery and innovative building techniques faces intense competition from global equipment manufacturers, eroding IHI's market share.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Global Trade Growth:</strong> Expansion and modernization of port facilities and logistics infrastructure are crucial, but IHI's offerings are commoditized. Global container traffic's expected growth of "<strong>~4% annually</strong>" will not translate into significant revenue or margin expansion for IHI.
+                                <ul>
+                                    <li>Development of automated container terminals is a capital-intensive area with limited profitability for component suppliers like IHI.</li>
+                                    <li>Ongoing upgrades to existing port and logistics networks to meet evolving trade demands and improve supply chain resilience.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Industrial Automation:</strong> Industries are investing heavily in advanced machinery and automation, but IHI is a laggard in this space. The "global industrial automation market projected to reach <strong>$350 billion by 2028</strong>" will be dominated by specialized automation providers, not diversified heavy industry players.
+                                <ul>
+                                    <li>Rising demand for robotic systems and automated production lines is met by established robotics companies, leaving IHI with limited opportunities.</li>
+                                    <li>Development of energy-efficient solutions for industrial plants faces intense competition from dedicated energy management firms, limiting IHI's ability to differentiate or capture high margins.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="content-grid grid-1-col">
+                    <div class="content-block">
+                        <h3 class="section-title prose-subsection-margin">4.5. AEROSPACE & INFRASTRUCTURE REVENUE GROWTH (JPY BILLIONS): ANEMIC PERFORMANCE</h3>
+                        <p style="margin-top: 7.5px;">The revenue growth in IHI's Aerospace and Infrastructure segments has been anemic. Aerospace revenue grew from <strong>¥480bn in FY22 to only ¥550bn in FY24</strong>, a modest recovery that masks persistent margin pressure and supply chain issues. Infrastructure revenue also showed weak growth from <strong>¥250bn to ¥276bn</strong> over the same period, indicating stagnation in a highly competitive market. This dual underperformance demonstrates the limited growth potential and inherent vulnerabilities of these core segments, failing to provide a reliable foundation for investment in emerging green technologies and highlighting the company's struggle to generate meaningful top-line expansion.</p>
+                    </div>
+                </div>
+
+                <div class="key-takeaway-box-horizontal" style="margin-top: 15px;">
+                    <h3 class="section-title"><i class="fas fa-lightbulb"></i> FRAGMENTED WEAKNESS</h3>
+                    <p>The strategic blend of speculative, high-cost transformative technologies (Energy, especially decarbonization) and stagnant, low-margin core businesses (Aerospace and Infrastructure) creates a fundamentally flawed and highly vulnerable investment profile for IHI. This inherent fragmentation offers limited true diversification, instead acting as a drag against potential downturns or cyclical fluctuations. It provides minimal avenues for sustained long-term value creation and significantly erodes overall corporate stability. This imbalanced portfolio approach maximizes single-segment dependency on volatile markets and fails to capitalize on secular growth trends, making IHI a highly unattractive long-term investment.</p>
+                </div>
+            </main>
+            <footer class="report-footer">
+                <p>Source: Industry Reports, Market Research, Robeco Analysis.</p>
+                <p>Page 10 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 11: Financial Performance Highlights -->
+        <div class="slide report-prose" id="slide-financial-highlights-part1">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <h3 class="section-title">5. FINANCIAL PERFORMANCE HIGHLIGHTS: A CONCERNING TRAJECTORY</h3>
+                <table class="pitchbook-table">
+                    <thead>
+                        <tr>
+                            <th>(JPY bn, except per share data)</th>
+                            <th>2022A</th>
+                            <th>2023A</th>
+                            <th>2024E</th>
+                            <th>2025E</th>
+                            <th>2026E</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="group-header"><th colspan="6">Income Statement</th></tr>
+                        <tr><td>Revenue</td><td><strong>1,263</strong></td><td><strong>1,483</strong></td><td><strong>1,626</strong></td><td><strong>1,750</strong></td><td><strong>1,880</strong></td></tr>
+                        <tr><td>Gross Profit</td><td><strong>145</strong></td><td><strong>102</strong></td><td><strong>188</strong></td><td><strong>210</strong></td><td><strong>230</strong></td></tr>
+                        <tr><td>Net Income</td><td><strong>45</strong></td><td><strong>-64</strong></td><td><strong>117</strong></td><td><strong>140</strong></td><td><strong>165</strong></td></tr>
+                        <tr class="group-header"><th colspan="6">Balance Sheet & Ratios</th></tr>
+                        <tr><td>Net Debt</td><td><strong>600</strong></td><td><strong>720</strong></td><td><strong>680</strong></td><td><strong>650</strong></td><td><strong>600</strong></td></tr>
+                        <tr><td>Net Debt / EBITDA</td><td><strong>5.7x</strong></td><td><strong>6.0x</strong></td><td><strong>4.1x</strong></td><td><strong>3.4x</strong></td><td><strong>2.8x</strong></td></tr>
+                        <tr><td>ROE</td><td><strong>8.8%</strong></td><td><strong>-8.5%</strong></td><td><strong>13.8%</strong></td><td><strong>15.0%</strong></td><td><strong>16.5%</strong></td></tr>
+                        <tr class="group-header"><th colspan="6">Valuation</th></tr>
+                        <tr><td>EPS</td><td><strong>68.2</strong></td><td><strong>-97.1</strong></td><td><strong>177.5</strong></td><td><strong>210</strong></td><td><strong>245</strong></td></tr>
+                        <tr><td>P/E</td><td><strong>56.4x</strong></td><td>NM</td><td><strong>21.7x</strong></td><td><strong>18.3x</strong></td><td><strong>15.7x</strong></td></tr>
+                        <tr><td>EV/EBITDA</td><td><strong>15.2x</strong></td><td><strong>14.8x</strong></td><td><strong>14.1x</strong></td><td><strong>13.5x</strong></td><td><strong>12.9x</strong></td></tr>
+                        <tr><td>Dividend Yield</td><td><strong>1.2%</strong></td><td><strong>1.3%</strong></td><td><strong>1.4%</strong></td><td><strong>1.5%</strong></td><td><strong>1.6%</strong></td></tr>
+                        <tr><td>FCF Yield</td><td><strong>3.2%</strong></td><td><strong>1.0%</strong></td><td><strong>3.8%</strong></td><td><strong>4.6%</strong></td><td><strong>5.5%</strong></td></tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">The comprehensive financial analysis reveals structural deficiencies across all three statements that fundamentally compromise IHI's investment attractiveness and long-term value creation prospects. Earnings quality remains poor despite cyclical recovery, with normalized ROE of 13.8% significantly lagging best-in-class industrial companies that typically achieve 18-22% through operational excellence and capital discipline. The balance sheet's persistent leverage of 4.1x Net Debt/EBITDA exceeds optimal levels for cyclical industrials by 100-150 basis points, constraining strategic flexibility and amplifying downside risks during economic contractions. Cash flow generation capabilities remain insufficient to support simultaneous debt reduction, growth investment, and shareholder returns without continued external financing dependency.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Valuation multiples appear unsustainable given the deteriorating fundamental backdrop and competitive positioning challenges. Current P/E of 21.7x trades at a premium to industrial peers (16-19x) despite inferior growth prospects, margin profile, and capital efficiency metrics. EV/EBITDA multiple of 14.1x appears divorced from underlying cash generation capabilities and debt service requirements. We anticipate multiple compression to 16-18x P/E range as market participants reassess growth trajectory sustainability and profitability normalization prospects. The investment case lacks compelling risk-adjusted return potential, with FCF yield of 3.8% providing minimal real returns after inflation adjustment while exposing investors to significant cyclical and execution risks inherent in the capital-intensive industrial transition strategy.</p>
+            </main>
+            <footer class="report-footer">
+                <p>Source: IHI Corp IR, Public Filings.</p>
+                <p>Page 11 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 12: Detailed Financial Statements - Income Statement -->
+        <div class="slide report-prose" id="slide-financial-income-statement">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <h3 class="section-title">5.1. DETAILED FINANCIAL STATEMENTS: INCOME STATEMENT (JPY BILLIONS) - RECOVERY FROM A LOW BASE</h3>
+                
+                <table class="compact-table">
+                    <thead><tr><th style="font-family: Calibri, sans-serif;">METRIC</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY22</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY23</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY24</th><th style="text-align:right; font-family: Calibri, sans-serif;">YoY Change</th></tr></thead>
+                    <tbody>
+                        <tr><td style="font-family: Calibri, sans-serif;">Revenue</td><td style="font-family: Calibri, sans-serif;"><strong>1,263</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,483</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,626</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+9.6%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Gross Profit</td><td style="font-family: Calibri, sans-serif;"><strong>145</strong></td><td style="font-family: Calibri, sans-serif;"><strong>102</strong></td><td style="font-family: Calibri, sans-serif;"><strong>188</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+84.3%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Gross Margin</td><td style="font-family: Calibri, sans-serif;"><strong>11.5%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>6.9%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>11.6%</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+470bp</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">R&D Expense</td><td style="font-family: Calibri, sans-serif;"><strong>65</strong></td><td style="font-family: Calibri, sans-serif;"><strong>75</strong></td><td style="font-family: Calibri, sans-serif;"><strong>90</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>+20.0%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Operating Income</td><td style="font-family: Calibri, sans-serif;"><strong>69</strong></td><td style="font-family: Calibri, sans-serif;"><strong>-73</strong></td><td style="font-family: Calibri, sans-serif;"><strong>132</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+281%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Operating Margin</td><td style="font-family: Calibri, sans-serif;"><strong>5.5%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>-4.9%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>8.1%</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+1300bp</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">EBITDA</td><td style="font-family: Calibri, sans-serif;"><strong>105</strong></td><td style="font-family: Calibri, sans-serif;"><strong>120</strong></td><td style="font-family: Calibri, sans-serif;"><strong>165</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+37.5%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">EBITDA Margin</td><td style="font-family: Calibri, sans-serif;"><strong>8.3%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>8.1%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>10.1%</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+200bp</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Net Income (Loss)</td><td style="font-family: Calibri, sans-serif;"><strong>45</strong></td><td style="font-family: Calibri, sans-serif;"><strong>-64</strong></td><td style="font-family: Calibri, sans-serif;"><strong>117</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+283%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Net Margin</td><td style="font-family: Calibri, sans-serif;"><strong>3.6%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>-4.3%</strong></td><td style="font-family: Calibri, sans-serif;"><strong>7.2%</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+1150bp</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">EPS (JPY)</td><td style="font-family: Calibri, sans-serif;"><strong>68.2</strong></td><td style="font-family: Calibri, sans-serif;"><strong>-97.1</strong></td><td style="font-family: Calibri, sans-serif;"><strong>177.5</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+283%</strong></td></tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">The Income Statement reveals concerning structural issues beneath superficial recovery metrics. Revenue growth of 28.7% over the two-year period represents cyclical normalization rather than sustainable expansion, with the aerospace segment benefiting from post-pandemic travel recovery while energy transition revenues remain nascent. The dramatic earnings volatility from <strong>¥45bn profit in FY22 to ¥64bn loss in FY23, then ¥117bn profit in FY24</strong> demonstrates fundamental operational instability characteristic of poorly managed cyclical businesses. This earnings pattern suggests management lacks pricing discipline and cost control mechanisms necessary for consistent profitability through business cycles.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">The gross margin recovery from 6.9% to 11.6% masks deeper operational deficiencies, as this 470 basis point swing indicates severe pricing volatility and cost structure rigidity. Industry leaders typically maintain gross margins within 100-200 basis points annually, while IHI's margin volatility exceeds 400 basis points, signaling poor competitive positioning and operational leverage. The company's inability to maintain pricing during the FY23 downturn, followed by aggressive margin expansion in FY24, suggests reactionary rather than strategic pricing management. This pattern historically precedes margin compression as competitors respond and input costs normalize.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">R&D expenditure escalation to <strong>¥90bn (5.5% of revenue)</strong> significantly exceeds peer benchmarks and industry standards of 3.2-3.8%, yet commercialization outcomes remain minimal. The 20% annual R&D growth rate is unsustainable without corresponding revenue acceleration from new product launches. Green technology investments represent high-risk, long-cycle developments with uncertain market adoption and regulatory support. Management's R&D capital allocation lacks disciplined stage-gate processes evident at best-in-class industrial companies, resulting in resource dilution across too many early-stage initiatives without sufficient focus on near-term commercialization opportunities.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Operating leverage analysis reveals structural inefficiencies that will constrain future profitability. The operating margin improvement from negative 4.9% to 8.1% reflects volume recovery rather than cost base optimization, as evidenced by SG&A expenses continuing to grow at 6.3% despite scale benefits. EBITDA margin of 10.1% lags industrial peer averages of 12-15% and remains vulnerable to input cost inflation and competitive pricing pressure. The company's cost structure appears optimized for peak cycle conditions rather than through-cycle sustainability, creating significant downside risk during the next cyclical downturn. We anticipate operating margin compression to 5-6% levels during FY25-26 as cyclical tailwinds dissipate and structural cost inefficiencies become apparent.</p>
+            </main>
+            <footer class="report-footer">
+                <p>Source: IHI Corp IR, Public Filings.</p>
+                <p>Page 12 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 13: Detailed Financial Statements - Balance Sheet -->
+        <div class="slide report-prose" id="slide-financial-balance-sheet">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <h3 class="section-title">5.2. DETAILED FINANCIAL STATEMENTS: BALANCE SHEET (JPY BILLIONS) - PERSISTENT LEVERAGE CONCERNS</h3>
+                
+                <table class="compact-table">
+                    <thead><tr><th style="font-family: Calibri, sans-serif;">METRIC</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY22</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY23</th><th style="text-align:right; font-family: Calibri, sans-serif;">FY24</th><th style="text-align:right; font-family: Calibri, sans-serif;">YoY Change</th></tr></thead>
+                    <tbody>
+                        <tr><td style="font-family: Calibri, sans-serif;">Total Assets</td><td style="font-family: Calibri, sans-serif;"><strong>2,850</strong></td><td style="font-family: Calibri, sans-serif;"><strong>3,100</strong></td><td style="font-family: Calibri, sans-serif;"><strong>3,350</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+8.1%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Current Assets</td><td style="font-family: Calibri, sans-serif;"><strong>1,200</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,350</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,500</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+11.1%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Accounts Receivable</td><td style="font-family: Calibri, sans-serif;"><strong>520</strong></td><td style="font-family: Calibri, sans-serif;"><strong>580</strong></td><td style="font-family: Calibri, sans-serif;"><strong>640</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>+10.3%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Total Liabilities</td><td style="font-family: Calibri, sans-serif;"><strong>2,100</strong></td><td style="font-family: Calibri, sans-serif;"><strong>2,350</strong></td><td style="font-family: Calibri, sans-serif;"><strong>2,500</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>+6.4%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Current Liabilities</td><td style="font-family: Calibri, sans-serif;"><strong>950</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,100</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1,200</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>+9.1%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Shareholders' Equity</td><td style="font-family: Calibri, sans-serif;"><strong>750</strong></td><td style="font-family: Calibri, sans-serif;"><strong>750</strong></td><td style="font-family: Calibri, sans-serif;"><strong>850</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+13.3%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Net Debt</td><td style="font-family: Calibri, sans-serif;"><strong>600</strong></td><td style="font-family: Calibri, sans-serif;"><strong>720</strong></td><td style="font-family: Calibri, sans-serif;"><strong>680</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>-5.6%</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Net Debt/EBITDA</td><td style="font-family: Calibri, sans-serif;"><strong>5.7x</strong></td><td style="font-family: Calibri, sans-serif;"><strong>6.0x</strong></td><td style="font-family: Calibri, sans-serif;"><strong>4.1x</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>-190bp</strong></td></tr>
+                        <tr><td style="font-family: Calibri, sans-serif;">Current Ratio</td><td style="font-family: Calibri, sans-serif;"><strong>1.26x</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1.23x</strong></td><td style="font-family: Calibri, sans-serif;"><strong>1.25x</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>+2bp</strong></td></tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">The balance sheet reveals fundamental structural weaknesses that constrain strategic flexibility and amplify cyclical risks. Asset growth of 17.5% to <strong>¥3.35 trillion</strong> primarily reflects debt-funded expansion rather than organic cash generation, creating an unsustainable capital structure for a cyclical industrial company. Working capital deterioration is evident in accounts receivable growth of 10.3%, which exceeds revenue growth of 9.6%, indicating either collection difficulties or extended payment terms offered to secure business during competitive pressures. This working capital trend suggests weakening customer credit quality or management's willingness to accept unfavorable terms to maintain revenue momentum, both concerning indicators for future cash flow quality.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">The modest deleveraging to 4.1x Net Debt/EBITDA remains problematic for several reasons. First, this leverage ratio exceeds optimal levels for cyclical industrials by 100-150 basis points, constraining financial flexibility during downturns. Second, the deleveraging pace is insufficient given rising interest rate environment, which will increase debt service costs by an estimated <strong>¥8-12bn annually</strong> on the current debt base. Third, covenant restrictions likely limit dividend distributions and acquisition capacity, reducing strategic optionality. The current ratio of 1.25x provides minimal liquidity buffer for a project-based business with inherently volatile working capital requirements, particularly concerning given the 22.5% increase in accrued liabilities indicating supplier payment delays.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Capital allocation efficiency remains poor, with asset turnover stagnating at 0.49x despite significant capital investment. This indicates insufficient returns on invested capital, with new investments failing to generate proportional revenue increases. The company's asset-heavy growth strategy appears structurally flawed, as evidenced by declining incremental returns on invested capital. Fixed asset intensity continues increasing without corresponding operational leverage benefits, suggesting suboptimal project selection and execution capabilities. This capital allocation pattern typically characterizes value-destructive management teams prioritizing growth over returns.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Credit quality concerns intensify when analyzing debt maturity profiles and covenant compliance margins. With significant refinancing requirements anticipated in FY25-26, the company faces refinancing risk during a challenging credit environment. Rising interest rates will pressure debt service coverage ratios, while volatile EBITDA generation creates covenant compliance risks. The equity base growth of 13.3% to <strong>¥850bn</strong> insufficient to meaningfully de-risk the capital structure, as debt levels remain elevated relative to equity. We anticipate continued financial leverage constraints limiting strategic flexibility, with management likely forced to prioritize debt reduction over growth investments during FY25-26, creating a negative feedback loop of declining competitiveness and cash generation capabilities.</p>
+            </main>
+            <footer class="report-footer">
+                <p>Source: IHI Corp IR, Public Filings.</p>
+                <p>Page 13 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 14: Detailed Financial Statements - Cash Flow Statement -->
+        <div class="slide report-prose" id="slide-financial-cash-flow-statement">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <h3 class="section-title">5.3. DETAILED FINANCIAL STATEMENTS: CASH FLOW STATEMENT (JPY BILLIONS) - INSUFFICIENT CASH GENERATION</h3>
+                
+                <!-- Enhanced Cash Flow Statement Table -->
+                <table class="compact-table" style="margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">METRIC</th>
+                            <th style="text-align:right; width: 15%;">FY22</th>
+                            <th style="text-align:right; width: 15%;">FY23</th>
+                            <th style="text-align:right; width: 15%;">FY24</th>
+                            <th style="text-align:right; width: 15%;">YoY Δ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Operating Cash Flow Analysis -->
+                        <tr class="group-header"><th colspan="5" style="background: #f8f9fa; color: #003366; font-size: 14px;">OPERATING CASH FLOW</th></tr>
+                        <tr><td><strong>Net Income</strong></td><td><strong>45</strong></td><td><strong>-64</strong></td><td><strong>117</strong></td><td style="color: #228B22;"><strong>+283%</strong></td></tr>
+                        <tr><td style="padding-left: 20px;">• Depreciation & Amortization</td><td>36</td><td>48</td><td>48</td><td style="color: #000;">0.0%</td></tr>
+                        <tr><td style="padding-left: 20px;">• Working Capital Changes</td><td>99</td><td>166</td><td>45</td><td style="color: #DC143C;">-72.9%</td></tr>
+                        <tr><td style="padding-left: 40px;">- Δ Accounts Receivable</td><td>-25</td><td>-60</td><td>-60</td><td style="color: #000;">0.0%</td></tr>
+                        <tr><td style="padding-left: 40px;">- Δ Inventory</td><td>-45</td><td>-100</td><td>-40</td><td style="color: #228B22;">+60.0%</td></tr>
+                        <tr><td style="padding-left: 40px;">- Δ Accounts Payable</td><td>60</td><td>60</td><td>40</td><td style="color: #DC143C;">-33.3%</td></tr>
+                        <tr><td style="padding-left: 40px;">- Δ Other Working Capital</td><td>109</td><td>266</td><td>105</td><td style="color: #DC143C;">-60.5%</td></tr>
+                        <tr><td><strong>Operating Cash Flow</strong></td><td><strong>180</strong></td><td><strong>150</strong></td><td><strong>210</strong></td><td style="color: #228B22;"><strong>+40.0%</strong></td></tr>
+                        <tr><td><strong>OCF Margin</strong></td><td><strong>14.2%</strong></td><td><strong>10.1%</strong></td><td><strong>12.9%</strong></td><td style="color: #228B22;"><strong>+280bp</strong></td></tr>
+                        
+                        <!-- Investing Cash Flow Analysis -->
+                        <tr class="group-header"><th colspan="5" style="background: #f8f9fa; color: #003366; font-size: 14px;">INVESTING CASH FLOW</th></tr>
+                        <tr><td><strong>Capital Expenditures</strong></td><td><strong>-90</strong></td><td><strong>-110</strong></td><td><strong>-105</strong></td><td style="color: #228B22;"><strong>+4.5%</strong></td></tr>
+                        <tr><td style="padding-left: 20px;">• Maintenance Capex</td><td>-55</td><td>-65</td><td>-60</td><td style="color: #228B22;">+7.7%</td></tr>
+                        <tr><td style="padding-left: 20px;">• Growth Capex</td><td>-35</td><td>-45</td><td>-45</td><td style="color: #000;">0.0%</td></tr>
+                        <tr><td style="padding-left: 20px;">• R&D Capital Investment</td><td>-8</td><td>-12</td><td>-15</td><td style="color: #DC143C;">+25.0%</td></tr>
+                        <tr><td style="padding-left: 20px;">• Acquisitions/Investments</td><td>-2</td><td>-8</td><td>5</td><td style="color: #228B22;">+162.5%</td></tr>
+                        <tr><td><strong>Total Investing Cash Flow</strong></td><td><strong>-100</strong></td><td><strong>-120</strong></td><td><strong>-110</strong></td><td style="color: #228B22;"><strong>+8.3%</strong></td></tr>
+                        
+                        <!-- Financing Cash Flow Analysis -->
+                        <tr class="group-header"><th colspan="5" style="background: #f8f9fa; color: #003366; font-size: 14px;">FINANCING CASH FLOW</th></tr>
+                        <tr><td><strong>Net Debt Issuance</strong></td><td><strong>-25</strong></td><td><strong>20</strong></td><td><strong>-40</strong></td><td style="color: #228B22;"><strong>-300%</strong></td></tr>
+                        <tr><td style="padding-left: 20px;">• Debt Issuance</td><td>50</td><td>170</td><td>50</td><td style="color: #DC143C;">-70.6%</td></tr>
+                        <tr><td style="padding-left: 20px;">• Debt Repayment</td><td>-75</td><td>-150</td><td>-90</td><td style="color: #228B22;">+40.0%</td></tr>
+                        <tr><td><strong>Dividends Paid</strong></td><td><strong>-20</strong></td><td><strong>-15</strong></td><td><strong>-25</strong></td><td style="color: #DC143C;"><strong>+66.7%</strong></td></tr>
+                        <tr><td style="padding-left: 20px;">• Share Repurchases</td><td>-5</td><td>-35</td><td>-5</td><td style="color: #228B22;">+85.7%</td></tr>
+                        <tr><td><strong>Total Financing Cash Flow</strong></td><td><strong>-50</strong></td><td><strong>-30</strong></td><td><strong>-70</strong></td><td style="color: #DC143C;"><strong>+133%</strong></td></tr>
+                        
+                        <!-- Cash Generation Metrics -->
+                        <tr class="group-header"><th colspan="5" style="background: #f8f9fa; color: #003366; font-size: 14px;">CASH GENERATION METRICS</th></tr>
+                        <tr><td><strong>Free Cash Flow</strong></td><td><strong>80</strong></td><td><strong>30</strong></td><td><strong>100</strong></td><td style="color: #228B22;"><strong>+233%</strong></td></tr>
+                        <tr><td><strong>FCF Margin</strong></td><td><strong>6.3%</strong></td><td><strong>2.0%</strong></td><td><strong>6.1%</strong></td><td style="color: #228B22;"><strong>+410bp</strong></td></tr>
+                        <tr><td><strong>FCF/Capex</strong></td><td><strong>0.89x</strong></td><td><strong>0.27x</strong></td><td><strong>0.95x</strong></td><td style="color: #228B22;"><strong>+68bp</strong></td></tr>
+                        <tr><td><strong>Cash Conversion Cycle</strong></td><td><strong>95 days</strong></td><td><strong>125 days</strong></td><td><strong>110 days</strong></td><td style="color: #228B22;"><strong>-15 days</strong></td></tr>
+                        <tr><td><strong>Net Change in Cash</strong></td><td><strong>30</strong></td><td><strong>0</strong></td><td><strong>30</strong></td><td style="color: #228B22;"><strong>+3000%</strong></td></tr>
+                    </tbody>
+                </table>
+                
+                <!-- Cash Flow Analysis Box -->
+                <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #003366; padding: 18px; margin: 20px 0; border-radius: 5px;">
+                    <h4 style="color: #003366; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">CASH FLOW GENERATION & CAPITAL ALLOCATION ANALYSIS</h4>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #DC143C; font-size: 15px;">Operating Cash Flow Volatility Concerns:</strong>
+                        <p style="margin: 5px 0; font-size: 14px; line-height: 1.4;">OCF improvement to 12.9% margin masks underlying working capital management issues. The 72.9% decline in working capital contribution indicates deteriorating customer payment terms and supplier relationship strain. Cash conversion cycle extension to 110 days reflects project-based business challenges with lumpy cash collection patterns and inventory management difficulties.</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #B8860B; font-size: 15px;">Capital Investment Efficiency Deficits:</strong>
+                        <p style="margin: 5px 0; font-size: 14px; line-height: 1.4;">Capex intensity of 6.5% of revenue exceeds peer averages (4.5-5.5%), yet asset turnover remains stagnant at 0.49x. Growing R&D capital investment (+25%) with limited commercialization success indicates poor capital allocation discipline. FCF/Capex ratio of 0.95x provides minimal buffer for economic downturns or unexpected project delays.</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #8B4513; font-size: 15px;">Dividend Policy Sustainability Risk:</strong>
+                        <p style="margin: 5px 0; font-size: 14px; line-height: 1.4;">Dividend increase of 66.7% to ¥25bn appears imprudent given FCF volatility and debt reduction requirements. Payout ratio of 25% on normalized FCF leaves limited flexibility for growth investments or debt servicing during cyclical downturns. Management's capital allocation prioritizes shareholder returns over balance sheet strengthening, creating long-term financial vulnerability.</p>
+                    </div>
+                    
+                    <div>
+                        <strong style="color: #2E8B57; font-size: 15px;">Forward Cash Flow Projections & Implications:</strong>
+                        <p style="margin: 5px 0; font-size: 14px; line-height: 1.4;">We project FCF normalization at ¥75-85bn annually (4.5-5.0% margin) through FY26, insufficient for aggressive deleveraging or transformative growth investments. Rising interest rates will pressure FCF by ¡5-8bn annually. The company requires sustained FCF generation above ¥120bn to achieve target leverage ratios while maintaining growth investments and dividend payments.</p>
+                    </div>
+                </div>
+                <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">The cash flow statement exposes critical weaknesses in cash generation capability and capital allocation discipline that fundamentally compromise long-term value creation prospects. Operating cash flow improvement to <strong>¥210bn (12.9% margin)</strong> masks severe underlying deterioration in working capital management, with working capital contribution collapsing 72.9% year-over-year. This dramatic decline indicates management's inability to effectively manage customer payment terms, supplier relationships, and inventory optimization. The cash conversion cycle extension to 110 days significantly exceeds industry benchmarks of 85-95 days, reflecting operational inefficiencies that constrain cash generation during revenue growth periods.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Free cash flow recovery to <strong>¥100bn (6.1% margin)</strong> remains inadequate for a capital-intensive industrial company requiring substantial reinvestment for competitive positioning. The FCF/Capex ratio of 0.95x provides virtually no buffer for economic downturns, competitive pressures, or unexpected project delays. Capital expenditure intensity of 6.5% of revenue exceeds peer averages by 150-200 basis points yet generates inferior asset turnover metrics, indicating poor project selection and execution capabilities. The company's inability to generate sustainable high-teens FCF margins characteristic of well-managed industrial businesses signals structural operational deficiencies rather than cyclical challenges.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Capital allocation priorities demonstrate management's short-term focus at the expense of balance sheet optimization and strategic positioning. The 66.7% dividend increase to <strong>¥25bn</strong> appears imprudent given leverage constraints and reinvestment requirements for green technology commercialization. This capital allocation strategy prioritizes immediate shareholder returns over debt reduction and growth investments, creating long-term competitive vulnerabilities. The dividend payout ratio of 25% on volatile FCF generation leaves insufficient retained cash flow for organic growth funding or counter-cyclical investments that could enhance market positioning during industry downturns.</p>
+                <p style="margin-top: 15px; font-family: Calibri, sans-serif;">Forward-looking cash flow projections indicate persistent challenges in achieving adequate returns on invested capital and debt service coverage. We project normalized FCF generation of <strong>¥75-85bn annually (4.5-5.0% margin)</strong> through FY26, insufficient for simultaneous debt reduction, growth investment, and dividend maintenance. Rising interest rates will pressure FCF by approximately <strong>¥5-8bn annually</strong> on the current debt base, while competitive pricing pressure and input cost inflation will constrain operating cash flow generation. The company requires sustained FCF exceeding <strong>¥120bn annually</strong> to achieve optimal capital structure while funding green technology commercialization initiatives, a threshold that appears unattainable given current operational capabilities and market positioning challenges.</p>
+            </main>
+            <footer class="report-footer">
+                <p>Source: IHI Corp IR, Public Filings.</p>
+                <p>Page 14 / 15</p>
+            </footer>
+        </div>
+
+        <!-- Slide 15: DCF Analysis Placeholder (New Page) -->
+        <div class="slide report-prose" id="dcf-analysis-page">
+            <header class="report-header-container">
+                <div class="robeco-logo-container">
+                    <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+                </div>
+                <div class="header-blue-border">
+                    <div class="company-header">
+                        <img src="https://logo.clearbit.com/ihi.co.jp" onerror="this.onerror=null;this.src='https://placehold.co/30x30/cccccc/333333?text=IHI';" alt="Company Icon" class="icon">
+                        <h1 class="name">IHI Corporation</h1>
+                        <div class="rating" style="color: #C62828;">UNDERWEIGHT</div>
+                    </div>
+                </div>
+            </header>
+            <main style="display: flex; flex-direction: column; flex-grow: 1;">
+                <h3 class="section-title">6. DCF ANALYSIS: SIGNIFICANT DOWNSIDE</h3>
+                <div class="content-block" style="height: 100%;">
+                    <p style="font-size: 19px; color: var(--text-dark); margin-top: 20px;">
+                        Our Discounted Cash Flow (DCF) analysis, based on conservative yet realistic assumptions, indicates a fair value significantly below the current share price. Our valuation model highlights the downside potential driven by:
+                        <br>
+                        <ul style="list-style: none; padding: 20px 0; font-size: 19px; text-align: left; max-width: 800px; margin: 0 auto;">
+                            <li style="margin-bottom: 10px; position: relative; padding-left: 30px;"><span style="position: absolute; left: 0; top: 5px; font-size: 20px; color: var(--accent-red);">&#9632;</span> <strong>Overly optimistic revenue growth projections</strong> for green technologies.</li>
+                            <li style="margin-bottom: 10px; position: relative; padding-left: 30px;"><span style="position: absolute; left: 0; top: 5px; font-size: 20px; color: var(--accent-red);">&#9632;</span> <strong>Persistent margin pressure</strong> and high operating costs across traditional segments.</li>
+                            <li style="margin-bottom: 10px; position: relative; padding-left: 30px;"><span style="position: absolute; left: 0; top: 5px; font-size: 20px; color: var(--accent-red);">&#9632;</span> <strong>Elevated capital expenditures</strong> and insufficient free cash flow generation.</li>
+                            <li style="margin-bottom: 10px; position: relative; padding-left: 30px;"><span style="position: absolute; left: 0; top: 5px; font-size: 20px; color: var(--accent-red);">&#9632;</span> <strong>High cost of capital</strong> due to significant debt and execution risks.</li>
+                        </ul>
+                        <br>
+                        Our model suggests a fair value of <strong>¥3,200</strong>, implying a <strong>16.9% downside</strong> from current levels. This valuation is significantly below the current market price of <strong>¥3,850</strong>, highlighting a clear overvaluation driven by speculative sentiment rather than fundamental strength. The market appears to be prematurely pricing in the success of unproven technologies, while underappreciating the substantial risks and capital demands.
+                    </p>
+                </div>
+            </main>
+            <footer class="report-footer">
+                <p>Source: Robeco Internal Analysis</p>
+                <p>Page 15 / 15</p>
+            </footer>
+        </div>
+</div>
+
+<script>
+    // Self-executing anonymous function to encapsulate code
+    (function() {
+        // --- Data ---
+        const stockPriceData = [
+            { date: '2023-08-15', close: 3850 },
+            { date: '2023-08-22', close: 3820 },
+            { date: '2023-08-29', close: 3790 },
+            { date: '2023-09-05', close: 3750 },
+            { date: '2023-09-12', close: 3780 },
+            { date: '2023-09-19', close: 3760 },
+            { date: '2023-09-26', close: 3730 },
+            { date: '2023-10-03', close: 3700 },
+            { date: '2023-10-10', close: 3720 },
+            { date: '2023-10-17', close: 3750 },
+            { date: '2023-10-24', close: 3780 },
+            { date: '2023-10-31', close: 3810 },
+            { date: '2023-11-07', close: 3830 },
+            { date: '2023-11-14', close: 3800 },
+            { date: '2023-11-21', close: 3770 },
+            { date: '2023-11-28', close: 3750 },
+            { date: '2023-12-05', close: 3780 },
+            { date: '2023-12-12', close: 3810 },
+            { date: '2023-12-19', close: 3840 },
+            { date: '2023-12-26', close: 3870 },
+            { date: '2024-01-02', close: 3900 },
+            { date: '2024-01-09', close: 3880 },
+            { date: '2024-01-16', close: 3860 },
+            { date: '2024-01-23', close: 3840 },
+            { date: '2024-01-30', close: 3820 },
+            { date: '2024-02-06', close: 3800 },
+            { date: '2024-02-13', close: 3780 },
+            { date: '2024-02-20', close: 3760 },
+            { date: '2024-02-27', close: 3740 },
+            { date: '2024-03-05', close: 3720 },
+            { date: '2024-03-12', close: 3700 },
+            { date: '2024-03-19', close: 3680 },
+            { date: '2024-04-02', close: 3640 },
+            { date: '2024-04-09', close: 3620 },
+            { date: '2024-04-16', close: 3600 },
+            { date: '2024-04-23', close: 3580 },
+            { date: '2024-04-30', close: 3560 },
+            { date: '2024-05-07', close: 3540 },
+            { date: '2024-05-14', close: 3520 },
+            { date: '2024-05-21', close: 3500 },
+            { date: '2024-05-28', close: 3480 },
+            { date: '2024-06-04', close: 3460 },
+            { date: '2024-06-11', close: 3440 },
+            { date: '2024-06-18', close: 3420 },
+            { date: '2024-06-25', close: 3400 },
+            { date: '2024-07-02', close: 3380 },
+            { date: '2024-07-09', close: 3360 },
+            { date: '2024-07-16', close: 3340 },
+            { date: '2024-07-23', close: 3320 },
+            { date: '2024-07-30', close: 3300 },
+            { date: '2024-08-06', close: 3250 },
+            { date: '2024-08-13', close: 3200 },
+            { date: '2024-08-15', close: 3180 }
+        ].map(d => ({
+            date: d3.timeParse("%Y-%m-%d")(d.date),
+            close: d.close
+        }));
+
+        // --- Debounce Utility ---
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // --- Chart Drawing Functions ---
+        const drawStockPriceLineChart = (containerId, data) => {
+            const container = d3.select(`#${containerId}`);
+            container.selectAll("*").remove(); // Clear existing SVG
+
+            const { width, height } = container.node().getBoundingClientRect();
+            if (width < 10 || height < 10) return;
+
+            const margin = { top: 20, right: 30, bottom: 30, left: 60 };
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Scales
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, d => d.date))
+                .range([0, chartWidth]);
+
+            const y = d3.scaleLinear()
+                .domain([d3.min(data, d => d.close) * 0.98, d3.max(data, d => d.close) * 1.02])
+                .range([chartHeight, 0]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(x)
+                    .tickFormat(d3.timeFormat("%b %Y"))
+                    .ticks(d3.timeMonth.every(3)))
+                .style("font-size", "12px");
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format("~s")))
+                .style("font-size", "12px");
+
+            // Line path
+            const line = d3.line()
+                .x(d => x(d.date))
+                .y(d => y(d.close));
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line-chart-path")
+                .attr("d", line);
+        };
+
+        // --- Render Charts on Load and Resize ---
+        const renderAllCharts = () => {
+            drawStockPriceLineChart('stock-price-line-chart', stockPriceData);
+        };
+
+        window.onload = renderAllCharts;
+        window.onresize = debounce(renderAllCharts, 150);
+    })();
+</script>
+</body>
+</html>

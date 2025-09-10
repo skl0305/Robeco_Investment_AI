@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco Google Search Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f7fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+        .source-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #e1e5e9;
+        }
+        .source-title {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 5px;
+        }
+        .source-url {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .source-url:hover {
+            text-decoration: underline;
+        }
+        .progress {
+            background: #e1e5e9;
+            height: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #0066cc, #004499);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        button {
+            background: linear-gradient(135deg, #0066cc, #004499);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #status {
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 Robeco Google Search Test</h1>
+    <p>Test the ultra-sophisticated multi-agent system with real Google Search grounding</p>
+
+    <div class="test-section">
+        <h3>🚀 Single Specialist Analysis Test</h3>
+        <p>Test single specialist analysis with real-time Google Search grounding and clickable source references</p>
+        <button id="startTest" onclick="startTest()">Start Fundamentals Analysis (NVDA)</button>
+        
+        <div id="status" style="margin-top: 15px;">Ready to test</div>
+        <div class="progress">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+    </div>
+
+    <div id="results" class="test-section" style="display: none;">
+        <h3>📊 Analysis Results</h3>
+        <div id="content"></div>
+        
+        <h4>📚 Google Search Sources</h4>
+        <div id="sources"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        
+        function initWebSocket() {
+            ws = new WebSocket('ws://127.0.0.1:8002/ws/professional');
+            
+            ws.onopen = function() {
+                console.log('✅ Connected to Robeco server');
+                document.getElementById('status').textContent = 'Connected to server';
+            };
+            
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                handleMessage(message);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('❌ WebSocket error:', error);
+                document.getElementById('status').textContent = 'Connection error';
+            };
+            
+            ws.onclose = function() {
+                document.getElementById('status').textContent = 'Disconnected';
+                setTimeout(initWebSocket, 3000);
+            };
+        }
+        
+        function handleMessage(message) {
+            console.log('📨 Message:', message.type);
+            
+            switch(message.type) {
+                case 'connection_established':
+                    document.getElementById('status').textContent = 'Server connected - ready to test';
+                    break;
+                    
+                case 'streaming_status_update':
+                    const progress = Math.round(message.data.progress * 100);
+                    document.getElementById('status').textContent = message.data.message;
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    break;
+                    
+                case 'agent_deployed':
+                    document.getElementById('status').textContent = `🤖 ${message.data.agent_type} agent researching with Google Search...`;
+                    break;
+                    
+                case 'agent_completed':
+                    console.log(`✅ ${message.data.agent_type}: ${message.data.sources_count} sources`);
+                    document.getElementById('status').textContent = `✅ ${message.data.agent_type} completed (${message.data.sources_count} sources)`;
+                    break;
+                    
+                case 'streaming_research_source':
+                    addSource(message.data.source);
+                    break;
+                    
+                case 'streaming_ai_content':
+                    addContent(message.data.content_chunk);
+                    break;
+                    
+                case 'streaming_analysis_completed':
+                    document.getElementById('status').textContent = `🎯 Analysis completed! ${message.data.total_sources} sources`;
+                    document.getElementById('startTest').disabled = false;
+                    document.getElementById('startTest').textContent = 'Run Another Test';
+                    break;
+                    
+                case 'streaming_analysis_error':
+                    document.getElementById('status').textContent = `❌ Error: ${message.data.error}`;
+                    document.getElementById('startTest').disabled = false;
+                    break;
+            }
+        }
+        
+        function addSource(source) {
+            document.getElementById('results').style.display = 'block';
+            const sourcesDiv = document.getElementById('sources');
+            
+            const sourceElement = document.createElement('div');
+            sourceElement.className = 'source-item';
+            sourceElement.innerHTML = `
+                <div class="source-title">${source.title}</div>
+                <a href="${source.url}" target="_blank" class="source-url">${source.url}</a>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Agent: ${source.agent} | Credibility: ${Math.round(source.credibility_score * 100)}%
+                </div>
+            `;
+            
+            sourcesDiv.appendChild(sourceElement);
+            console.log('📚 Source added:', source.title);
+        }
+        
+        function addContent(content) {
+            document.getElementById('results').style.display = 'block';
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML += content.replace(/\\n/g, '<br>');
+        }
+        
+        function startTest() {
+            document.getElementById('startTest').disabled = true;
+            document.getElementById('startTest').textContent = 'Testing...';
+            document.getElementById('status').textContent = 'Starting analysis...';
+            document.getElementById('progressBar').style.width = '0%';
+            
+            // Clear previous results
+            document.getElementById('content').innerHTML = '';
+            document.getElementById('sources').innerHTML = '';
+            document.getElementById('results').style.display = 'none';
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const testRequest = {
+                    type: 'start_analysis',
+                    analyst: 'fundamentals',
+                    ticker: 'NVDA',
+                    company: 'NVIDIA Corporation',
+                    user_query: 'Quick test analysis with Google Search research',
+                    session_id: `test_${Date.now()}`
+                };
+                
+                ws.send(JSON.stringify(testRequest));
+                console.log('🚀 Test request sent');
+            } else {
+                document.getElementById('status').textContent = 'Not connected to server';
+                document.getElementById('startTest').disabled = false;
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initWebSocket();
+        });
+    </script>
+</body>
+</html>

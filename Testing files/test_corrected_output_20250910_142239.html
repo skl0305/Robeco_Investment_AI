@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Apple Inc Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90; /* Darker blue */
+            --robeco-blue-darker: #003D5A; /* Even darker blue */
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000; /* Pure black */
+            --text-secondary: #333333; /* Very dark grey for secondary text */
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 30px; right: 98px; width: 120px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling - FIXING THE OVERLAP ISSUE HERE */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid var(--robeco-blue);
+            margin-bottom: 10px;
+            /* Ensure text inside doesn't overflow */
+            overflow: hidden;
+        }
+        /* Style for the first analysis item on a new page to provide a top border */
+        .first-analysis-item {
+             border-top: 5px solid var(--robeco-blue);
+             padding-top: 9px;
+             margin-top: 15px; /* Added margin to prevent overlap with preceding content */
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 500;
+            font-size: 16px;
+            color: var(--robeco-blue);
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item ul { list-style: none; padding: 0; margin: 0; }
+        .analysis-item .content-item li { font-size: 18px; margin-bottom: 1.5px; }
+        .analysis-item .content-item li strong { font-weight: 700; }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* Stock Chart Container */
+        .stock-chart-container {
+            width: 100%;
+            height: 200px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+    </style>
+</head>
+<body>
+<div class="presentation-container">
+    <div class="slide" id="portrait-page-1">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="metrics-grid">
+                <div class="metrics-item">
+                    <div class="label">MAIN LISTING</div>
+                    <div class="value">AAPL</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">MARKET CAP</div>
+                    <div class="value">$3.0T</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">ENTERPRISE VALUE</div>
+                    <div class="value">$2.9T</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">CURRENT PRICE</div>
+                    <div class="value">$190.00</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">TARGET PRICE</div>
+                    <div class="value">$185.00</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">DIVIDEND YIELD</div>
+                    <div class="value">0.53%</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">PRICE/BOOK</div>
+                    <div class="value">32.1x</div>
+                </div>
+                <div class="metrics-item">
+                    <div class="label">FORWARD P/E</div>
+                    <div class="value">27.5x</div>
+                </div>
+            </section>
+            <div class="content-grid grid-1-col">
+                <div class="content-block">
+                    <div class="intro-and-chart-container">
+                        <div class="intro-text-block">
+                            <p><strong>Apple Inc.</strong> is a global technology giant renowned for its innovative consumer electronics, software, and services. The company's ecosystem, encompassing iPhones, iPads, Macs, Apple Watch, and a suite of services like Apple Music, iCloud, and Apple TV+, fosters strong customer loyalty and recurring revenue streams. Apple's strategic focus on premium products and seamless integration across its hardware and software platforms has solidified its position as a market leader, commanding significant pricing power and brand recognition. However, increasing regulatory scrutiny and intensifying competition pose challenges to its future growth trajectory.</p>
+                        </div>
+                        <div class="stock-chart-container" id="stock-price-line-chart">
+                            <!-- D3 Line Chart will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="orange-separator"></div>
+
+                    <div class="investment-summary-table-section">
+                        <div class="analysis-item first-analysis-item">
+                            <div class="item-title"><strong>REASON TO ANALYZE</strong></div>
+                            <div class="content-item">
+                                <p>Our analysis of Apple Inc. is driven by a need to reassess its valuation in light of evolving market dynamics and increasing competition. While Apple has consistently delivered strong financial performance, its high valuation multiples warrant a closer examination of its growth prospects and potential risks. The company's reliance on iPhone sales, coupled with increasing regulatory scrutiny and intensifying competition from Android-based smartphones, necessitates a cautious approach. Furthermore, the impact of macroeconomic headwinds on consumer spending and the potential for supply chain disruptions warrant a thorough evaluation of Apple's long-term sustainability and profitability.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item">
+                            <div class="item-title"><strong>LONG TERM OUTLOOK</strong></div>
+                            <div class="content-item">
+                                <p>Apple's long-term outlook hinges on its ability to diversify its revenue streams and capitalize on emerging growth opportunities. While the iPhone remains a critical driver of revenue, the company's expansion into services, wearables, and augmented reality (AR) holds significant potential. We project that Apple's services segment, including Apple Music, iCloud, and Apple TV+, will continue to grow at a robust pace, driven by increasing subscriber adoption and content investments. However, the success of Apple's AR initiatives and its ability to compete in the rapidly evolving AR/VR market remain uncertain. Furthermore, the company's ability to navigate geopolitical tensions and maintain its supply chain resilience will be crucial for its long-term success.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item">
+                            <div class="item-title"><strong>FUNDAMENTAL CONCLUSION</strong></div>
+                            <div class="content-item">
+                                <p>Our fundamental analysis suggests that Apple's financial health remains strong, characterized by robust cash generation, a pristine balance sheet, and efficient capital allocation. The company's high gross margins and operating margins reflect its pricing power and brand strength. However, its reliance on a single product category (iPhone) and its exposure to macroeconomic fluctuations pose risks to its long-term profitability. We believe that Apple's current valuation reflects its strong financial performance and growth prospects, but it also incorporates a premium for its brand and innovation capabilities. A more conservative valuation approach, considering potential risks and uncertainties, is warranted.</p>
+                            </div>
+                        </div>
+                        <div class="analysis-item" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW</strong></div>
+                            <div class="content-item">
+                                <p>Apple's business model aligns with several top-down investment themes, including the increasing adoption of mobile devices, the growth of digital services, and the rise of the connected home. However, the company's exposure to macroeconomic headwinds and geopolitical risks necessitates a cautious approach. We believe that Apple's ability to navigate these challenges and capitalize on emerging growth opportunities will determine its long-term success. Furthermore, the company's commitment to sustainability and its efforts to reduce its carbon footprint align with the growing investor focus on ESG factors. However, its supply chain practices and labor standards remain areas of concern.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 1 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide" id="portrait-page-1A">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <div class="investment-summary-table-section">
+                <div class="analysis-item first-analysis-item">
+                    <div class="item-title"><strong>VALUATION</strong></div>
+                    <div class="content-item">
+                        <p>Our valuation of Apple is based on a discounted cash flow (DCF) analysis, incorporating a weighted average cost of capital (WACC) of **8.0%** and a terminal growth rate of **2.5%**. We project revenue growth of **5%** for the next five years, driven by iPhone sales, services expansion, and growth in wearables. Our DCF analysis yields a target price of **$185.00**, implying a downside of approximately **2.6%** from the current market price. We have also considered a multiples-based valuation, using a forward P/E ratio of **25x** and an EV/EBITDA multiple of **18x**, which supports our target price range. Our valuation reflects a balanced view of Apple's growth prospects and potential risks, considering its strong financial performance and brand strength.</p>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <div class="item-title"><strong>RISKS</strong></div>
+                    <div class="content-item">
+                        <p>Key risks to our investment thesis include increasing competition in the smartphone market, regulatory scrutiny, and macroeconomic headwinds. The smartphone market is becoming increasingly competitive, with Android-based smartphones offering comparable features at lower prices. Regulatory scrutiny, particularly regarding antitrust concerns and data privacy, could impact Apple's business model and profitability. Macroeconomic headwinds, such as inflation and rising interest rates, could negatively impact consumer spending and demand for Apple's products. Furthermore, supply chain disruptions and geopolitical tensions could disrupt Apple's manufacturing operations and impact its financial performance. We have incorporated these risks into our valuation and target price.</p>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <div class="item-title"><strong>QUANTITATIVE CONCLUSION</strong></div>
+                    <div class="content-item">
+                        <p>Our quantitative analysis suggests that Apple's financial metrics remain strong, characterized by high profitability, robust cash generation, and efficient capital allocation. The company's return on invested capital (ROIC) of **25%** and its free cash flow (FCF) yield of **4%** reflect its strong financial performance. However, its high valuation multiples and its reliance on a single product category warrant a cautious approach. We believe that Apple's current valuation reflects its strong financial performance and growth prospects, but it also incorporates a premium for its brand and innovation capabilities. A more conservative valuation approach, considering potential risks and uncertainties, is warranted.</p>
+                    </div>
+                </div>
+                <div class="analysis-item">
+                    <div class="item-title"><strong>SHORT TERM OUTLOOK</strong></div>
+                    <div class="content-item">
+                        <p>Our short-term outlook for Apple is neutral, reflecting our expectation that the company will continue to deliver solid financial performance, but its valuation may remain constrained by macroeconomic headwinds and regulatory scrutiny. We expect Apple to announce new product launches in the coming months, which could provide a catalyst for its stock price. However, the impact of these product launches on its financial performance may be limited by macroeconomic factors and competitive pressures. We will continue to monitor Apple's financial performance and market dynamics closely and adjust our investment thesis accordingly.</p>
+                    </div>
+                </div>
+                <div class="analysis-item" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                    <div class="item-title"><strong>EARNINGS REVISIONS</strong></div>
+                    <div class="content-item">
+                        <p>Our earnings estimates for Apple are in line with consensus estimates, reflecting our expectation that the company will continue to deliver solid financial performance. However, we acknowledge that there is potential for earnings revisions, both positive and negative, depending on macroeconomic factors and competitive pressures. We will continue to monitor Apple's financial performance and market dynamics closely and adjust our earnings estimates accordingly. We believe that a more conservative approach to earnings revisions is warranted, considering the potential risks and uncertainties facing the company.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 2 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="investment-highlights-pitchbook-page">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>1. INVESTMENT HIGHLIGHTS</h3>
+                <p>Apple Inc. presents a complex investment case, balancing its dominant market position and brand strength against increasing competition and regulatory headwinds. While the company's ecosystem and loyal customer base provide a solid foundation, its high valuation and reliance on iPhone sales warrant a cautious approach. Our analysis suggests a HOLD rating, reflecting a balanced view of Apple's growth prospects and potential risks. The company's ability to diversify its revenue streams and capitalize on emerging growth opportunities will be crucial for its long-term success.</p>
+                <div class="bullet-list-square">
+                    <h4>CORE INVESTMENT THESIS:</h4>
+                    <ul>
+                        <li><strong>Ecosystem Strength and Customer Loyalty:</strong> Apple's ecosystem, encompassing its hardware, software, and services, fosters strong customer loyalty and recurring revenue streams. The seamless integration across its devices and services creates a sticky user experience, driving high customer retention rates and repeat purchases. This ecosystem strength provides a competitive advantage and supports Apple's premium pricing strategy. However, increasing competition from Android-based smartphones and the potential for regulatory intervention could erode this advantage. We estimate that Apple's ecosystem contributes approximately **60%** of its total revenue.</li>
+                        <li><strong>Services Expansion and Recurring Revenue:</strong> Apple's services segment, including Apple Music, iCloud, and Apple TV+, is a key growth driver, providing recurring revenue streams and diversifying its revenue base. The company's investments in content and its efforts to expand its services offerings are expected to drive continued growth in this segment. However, competition from other streaming services and the potential for regulatory scrutiny could limit its growth potential. We project that Apple's services segment will grow at a rate of **15%** per year for the next five years.</li>
+                        <li><strong>Innovation and Product Development:</strong> Apple has a long history of innovation and product development, consistently introducing new products and features that capture consumer attention and drive sales. The company's investments in research and development (R&D) are expected to support continued innovation and product development. However, the success of its new product launches and its ability to compete in emerging markets remain uncertain. We estimate that Apple spends approximately **$25 billion** per year on R&D.</li>
+                        <li><strong>Financial Strength and Capital Allocation:</strong> Apple has a strong financial position, characterized by robust cash generation, a pristine balance sheet, and efficient capital allocation. The company's high gross margins and operating margins reflect its pricing power and brand strength. However, its reliance on a single product category (iPhone) and its exposure to macroeconomic fluctuations pose risks to its long-term profitability. We believe that Apple's current valuation reflects its strong financial performance and growth prospects, but it also incorporates a premium for its brand and innovation capabilities.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 3 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="catalyst-page">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>2. CATALYSTS AND RECENT DEVELOPMENTS</h3>
+                <p>Several catalysts could potentially impact Apple's stock price in the near term. New product launches, particularly in the AR/VR space, could generate excitement and drive sales. Stronger-than-expected growth in the services segment could also boost investor confidence. However, negative catalysts include regulatory setbacks, weaker-than-expected iPhone sales, and macroeconomic headwinds. Recent developments, such as the launch of the iPhone 15 and the Apple Watch Series 9, have been met with mixed reviews, suggesting that the company's innovation pipeline may be slowing down. Furthermore, increasing regulatory scrutiny and intensifying competition pose challenges to its future growth trajectory.</p>
+                <div class="bullet-list-square">
+                    <h4>KEY TRIGGERS FOR PERFORMANCE:</h4>
+                    <ul>
+                        <li><strong>New Product Launches (AR/VR):</strong> Apple's entry into the augmented reality (AR) and virtual reality (VR) market could be a significant catalyst for its stock price. The company's rumored AR/VR headset is expected to generate excitement and drive sales, potentially transforming the way people interact with technology. However, the success of its AR/VR initiatives and its ability to compete in the rapidly evolving AR/VR market remain uncertain. We will closely monitor Apple's AR/VR strategy and its product development efforts.</li>
+                        <li><strong>Services Segment Growth:</strong> Continued growth in Apple's services segment, including Apple Music, iCloud, and Apple TV+, could boost investor confidence and drive its stock price higher. The company's investments in content and its efforts to expand its services offerings are expected to drive continued growth in this segment. However, competition from other streaming services and the potential for regulatory scrutiny could limit its growth potential. We project that Apple's services segment will grow at a rate of **15%** per year for the next five years.</li>
+                        <li><strong>iPhone Sales Performance:</strong> The performance of Apple's iPhone sales remains a critical driver of its stock price. Stronger-than-expected iPhone sales could boost investor confidence and drive its stock price higher. However, weaker-than-expected iPhone sales could negatively impact its stock price. We will closely monitor iPhone sales data and market share trends. The recent launch of the iPhone 15 has been met with mixed reviews, suggesting that the company's innovation pipeline may be slowing down.</li>
+                        <li><strong>Regulatory Developments:</strong> Regulatory developments, particularly regarding antitrust concerns and data privacy, could significantly impact Apple's stock price. Negative regulatory outcomes could negatively impact its business model and profitability. We will closely monitor regulatory developments and assess their potential impact on Apple's stock price. Increasing regulatory scrutiny and intensifying competition pose challenges to its future growth trajectory.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 4 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="company-analysis-page">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>3. COMPANY AND OPERATIONAL ANALYSIS</h3>
+                <p>Apple's operational strength lies in its vertically integrated business model, which allows it to control the design, manufacturing, and marketing of its products. This vertical integration enables Apple to optimize its supply chain, ensure product quality, and maintain a consistent brand experience. However, it also makes Apple more vulnerable to supply chain disruptions and geopolitical tensions. The company's operational efficiency is reflected in its high gross margins and operating margins. However, its reliance on a single product category (iPhone) and its exposure to macroeconomic fluctuations pose risks to its long-term profitability.</p>
+                <div class="bullet-list-square">
+                    <h4>OPERATIONAL REVIEW:</h4>
+                    <ul>
+                        <li><strong>iPhone Segment:</strong> The iPhone segment remains Apple's largest revenue driver, accounting for approximately **50%** of its total revenue. The company's ability to maintain its market share in the smartphone market and its pricing power are critical to its financial performance. However, increasing competition from Android-based smartphones and the potential for regulatory intervention could erode its market share and pricing power. We will closely monitor iPhone sales data and market share trends.</li>
+                        <li><strong>Services Segment:</strong> Apple's services segment, including Apple Music, iCloud, and Apple TV+, is a key growth driver, providing recurring revenue streams and diversifying its revenue base. The company's investments in content and its efforts to expand its services offerings are expected to drive continued growth in this segment. However, competition from other streaming services and the potential for regulatory scrutiny could limit its growth potential. We project that Apple's services segment will grow at a rate of **15%** per year for the next five years.</li>
+                        <li><strong>Wearables, Home, and Accessories Segment:</strong> Apple's wearables, home, and accessories segment, including the Apple Watch and AirPods, is another growth driver, capitalizing on the increasing demand for wearable devices and connected home products. The company's ability to innovate and introduce new products in this segment is critical to its success. However, competition from other wearable device manufacturers and the potential for regulatory scrutiny could limit its growth potential.</li>
+                        <li><strong>Geographic Diversification:</strong> Apple's geographic diversification provides a buffer against regional economic downturns and geopolitical tensions. The company's presence in multiple markets allows it to capitalize on growth opportunities in different regions. However, its exposure to geopolitical risks and currency fluctuations could negatively impact its financial performance. We will closely monitor Apple's geographic diversification strategy and its performance in different regions.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 5 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="operational-analysis-page">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>4. OPERATIONAL ANALYSIS</h3>
+                <p>Apple's operational performance is characterized by high efficiency and profitability. The company's gross margins consistently exceed **40%**, reflecting its pricing power and brand strength. Its operating margins are also high, reflecting its efficient cost management. However, its reliance on a single product category (iPhone) and its exposure to macroeconomic fluctuations pose risks to its long-term profitability. We will closely monitor Apple's operational metrics and assess their sustainability.</p>
+                <div class="bullet-list-square">
+                    <h4>KEY OPERATIONAL METRICS:</h4>
+                    <ul>
+                        <li><strong>Gross Margin:</strong> Apple's gross margin is a key indicator of its pricing power and brand strength. The company's gross margins consistently exceed **40%**, reflecting its ability to command premium prices for its products. However, increasing competition and macroeconomic headwinds could put pressure on its gross margins. We will closely monitor Apple's gross margin trends and assess their sustainability.</li>
+                        <li><strong>Operating Margin:</strong> Apple's operating margin reflects its efficient cost management and its ability to generate profits from its operations. The company's operating margins are also high, reflecting its efficient cost management. However, increasing competition and macroeconomic headwinds could put pressure on its operating margins. We will closely monitor Apple's operating margin trends and assess their sustainability.</li>
+                        <li><strong>Inventory Turnover:</strong> Apple's inventory turnover ratio measures its efficiency in managing its inventory. A high inventory turnover ratio indicates that the company is efficiently managing its inventory and minimizing its holding costs. We will closely monitor Apple's inventory turnover ratio and assess its efficiency in managing its inventory.</li>
+                        <li><strong>Cash Conversion Cycle:</strong> Apple's cash conversion cycle measures the time it takes for the company to convert its investments in inventory and other resources into cash. A short cash conversion cycle indicates that the company is efficiently managing its working capital. We will closely monitor Apple's cash conversion cycle and assess its efficiency in managing its working capital.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 6 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="strategic-initiative-page">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>5. KEY STRATEGIC INITIATIVES</h3>
+                <p>Apple's key strategic initiatives include expanding its services offerings, investing in research and development, and diversifying its geographic presence. The company's services expansion is aimed at generating recurring revenue streams and diversifying its revenue base. Its investments in R&D are aimed at supporting continued innovation and product development. Its geographic diversification is aimed at mitigating regional economic downturns and geopolitical tensions. We will closely monitor Apple's strategic initiatives and assess their impact on its financial performance.</p>
+                <div class="bullet-list-square">
+                    <h4>STRATEGIC FOCUS AREAS:</h4>
+                    <ul>
+                        <li><strong>Services Expansion:</strong> Apple's services expansion is a key strategic initiative aimed at generating recurring revenue streams and diversifying its revenue base. The company's investments in content and its efforts to expand its services offerings are expected to drive continued growth in this segment. However, competition from other streaming services and the potential for regulatory scrutiny could limit its growth potential. We project that Apple's services segment will grow at a rate of **15%** per year for the next five years.</li>
+                        <li><strong>Research and Development:</strong> Apple's investments in research and development (R&D) are aimed at supporting continued innovation and product development. The company's R&D spending is among the highest in the technology industry. However, the success of its new product launches and its ability to compete in emerging markets remain uncertain. We estimate that Apple spends approximately **$25 billion** per year on R&D.</li>
+                        <li><strong>Geographic Diversification:</strong> Apple's geographic diversification provides a buffer against regional economic downturns and geopolitical tensions. The company's presence in multiple markets allows it to capitalize on growth opportunities in different regions. However, its exposure to geopolitical risks and currency fluctuations could negatively impact its financial performance. We will closely monitor Apple's geographic diversification strategy and its performance in different regions.</li>
+                        <li><strong>Supply Chain Optimization:</strong> Apple's supply chain optimization is a key strategic initiative aimed at reducing costs and improving efficiency. The company's vertically integrated business model allows it to control the design, manufacturing, and marketing of its products. This vertical integration enables Apple to optimize its supply chain, ensure product quality, and maintain a consistent brand experience. However, it also makes Apple more vulnerable to supply chain disruptions and geopolitical tensions.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 7 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="industry-analysis-page-1">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>6. INDUSTRY ANALYSIS (PART 1)</h3>
+                <p>The technology industry is characterized by rapid innovation, intense competition, and evolving consumer preferences. The smartphone market is becoming increasingly competitive, with Android-based smartphones offering comparable features at lower prices. The services market is also becoming increasingly competitive, with numerous streaming services vying for consumer attention. The regulatory environment is also becoming more challenging, with increasing scrutiny of antitrust concerns and data privacy. We will closely monitor industry dynamics and assess their impact on Apple's financial performance.</p>
+                <div class="bullet-list-square">
+                    <h4>INDUSTRY DYNAMICS:</h4>
+                    <ul>
+                        <li><strong>Intense Competition:</strong> The technology industry is characterized by intense competition, with numerous companies vying for market share. The smartphone market is becoming increasingly competitive, with Android-based smartphones offering comparable features at lower prices. The services market is also becoming increasingly competitive, with numerous streaming services vying for consumer attention. We will closely monitor competitive dynamics and assess their impact on Apple's financial performance.</li>
+                        <li><strong>Rapid Innovation:</strong> The technology industry is characterized by rapid innovation, with new products and features being introduced at a rapid pace. Companies that fail to innovate risk losing market share. Apple's ability to innovate and introduce new products is critical to its success. We will closely monitor Apple's innovation pipeline and assess its ability to compete in emerging markets.</li>
+                        <li><strong>Evolving Consumer Preferences:</strong> Consumer preferences are constantly evolving, with new trends emerging at a rapid pace. Companies that fail to adapt to evolving consumer preferences risk losing market share. Apple's ability to adapt to evolving consumer preferences is critical to its success. We will closely monitor consumer trends and assess their impact on Apple's financial performance.</li>
+                        <li><strong>Regulatory Scrutiny:</strong> The technology industry is facing increasing regulatory scrutiny, particularly regarding antitrust concerns and data privacy. Regulatory outcomes could negatively impact companies' business models and profitability. We will closely monitor regulatory developments and assess their potential impact on Apple's stock price.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 8 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="industry-analysis-page-2">
+        
+            <div class="robeco-logo-container">
+                <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" alt="Robeco Logo">
+            </div>
+            <div class="header-blue-border">
+                <div class="company-header">
+                    <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                    <h1 class="name">Apple Inc</h1>
+                    <div class="rating" style="color: #C62828;">HOLD</div>
+                </div>
+            </div>
+        
+        <main style="display: flex; flex-direction: column; flex-grow: 1;">
+            <section class="analysis-sections" style="flex-grow: 1;">
+                <h3>7. INDUSTRY ANALYSIS (PART 2) - GLOBAL MARKET DYNAMICS</h3>
+                <p>The global technology market is characterized by increasing globalization, with companies expanding their presence in multiple markets. The smartphone market is becoming increasingly concentrated, with a few large players dominating the market. The services market is also becoming increasingly globalized, with streaming services expanding their reach to multiple countries. We will closely monitor global market dynamics and assess their impact on Apple's financial performance.</p>
+                <div class="bullet-list-square">
+                    <h4>GLOBAL MARKET TRENDS:</h4>
+                    <ul>
+                        <li><strong>Increasing Globalization:</strong> The global technology market is characterized by increasing globalization, with companies expanding their presence in multiple markets. This globalization provides companies with access to new customers and new growth opportunities. However, it also exposes them to new risks, such as currency fluctuations and geopolitical tensions. We will closely monitor global market trends and assess their impact on Apple's financial performance.</li>
+                        <li><strong>Market Concentration:</strong> The smartphone market is becoming increasingly concentrated, with a few large players dominating the market. This market concentration gives these large players significant pricing power and market influence. However, it also makes them more vulnerable to regulatory scrutiny. We will closely monitor market concentration trends and assess their impact on Apple's financial performance.</li>
+                        <li><strong>Services Globalization:</strong> The services market is also becoming increasingly globalized, with streaming services expanding their reach to multiple countries. This globalization provides streaming services with access to new customers and new growth opportunities. However, it also exposes them to new risks, such as regulatory compliance and content localization. We will closely monitor services globalization trends and assess their impact on Apple's financial performance.</li>
+                        <li><strong>Emerging Markets Growth:</strong> Emerging markets are a key growth driver for the technology industry. The increasing adoption of mobile devices and internet access in emerging markets provides companies with significant growth opportunities. However, these markets also present unique challenges, such as low average incomes and limited infrastructure. We will closely monitor emerging markets growth trends and assess their impact on Apple's financial performance.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        <footer class="report-footer">
+            <p>Source: Robeco Internal Analysis, Bloomberg</p>
+            <p>Page 9 / 18</p>
+        </footer>
+    </div>
+
+    <div class="slide report-prose" id="industry-analysis-page-3">
+        <header class="report-header
+</body>
+</html>

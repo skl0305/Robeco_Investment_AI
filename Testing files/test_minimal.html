@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Minimal Test</title>
+</head>
+<body>
+    <h1>JavaScript Test</h1>
+    <button onclick="setupInvestmentProject()">Test Button</button>
+    
+    <script>
+        console.log('🔧 DEBUG: JavaScript script tag reached');
+        
+        window.setupInvestmentProject = function() {
+            alert('EMERGENCY: setupInvestmentProject called from window scope');
+            console.log('EMERGENCY: Function called successfully');
+        };
+        
+        console.log('🔧 DEBUG: Function defined successfully');
+    </script>
+</body>
+</html>

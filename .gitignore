@@ -146,6 +146,4 @@ Public/
 # Specific to this project
 ../../*
 ../*
-!../PPT*
-*.html
 .localized

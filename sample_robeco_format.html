@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Apple Inc Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide { width: 1620px; height: 2291px; background-color: var(--bg-light); position: relative; overflow: hidden; display: flex; flex-direction: column; border-bottom: 5px solid var(--robeco-blue); padding: 105px 98px; box-sizing: border-box; }
+        .slide:last-child { border-bottom: none; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px 2px; padding: 5px 0; margin-bottom: 10px; border-top: 5px solid var(--robeco-blue); border-bottom: 5px solid var(--robeco-blue); }
+        .metrics-item { text-align: left; padding: 2px 0; }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 700; color: var(--text-dark); }
+        .key-takeaway-box-horizontal { background: var(--takeaway-bg); border: 5px solid var(--robeco-blue); padding: 22.5px; margin: 22.5px 0; }
+        .content-block { margin-bottom: 15px; }
+        .report-footer { position: absolute; bottom: 45px; left: 98px; right: 98px; padding-top: 12px; border-top: 5px solid var(--robeco-blue); display: flex; justify-content: space-between; align-items: center; font-size: 16.5pt; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Title Slide -->
+        <div class="slide">
+            <div class="slide-content">
+                <h1 class="report-title">Apple Inc</h1>
+                <h2 class="report-subtitle">Institutional Investment Analysis • AAPL</h2>
+                
+                <!-- Key Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metrics-item">
+                        <div class="label">ANALYSIS DATE</div>
+                        <div class="value">September 09, 2025</div>
+                    </div>
+                    <div class="metrics-item">
+                        <div class="label">RESEARCH SOURCES</div>
+                        <div class="value">47 Sources</div>
+                    </div>
+                    <div class="metrics-item">
+                        <div class="label">ANALYST COVERAGE</div>
+                        <div class="value">6 Specialists</div>
+                    </div>
+                    <div class="metrics-item">
+                        <div class="label">CONFIDENCE LEVEL</div>
+                        <div class="value">85.2%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="report-footer">
+                <p>Robeco Institutional Investment Committee</p>
+                <p>September 09, 2025</p>
+            </div>
+        </div>
+        
+        <!-- Analysis Content Slides -->
+        <div class="slide">
+            <div class="slide-content">
+                <h3 class="section-title">4. INDUSTRY ANALYSIS: INSTITUTIONAL PERSPECTIVE</h3>
+                <div class="content-block">
+                    <p>Apple Inc operates within the highly competitive technology sector, specifically focusing on consumer electronics, software services, and digital ecosystems. The company maintains dominant market positions across multiple product categories including smartphones, tablets, computers, and wearable devices, while expanding aggressively into services revenue streams that provide higher margins and recurring revenue characteristics essential for institutional investment thesis development.</p>
+                </div>
+                
+                <!-- Key Takeaway Box -->
+                <div class="key-takeaway-box-horizontal">
+                    <h3 class="section-title"><i class="fas fa-lightbulb"></i> INDUSTRY KEY INSIGHTS</h3>
+                    <p>Technology sector leadership with sustainable competitive advantages through ecosystem integration and premium brand positioning that supports institutional-grade investment thesis development.</p>
+                </div>
+            </div>
+            <div class="report-footer">
+                <p>Robeco Institutional Investment Committee</p>
+                <p>September 09, 2025</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

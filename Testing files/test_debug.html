@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Debug Test</title>
+</head>
+<body>
+    <h1>Testing setupInvestmentProject Function</h1>
+    <div id="result"></div>
+    
+    <script>
+        console.log('DEBUG: Script started');
+        
+        // Test the problematic function directly
+        async function setupInvestmentProject() {
+            console.log('DEBUG: setupInvestmentProject function called');
+            console.log('DEBUG: Function definition reached successfully');
+            
+            // Mock stock data that might cause issues
+            const stockData = {
+                currency: undefined, // This might be the issue!
+                current_price: 150.25,
+                recommendation_key: 'buy',
+                recommendation_mean: 1.5,
+                target_mean_price: 175.50,
+                target_high_price: 185.00,
+                target_low_price: 165.00
+            };
+            
+            console.log('DEBUG: About to test string concatenation');
+            
+            // Test the exact problematic lines
+            try {
+                const rating = stockData.recommendation_mean ? '(' + stockData.recommendation_mean.toFixed(1) + '/5.0)' : '';
+                console.log('DEBUG: Rating created:', rating);
+                
+                const targetRange = stockData.target_high_price && stockData.target_low_price ? 
+                    ' (' + stockData.currency + stockData.target_low_price.toFixed(2) + ' - ' + stockData.currency + stockData.target_high_price.toFixed(2) + ')' : '';
+                console.log('DEBUG: Target range created:', targetRange);
+                
+                const targetPrice = stockData.target_mean_price ? stockData.target_mean_price.toFixed(2) : 'N/A';
+                console.log('DEBUG: Target price created:', targetPrice);
+                
+                // This is the potentially problematic line
+                const testString = 'Target: ' + stockData.currency + targetPrice + targetRange;
+                console.log('DEBUG: Test string created successfully:', testString);
+                
+                document.getElementById('result').innerHTML = '<p>SUCCESS: ' + testString + '</p>';
+                
+            } catch (error) {
+                console.error('DEBUG: Error in string concatenation:', error);
+                document.getElementById('result').innerHTML = '<p>ERROR: ' + error.message + '</p>';
+            }
+        }
+        
+        // Call the function
+        setupInvestmentProject();
+        
+        console.log('DEBUG: Script completed');
+    </script>
+</body>
+</html>
