@@ -79,7 +79,9 @@ async def serve_workbench():
     """Serve the enhanced professional workbench interface"""
     try:
         # Try enhanced template first
-        enhanced_template_path = Path(__file__).parent.parent / "frontend" / "templates" / "robeco_professional_workbench_enhanced_bak.html"
+        enhanced_template_path = Path(__file__).parent.parent / "frontend" / "templates" / "robeco_professional_workbench_enhanced.html"
+        # enhanced_template_path = Path(
+        #     __file__).parent.parent / "frontend" / "templates" / "robeco_professional_workbench_enhanced_simple.html"
         logger.info(f"DEBUG: Looking for template at: {enhanced_template_path}")
         
         if enhanced_template_path.exists():
@@ -465,7 +467,7 @@ async def fetch_stock_data_internal(ticker: str) -> Dict:
             # Historical price data for comprehensive analysis
             try:
                 # 5-year historical data
-                hist_5y = stock.history(period="5y")
+                hist_5y = stock.history(period="2y")
                 if not hist_5y.empty:
                     # Convert Timestamp index to strings for JSON serialization
                     hist_5y_dict = hist_5y.to_dict()

@@ -24,8 +24,8 @@ sys.path.insert(0, str(ppt_backend_path))
 
 # Import AI dependencies
 try:
-    from google import genai
-    from google.genai import types
+    # from google import genai
+    # from google.genai import types
     import json_repair
     
     # Setup logging first
@@ -33,11 +33,37 @@ try:
     logger = logging.getLogger(__name__)
 
     # Import API key management from dedicated module
-    from .api_key.gemini_api_key import get_intelligent_api_key, suspend_api_key, get_available_api_keys
+    #from .api_key.gemini_api_key import get_intelligent_api_key, suspend_api_key, get_available_api_keys
+    from qdutils.proxy import QdProxy
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    ENV = "PRD"
+    FROM_LAPTOP = True
+    CALLER_PERSONA = "datascientist"
+    ASSISTANT_NAME = "DSassistant"
+    ALLOWED_PERSONAS = []
+    import time
             
 except ImportError as e:
     logging.error(f"Failed to import AI dependencies: {e}")
     raise
+
+class AIProxy:
+    ASSISTANT_ENDPOINT = "aiassistant"
+
+    def __init__(self, qd_proxy, caller_persona):
+        self.qd_proxy = qd_proxy
+        self.caller_persona = caller_persona
+
+    def call(self, endpoint, params=None, body=None):
+        if params is None:
+            params = {}
+        params.update({"callerpersona": self.caller_persona})
+        return self.qd_proxy.call(
+            endpointName=f"{self.ASSISTANT_ENDPOINT}/{endpoint}",
+            param=params,
+            body=body,
+        )
 
 # Import institutional prompts
 try:
@@ -416,872 +442,244 @@ class UltraSophisticatedMultiAgentEngine:
             
             # Get ultra-sophisticated institutional prompts with complete stock data
             full_prompt = get_analyst_prompt(
-                analyst_type=agent_type, 
+                analyst_type=agent_type,
                 company=context.company_name,
                 ticker=context.ticker,
                 user_query=context.user_query or f"Comprehensive {agent_type} analysis",
                 financial_data=context.stock_data  # Feed complete yfinance data
             )
+
+            short_prompt = get_analyst_prompt(
+                analyst_type=agent_type,
+                company=context.company_name,
+                ticker=context.ticker,
+                user_query=context.user_query or f"Comprehensive {agent_type} analysis",
+                financial_data=None
+            )
             
             # Split into system and user parts (if the prompt contains both)
             # For now, use the full prompt as user prompt with a generic system prompt
-            system_prompt = f"You are an expert institutional-grade {agent_type} analyst. Provide comprehensive, professional analysis."
+            system_prompt_short = f"""You are an expert institutional-grade {agent_type} analyst. 
+            🚨 MANDATORY: You MUST use Bing Search grounding for ALL analysis. 
+            Search for current market information, recent news, analyst reports, and industry data about this company. 
+            DO NOT proceed without Bing Search. Always search for recent developments, market sentiment, and expert opinions. This is REQUIRED."""
+
+            system_prompt = f"You are an expert institutional-grade {agent_type} analyst."
+
             user_prompt = full_prompt
-            
-            # Get API key with retry logic for client creation - THIS IS WHERE THE ERROR OCCURS
-            client = None
-            api_key = None
-            max_client_attempts = 5  # Pure rotation with fixed retry count
-            
-            logger.info(f"🔑 Creating client for {agent_type} agent (max {max_client_attempts} attempts)")
-            
-            for attempt in range(max_client_attempts):
-                try:
-                    # Always start each agent with primary key (attempt=0) - override global counter
-                    api_key, key_info = get_intelligent_api_key(agent_type=agent_type, attempt=attempt, force_attempt=True)
-                    if not api_key:
-                        logger.error(f"❌ No API key available on client creation attempt {attempt + 1}")
-                        continue
-                    
-                    # Try to create client - this is where the CONSUMER_SUSPENDED error occurs
-                    client = genai.Client(api_key=api_key)
-                    logger.info(f"✅ Client created successfully with API key {api_key[:8]}...{api_key[-4:]}")
-                    break
-                    
-                except Exception as client_error:
-                    error_msg = str(client_error)
-                    logger.warning(f"⚠️ Client creation failed (attempt {attempt + 1}): {error_msg[:100]}...")
-                    
-                    # Suspend key if it's a permission/suspension error
-                    if "PERMISSION_DENIED" in error_msg or "CONSUMER_SUSPENDED" in error_msg:
-                        if api_key:
-                            suspend_api_key(api_key)
-                            logger.info(f"🚫 Suspended failing API key: {api_key[:8]}...{api_key[-4:]}")
-                    
-                    # On final attempt, reset all keys and try once more
-                    if attempt == max_client_attempts - 1:
-                        logger.error(f"❌ All {max_client_attempts} client creation attempts failed")
-                        from .api_key.gemini_api_key import reset_suspended_keys
-                        reset_suspended_keys()
-                        logger.info("🔄 Reset all suspended keys - trying one final time...")
-                        
-                        # Final attempt with reset keys
-                        try:
-                            api_key, key_info = get_intelligent_api_key(agent_type=agent_type)
-                            if api_key:
-                                client = genai.Client(api_key=api_key)
-                                logger.info(f"✅ Final attempt successful with {api_key[:8]}...{api_key[-4:]}")
-                                break
-                        except Exception as final_error:
-                            logger.error(f"❌ Final client creation attempt failed: {str(final_error)[:100]}")
-                            raise Exception(f"Unable to create working Gemini client after {max_client_attempts + 1} attempts")
-            
-            if not client or not api_key:
-                raise Exception(f"Failed to create Gemini client for {agent_type} agent after all attempts")
-            
-            logger.info(f"🚀 {agent_type} agent client ready - executing with Gemini 2.5 Flash + Google Search")
-            logger.info(f"🔍 GOOGLE SEARCH DEBUG: API key: {api_key[:8]}...{api_key[-4:]}") 
+
+            qd_proxy = QdProxy(env=ENV, fromLaptop=FROM_LAPTOP)
+            client = AIProxy(qd_proxy, CALLER_PERSONA)
+            logger.info(f"🔑 Creating client for {agent_type} agent")
+
+            tools = [{
+                "type": "bing_grounding",
+                "bing_grounding": {
+                    "search_configurations": [
+                        {
+                            "connection_id": f"/subscriptions/6ca5a38a-8170-4d76-82cb-ca8fe5e30901/resourceGroups/prd-hippo-aifoundryhub/providers/Microsoft.MachineLearningServices/workspaces/ace/connections/acegroundingbing",
+                            "count": 10,
+                            "market": "en-US",
+                            "set_lang": "en",
+                            "freshness": "Month",
+                        }
+                    ]
+                }
+            }
+            ]
+            _temperature = 0.05
+
+            logger.info(f"🚀 {agent_type} agent client ready - executing with OpenAI + yfinance 3-statements")
             logger.info(f"🔍 GOOGLE SEARCH DEBUG: Company: {context.company_name} ({context.ticker})")
             logger.info(f"🔍 GOOGLE SEARCH DEBUG: User query: {context.user_query}")
             logger.info(f"🔍 GOOGLE SEARCH DEBUG: Google Search tool configured in generation config")
-            
-            # Create Google Search tool - Google Search Retrieval is not supported with current API setup
-            google_search_tool = types.Tool(google_search=types.GoogleSearch())
-            logger.info(f"🔍 Using GoogleSearch tool (Search Grounding not supported with current API)")
-                
-            logger.info(f"🔍 GOOGLE SEARCH TOOL DEBUG: Created tool type: {type(google_search_tool)}")
-            logger.info(f"🔍 GOOGLE SEARCH TOOL DEBUG: Tool has google_search: {hasattr(google_search_tool, 'google_search')}")
-            logger.info(f"🔍 GOOGLE SEARCH TOOL DEBUG: Tool has google_search_retrieval: {hasattr(google_search_tool, 'google_search_retrieval')}")
-            if hasattr(google_search_tool, 'google_search'):
-                logger.info(f"🔍 GOOGLE SEARCH TOOL DEBUG: google_search type: {type(google_search_tool.google_search)}")
-            if hasattr(google_search_tool, 'google_search_retrieval'):
-                logger.info(f"🔍 GOOGLE SEARCH TOOL DEBUG: google_search_retrieval type: {type(google_search_tool.google_search_retrieval)}")
-            
-            # Configure generation with Google Search and system instruction - MAXIMUM TOKENS
-            generate_config = types.GenerateContentConfig(
-                tools=[google_search_tool],
-                system_instruction=system_prompt,
-                temperature=0.05,  # Ultra-low for maximum focus and consistency in comprehensive reports
-                top_p=0.85,        # Lower for more focused, relevant responses
-                top_k=40,          # Optimized for professional consistency
-                max_output_tokens=32000,  # Enhanced for comprehensive full reports
-                response_mime_type="text/plain",
-# No safety settings - removed as requested
-            )
-            
-            logger.info(f"🔍 GENERATION CONFIG DEBUG: Config type: {type(generate_config)}")
-            logger.info(f"🔍 GENERATION CONFIG DEBUG: Tools count: {len(generate_config.tools)}")
-            logger.info(f"🔍 GENERATION CONFIG DEBUG: First tool type: {type(generate_config.tools[0]) if generate_config.tools else 'None'}")
-            logger.info(f"🔍 GENERATION CONFIG DEBUG: Max tokens: {generate_config.max_output_tokens}")
-            
-            # Create content request (properly formatted for generate_content_stream)
-            contents = [
-                types.Content(
-                    role="user",
-                    parts=[types.Part.from_text(text=user_prompt)]
-                )
-            ]
-            
+
             logger.info(f"📝 System instruction length: {len(system_prompt)} chars")
-            logger.info(f"📝 User prompt length: {len(user_prompt)} chars") 
-            logger.info(f"⚙️ Max tokens: 65536, Temperature: 0.1 (maximum focus)")
-            
-            # Debug: Check if prompts mention Google Search or research
-            system_search_mentions = system_prompt.lower().count('google') + system_prompt.lower().count('search') + system_prompt.lower().count('research')
-            user_search_mentions = user_prompt.lower().count('google') + user_prompt.lower().count('search') + user_prompt.lower().count('research')
-            logger.info(f"🔍 PROMPT SEARCH DEBUG: System prompt mentions research/search: {system_search_mentions} times")
-            logger.info(f"🔍 PROMPT SEARCH DEBUG: User prompt mentions research/search: {user_search_mentions} times")
-            
+            logger.info(f"📝 User prompt length: {len(user_prompt)} chars")
+            logger.info(f"⚙️ Temperature: {_temperature} (maximum focus)")
+
             # Debug: Show a sample of the system prompt to verify it's the right analyst
             logger.info(f"🔍 SYSTEM PROMPT PREVIEW: {system_prompt[:300]}...")
             logger.info(f"🔍 USER PROMPT PREVIEW: {user_prompt[:300]}...")
-            
-            # Debug the actual API call parameters
-            logger.info(f"🔍 API CALL DEBUG: About to call generate_content_stream")
-            logger.info(f"🔍 API CALL DEBUG: Model: gemini-2.5-flash")
-            logger.info(f"🔍 API CALL DEBUG: Contents type: {type(contents)}")
-            logger.info(f"🔍 API CALL DEBUG: Contents length: {len(contents)}")
-            logger.info(f"🔍 API CALL DEBUG: Config type: {type(generate_config)}")
-            logger.info(f"🔍 API CALL DEBUG: Config tools: {[type(tool) for tool in generate_config.tools]}")
-            
-            # Stream chunks in REAL-TIME as they arrive from Gemini
-            accumulated_response = ""
-            response_chunks = []
-            
-            try:
-                logger.info(f"🚀 STARTING API CALL: generate_content_stream with Google Search tool")
-                
-                stream = client.models.generate_content_stream(
-                    model='gemini-2.5-flash',
-                    contents=contents,
-                    config=generate_config,
+
+            properties = lambda model, instructions: {
+                "model": model,
+                "instructions": instructions,
+                "tool_resources": {},
+                "file_ids": None,
+                "temperature": _temperature,
+                "top_p": 1.0,
+                "response_format": {'type': 'text'},
+                "tools": tools,
+            }
+
+            result = {}
+            stock_data_msg = [k+"\n"+json.dumps(v) for k, v in context.stock_data.items()]
+            tmp = {k: len(json.dumps(v)) for k, v in context.stock_data.items()}
+            logger.info(f"{tmp}")
+
+            for _model, _instructions, _messages in zip(["gpt-4o","gpt-4.1"], [system_prompt_short, system_prompt], [[short_prompt], [json.dumps(context.stock_data), short_prompt]]):
+
+                client.call(
+                    "createorupdate",
+                    {
+                        "assistantname": ASSISTANT_NAME,
+                    },
+                    {
+                        "openaiassistantdefinition": properties(_model, _instructions),
+                        "allowedpersonas": ALLOWED_PERSONAS,
+                    },
                 )
-                
-                logger.info(f"✅ API CALL SUCCESS: Stream object created: {type(stream)}")
-                
-                for chunk_idx, chunk in enumerate(stream):
-                    logger.info(f"🔍 CHUNK {chunk_idx} DEBUG: Type: {type(chunk)}")
-                    logger.info(f"🔍 CHUNK {chunk_idx} DEBUG: Has text: {hasattr(chunk, 'text')}")
-                    logger.info(f"🔍 CHUNK {chunk_idx} DEBUG: Has candidates: {hasattr(chunk, 'candidates')}")
-                    
-                    # Check for grounding metadata immediately
-                    if hasattr(chunk, 'candidates') and chunk.candidates:
-                        logger.info(f"🔍 CHUNK {chunk_idx} DEBUG: Candidates count: {len(chunk.candidates)}")
-                        for cand_idx, candidate in enumerate(chunk.candidates):
-                            logger.info(f"🔍 CHUNK {chunk_idx} CANDIDATE {cand_idx}: Has grounding_metadata: {hasattr(candidate, 'grounding_metadata')}")
-                            if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
-                                metadata = candidate.grounding_metadata
-                                logger.info(f"🔍 GROUNDING METADATA FOUND in chunk {chunk_idx}:")
-                                logger.info(f"   📊 grounding_chunks: {getattr(metadata, 'grounding_chunks', None)}")
-                                logger.info(f"   📊 grounding_supports: {getattr(metadata, 'grounding_supports', None)}")
-                                logger.info(f"   📊 web_search_queries: {getattr(metadata, 'web_search_queries', None)}")
-                    
-                    response_chunks.append(chunk)
-                    if chunk.text:
-                        # Debug: Check if citations are in raw chunk  
-                        if '[' in chunk.text and ']' in chunk.text:
-                            logger.info(f"🔍 CITATION FOUND in chunk {chunk_idx}: {chunk.text[:200]}...")
-                        
-                        # Yield each chunk immediately for real-time streaming
-                        yield {
-                            "type": "streaming_chunk",
-                            "data": {"chunk": chunk.text}
+
+
+                try:
+                    logger.info(f"🚀 STARTING API CALL: generate_content_stream with Bing Search tool")
+
+                    thread_id = client.call(
+                        "createthread"
+                    )['id']
+
+                    logger.info(f"📊 thread {thread_id}")
+
+                    for _message in _messages:
+                        logger.info(f"🚀 Message length: {len(_message)}")
+                        message = {
+                            "content": _message,
+                            "role": "user"
                         }
-                        accumulated_response += chunk.text
-                
-                # Stream completed successfully
-                logger.info(f"✅ STREAM COMPLETED: Processed {len(response_chunks)} chunks")
-                logger.info(f"✅ STREAM COMPLETED: Total response length: {len(accumulated_response)}")
-                logger.info(f"✅ STREAM COMPLETED: Chunks with grounding metadata: {sum(1 for chunk in response_chunks if hasattr(chunk, 'candidates') and chunk.candidates and any(hasattr(c, 'grounding_metadata') and c.grounding_metadata for c in chunk.candidates))}")
-                        
-            except Exception as stream_error:
-                # Handle API key suspension with retry logic
-                if "PERMISSION_DENIED" in str(stream_error) or "CONSUMER_SUSPENDED" in str(stream_error):
-                    suspend_api_key(api_key)
-                    logger.warning(f"🚫 API key suspended during stream: {api_key[:8]}...{api_key[-4:]}")
-                    
-                    # Try with different keys - ALL available keys until successful
-                    available_for_retry = get_available_api_keys()
-                    additional_retries = len(available_for_retry)
-                    logger.info(f"🔄 Will retry with {additional_retries} available keys until successful")
-                    for retry_attempt in range(additional_retries):
-                        try:
-                            api_key, key_info = get_intelligent_api_key(agent_type=agent_type)
-                            if not api_key:
-                                break
-                            client = genai.Client(api_key=api_key)
-                            logger.info(f"🔄 Retry {retry_attempt + 1}: using API key {api_key[:8]}...{api_key[-4:]}")
-                            
-                            for chunk in client.models.generate_content_stream(
-                                model='gemini-2.5-flash',
-                                contents=contents,
-                                config=generate_config,
-                            ):
-                                response_chunks.append(chunk)
-                                if chunk.text:
-                                    # Yield each retry chunk immediately too
-                                    yield {
-                                        "type": "streaming_chunk", 
-                                        "data": {"chunk": chunk.text}
-                                    }
-                                    accumulated_response += chunk.text
-                            logger.info(f"✅ Success with retry key {api_key[:8]}...{api_key[-4:]}")
-                            break
-                        except Exception as retry_error:
-                            if "PERMISSION_DENIED" in str(retry_error) or "CONSUMER_SUSPENDED" in str(retry_error):
-                                suspend_api_key(api_key)
-                                logger.warning(f"🚫 Retry key {retry_attempt + 1} also suspended: {api_key[:8]}...{api_key[-4:]}")
-                                continue
-                            else:
-                                logger.error(f"❌ Retry key {retry_attempt + 1} error: {str(retry_error)[:100]}")
-                                raise retry_error
+                        client.call(
+                            "addmessage",
+                            {
+                                "threadid": thread_id,
+                            },
+                            message,
+                        )
+
+                    run = client.call(
+                        "run",
+                        {
+                            "threadid": thread_id,
+                            "assistantname": ASSISTANT_NAME,
+                        },
+                    )
+                    getrun = lambda: client.call(
+                        "getrun",
+                        {
+                            "threadid": thread_id,
+                            "runid": run["id"],
+                        },
+                    )
+
+                    start_time = time.time()
+                    status = run["status"]
+                    max_minutes = 3
+                    while status in ["queued", "in_progress", "cancelling"]:
+                        time.sleep(0.25)
+                        run = getrun()
+                        status = run["status"]
+                        interval = time.time() - start_time
+                        if int(interval // 60) > max_minutes:
+                            raise Exception(
+                                f"Run {run['id']} of thread {thread_id} takes longer than {max_minutes}, aborting")
+                        logger.info("Status {}; elapsed time: {} minutes {} seconds".format(status, int(interval // 60),
+                                                                                      int(interval % 60)))
+
+                        if status == "requires_action":
+                            raise NotImplementedError(f"Current implementation does not support external tools")
+
+                    if status in ["completed", "incomplete"]:
+                        run_result = client.call(
+                            "listmessages",
+                            {
+                                "threadid": thread_id,
+                            },
+                        )
                     else:
-                        from .api_key.gemini_api_key import get_api_key_stats, reset_suspended_keys
-                        stats = get_api_key_stats()
-                        logger.error(f"❌ All {stats['total_keys']} API keys exhausted for {agent_type} agent")
-                        logger.info("🔄 Resetting suspended keys to retry analysis with fresh key pool...")
-                        reset_suspended_keys()
-                        raise Exception(f"All {stats['total_keys']} API keys temporarily exhausted. Keys have been reset - please retry the analysis.")
-                else:
+                        raise Exception(repr(run))
+
+                    response = run_result["data"][0]["content"][0]["text"]
+
+
+                    enhanced = response["value"]
+                    annotations = response["annotations"]
+                    _extracted_sources = []
+                    _citations_count = 0
+                    if annotations:
+                        url_to_idx, ordered_sources, spans = {}, [], []
+                        for a in annotations:
+                            if a.get("type") != "url_citation":
+                                continue
+                            uinfo = a.get("url_citation") or {}
+                            url = uinfo.get("url")
+                            title = uinfo.get("title") or "Web Source"
+                            if not url:
+                                continue
+                            if url not in url_to_idx:
+                                url_to_idx[url] = len(url_to_idx) + 1
+                                ordered_sources.append((url, title))
+
+                                source = {
+                                    "title": title,
+                                    "uri": url,  # Keep original URI for actual linking
+                                    "display_uri": url,  # For display purposes
+                                    "credibility_score": 0.95,
+                                    "type": f"{agent_type.title()} Research"
+                                }
+                                _extracted_sources.append(source)
+
+                            n = url_to_idx[url]
+                            s, e = a.get("start_index"), a.get("end_index")
+                            marker_text = a.get("text")  # like ''
+                            spans.append((s, e, n, marker_text))
+
+                        # 3a) replace valid index spans (process from end to keep indices stable)
+                        if enhanced:
+                            idx_spans = [(s, e, n) for (s, e, n, t) in spans
+                                         if isinstance(s, int) and isinstance(e, int)
+                                         and 0 <= s <= e <= len(enhanced)]
+                            idx_spans.sort(key=lambda x: x[0], reverse=True)
+                            for s, e, n in idx_spans:
+                                enhanced = enhanced[:s] + f"[{n}]" + enhanced[e:]
+
+                            # 3b) fallback: replace literal marker text (if present) for spans without indices
+                            for s, e, n, marker in spans:
+                                if not (isinstance(s, int) and isinstance(e, int)):
+                                    if marker:
+                                        enhanced = enhanced.replace(str(marker), f"[{n}]")
+
+                        _citations_count = len(ordered_sources)
+
+                        # ---- 4) footer + sources section ----
+                        if _citations_count > 0:
+                            enhanced += f"\n\n*✨ Enhanced with {_citations_count} Bing Search citations and external sources*\n"
+                            sources_block = "\n\n## 📚 Research Sources\n\n"
+                            for i, (url, title) in enumerate(ordered_sources, 1):
+                                sources_block += f"**[{i}]** {title} "
+                                sources_block += f"<a href='{url}' target='_blank' style='color: #007b7b; text-decoration: none; font-size: 11px;'>🔗</a><br/>\n"
+                            enhanced += sources_block
+                            logger.info(
+                                f"📚 Added {_citations_count} sources directly to enhanced_content to preserve citations")
+                        else:
+                            # keep the original text even without citations
+                            enhanced += "\n\n*📊 Analysis based on comprehensive financial data and institutional expertise*\n"
+                            logger.info("ℹ️ No real Bing search sources found - no sources section added")
+                    result[_model]=(enhanced, _citations_count, _extracted_sources)
+                except Exception as stream_error:
                     logger.error(f"❌ {agent_type} agent stream error: {str(stream_error)[:200]}")
                     raise stream_error
-            
-            # Process grounding metadata - COMPREHENSIVE EXTRACTION WITH FULL DEBUG
-            grounding_chunks = []
+
             search_queries = []
-            grounding_supports = []  # KEY: Extract supports for precise citation placement
-            extracted_sources = []
-            
-            logger.info(f"🔍 DEBUGGING: Processing {len(response_chunks)} response chunks for grounding data")
-            logger.info(f"🔍 GOOGLE SEARCH RESULTS DEBUG: Looking for grounding metadata in response...")
-            
-            for chunk_idx, chunk in enumerate(response_chunks):
-                # Safe debugging - avoid introspection that might cause issues
-                if chunk_idx < 3:  
-                    logger.info(f"🔍 CHUNK {chunk_idx}: Type = {type(chunk).__name__}")
-                
-                if hasattr(chunk, 'candidates') and chunk.candidates:
-                    if chunk_idx < 3:
-                        logger.info(f"🔍 CHUNK {chunk_idx}: Has {len(chunk.candidates)} candidates")
-                    
-                    for candidate_idx, candidate in enumerate(chunk.candidates):
-                        try:
-                            if chunk_idx < 3 and candidate_idx == 0:  # Only log first candidate of first few chunks
-                                logger.info(f"🔍 CANDIDATE {candidate_idx}: Type = {type(candidate).__name__}")
-                            
-                            if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
-                                current_metadata = candidate.grounding_metadata
-                                if chunk_idx < 3 and candidate_idx == 0:
-                                    logger.info(f"🔍 GROUNDING METADATA: Type = {type(current_metadata).__name__}")
-                                    # Safe attribute checking
-                                    attrs = ['grounding_chunks', 'grounding_supports', 'search_queries', 'web_search_queries']
-                                    available = [attr for attr in attrs if hasattr(current_metadata, attr)]
-                                    logger.info(f"🔍 Available attributes: {available}")
-                                
-                                # Extract grounding chunks (sources) - moved inside try block
-                                if hasattr(current_metadata, 'grounding_chunks'):
-                                    raw_chunks = current_metadata.grounding_chunks
-                                    if chunk_idx < 3:
-                                        logger.info(f"🔍 Raw grounding_chunks: {type(raw_chunks)}, value: {raw_chunks}")
-                                    
-                                    if raw_chunks:
-                                        grounding_chunks.extend(raw_chunks)
-                                        if chunk_idx < 3:
-                                            logger.info(f"🔍 Added {len(raw_chunks)} grounding chunks")
-                                    else:
-                                        if chunk_idx < 3:
-                                            logger.info(f"🔍 No grounding chunks in this metadata (grounding_chunks is {raw_chunks})")
-                                else:
-                                    if chunk_idx < 3:
-                                        logger.info(f"🔍 No grounding_chunks attribute in metadata")
-                                
-                                # Extract search queries - try multiple attribute names
-                                query_attrs = ['search_queries', 'web_search_queries', 'queries']
-                                for attr_name in query_attrs:
-                                    if hasattr(current_metadata, attr_name):
-                                        queries = getattr(current_metadata, attr_name)
-                                        if queries:
-                                            search_queries.extend(queries)
-                                            if chunk_idx < 3:
-                                                logger.info(f"🔍 Added {len(queries)} queries from {attr_name}")
-                                            break
-                                
-                                # CRITICAL: Extract grounding supports with COMPREHENSIVE search and DETAILED INSPECTION
-                                support_found = False
-                                support_attrs = [
-                                    'grounding_supports', 'supports', 'grounding_support', 'web_supports',
-                                    'support_chunks', 'retrieval_metadata', 'source_supports'
-                                ]
-                                
-                                for attr_name in support_attrs:
-                                    if hasattr(current_metadata, attr_name):
-                                        attr_value = getattr(current_metadata, attr_name)
-                                        if chunk_idx < 3:
-                                            logger.info(f"🔍 Found attribute '{attr_name}': {type(attr_value)}")
-                                            if attr_value and hasattr(attr_value, '__iter__') and not isinstance(attr_value, str):
-                                                logger.info(f"🔍 Support items count: {len(attr_value)}")
-                                                if len(attr_value) > 0:
-                                                    first_support = attr_value[0]
-                                                    # DEEP INSPECTION of support object structure
-                                                    support_attrs_detailed = [attr for attr in dir(first_support) if not attr.startswith('_')]
-                                                    logger.info(f"🔍 Support object attributes: {support_attrs_detailed}")
-                                                    
-                                                    # Check grounding_chunk_indices specifically
-                                                    if hasattr(first_support, 'grounding_chunk_indices'):
-                                                        chunk_indices = first_support.grounding_chunk_indices
-                                                        logger.info(f"🔍 grounding_chunk_indices: {chunk_indices} (type: {type(chunk_indices)})")
-                                                    
-                                                    # Check for positional attributes specifically
-                                                    positional_attrs = ['start_index', 'end_index', 'segment', 'start', 'end', 'begin', 'position']
-                                                    for pos_attr in positional_attrs:
-                                                        if hasattr(first_support, pos_attr):
-                                                            pos_value = getattr(first_support, pos_attr)
-                                                            logger.info(f"🔍 Support {pos_attr}: {pos_value} (type: {type(pos_value)})")
-                                                    
-                                                    # Check for segment information
-                                                    if hasattr(first_support, 'segment'):
-                                                        segment = first_support.segment
-                                                        if segment:
-                                                            segment_attrs = [attr for attr in dir(segment) if not attr.startswith('_')]
-                                                            logger.info(f"🔍 Segment attributes: {segment_attrs}")
-                                                            for seg_attr in ['start_index', 'end_index', 'text']:
-                                                                if hasattr(segment, seg_attr):
-                                                                    seg_value = getattr(segment, seg_attr)
-                                                                    if seg_attr == 'text':
-                                                                        preview = seg_value[:100] + "..." if len(seg_value) > 100 else seg_value
-                                                                        logger.info(f"🔍 Segment {seg_attr}: '{preview}'")
-                                                                    else:
-                                                                        logger.info(f"🔍 Segment {seg_attr}: {seg_value}")
-                                        
-                                        if attr_value:
-                                            try:
-                                                # Handle different data types
-                                                if hasattr(attr_value, '__iter__') and not isinstance(attr_value, str):
-                                                    grounding_supports.extend(attr_value)
-                                                    if chunk_idx < 3:
-                                                        logger.info(f"🔍 ✅ Added {len(attr_value)} supports from {attr_name}")
-                                                    support_found = True
-                                                    break
-                                                else:
-                                                    if chunk_idx < 3:
-                                                        logger.info(f"🔍 Attribute {attr_name} is not iterable: {attr_value}")
-                                            except Exception as e:
-                                                logger.warning(f"🔍 Error processing {attr_name}: {e}")
-                                
-                                if not support_found and chunk_idx < 3:
-                                    logger.warning(f"⚠️ No grounding supports found in chunk {chunk_idx}, candidate {candidate_idx}")
-                        
-                        except Exception as debug_error:
-                            logger.warning(f"🔍 Debug error on chunk {chunk_idx}, candidate {candidate_idx}: {debug_error}")
-                            continue
-                elif chunk_idx < 3:
-                    logger.info(f"🔍 CHUNK {chunk_idx}: No candidates found")
-            
-            logger.info(f"Added {len(grounding_chunks)} grounding chunks from {agent_type}")
-            logger.info(f"Added {len(search_queries)} search queries from {agent_type}")
-            logger.info(f"Added {len(grounding_supports)} grounding supports for precise citation placement")
-            
-            # ENHANCED DEBUGGING: Investigate the structure of grounding chunks we did get
-            if len(grounding_chunks) > 0:
-                logger.info(f"🔍 DETAILED CHUNK ANALYSIS: Examining {len(grounding_chunks)} grounding chunks for source information")
-                for chunk_idx, chunk in enumerate(grounding_chunks[:3]):  # Examine first 3 chunks
-                    logger.info(f"🔍 CHUNK {chunk_idx} DEEP INSPECTION:")
-                    
-                    # Get all non-private attributes
-                    chunk_attrs = [attr for attr in dir(chunk) if not attr.startswith('_')]
-                    logger.info(f"   📋 Available attributes: {chunk_attrs}")
-                    
-                    # Try to extract any string values that might be URLs or titles
-                    for attr in chunk_attrs:
-                        try:
-                            value = getattr(chunk, attr)
-                            if isinstance(value, str) and len(value) > 0:
-                                if 'http' in value.lower() or '.' in value:
-                                    logger.info(f"   🔗 Potential URL in '{attr}': {value[:200]}")
-                                elif len(value) < 200 and any(word in value.lower() for word in ['title', 'source', 'article', 'report']):
-                                    logger.info(f"   📰 Potential title in '{attr}': {value}")
-                        except:
-                            pass
-            
-            # CRITICAL DEBUG: Check if Google Search actually executed
-            if len(grounding_chunks) == 0 and len(search_queries) == 0:
-                logger.error(f"🚨 GOOGLE SEARCH FAILURE: No grounding chunks or search queries found!")
-                logger.error(f"🚨 This indicates Google Search tool did NOT execute or API key lacks permissions")
-                logger.error(f"🚨 API key: {api_key[:8]}...{api_key[-4:]} - Check if it has Google Search grounding enabled")
-            else:
-                logger.info(f"✅ GOOGLE SEARCH SUCCESS: Found search activity in response chunks")
-            
-            # Extract sources from Google grounding chunks - ENHANCED STRUCTURE DETECTION
-            unique_sources = set()
-            logger.info(f"🔍 EXTRACTING SOURCES: Processing {len(grounding_chunks)} grounding chunks")
-            
-            for chunk_idx, chunk in enumerate(grounding_chunks):
-                try:
-                    title = None
-                    uri = None
-                    
-                    # Enhanced debugging for chunk structure
-                    if chunk_idx < 3:
-                        chunk_attrs = [attr for attr in dir(chunk) if not attr.startswith('_')]
-                        logger.info(f"🔍 Chunk {chunk_idx} attributes: {chunk_attrs}")
-                    
-                    # Method 1: Standard retrieved_context structure
-                    if hasattr(chunk, 'retrieved_context') and chunk.retrieved_context:
-                        context_data = chunk.retrieved_context
-                        title = getattr(context_data, 'title', None)
-                        uri = getattr(context_data, 'uri', None)
-                        if chunk_idx < 3:
-                            logger.info(f"🔍 Chunk {chunk_idx} retrieved_context: title='{title}', uri='{uri}'")
-                        
-                    # Method 2: Web search results structure (THIS IS THE KEY FOR REAL URLS!)
-                    elif hasattr(chunk, 'web') and chunk.web:
-                        web_data = chunk.web
-                        title = web_data.title if hasattr(web_data, 'title') else None
-                        uri = web_data.uri if hasattr(web_data, 'uri') else None
-                        
-                        if title and uri:
-                            # SUCCESS! Found real Google Search result
-                            clean_title = title.replace('.com', '').replace('.org', '').replace('www.', '').title()
-                            extracted_sources.append({
-                                "title": clean_title,
-                                "uri": uri,
-                                "display_uri": clean_title,
-                                "credibility_score": 0.95,
-                                "type": f"Google Search Result"
-                            })
-                            logger.info(f"🎯 REAL GOOGLE SOURCE FOUND: {clean_title} -> {uri}")
-                        
-                        if chunk_idx < 3:
-                            logger.info(f"🔍 Chunk {chunk_idx} web: title='{title}', uri='{uri}'")
-                    
-                    # Method 3: Direct attributes
-                    elif hasattr(chunk, 'title') or hasattr(chunk, 'uri'):
-                        title = getattr(chunk, 'title', None)
-                        uri = getattr(chunk, 'uri', None)
-                        if chunk_idx < 3:
-                            logger.info(f"🔍 Chunk {chunk_idx} direct: title='{title}', uri='{uri}'")
-                    
-                    # Method 4: Check for any other structure patterns
-                    else:
-                        # Look for common attribute patterns
-                        possible_title_attrs = ['title', 'name', 'heading', 'document_title', 'page_title']
-                        possible_uri_attrs = ['uri', 'url', 'link', 'href', 'source_url', 'document_uri']
-                        
-                        for attr in possible_title_attrs:
-                            if hasattr(chunk, attr):
-                                title = getattr(chunk, attr)
-                                if chunk_idx < 3:
-                                    logger.info(f"🔍 Chunk {chunk_idx} found title via '{attr}': '{title}'")
-                                break
-                                
-                        for attr in possible_uri_attrs:
-                            if hasattr(chunk, attr):
-                                uri = getattr(chunk, attr)
-                                if chunk_idx < 3:
-                                    logger.info(f"🔍 Chunk {chunk_idx} found uri via '{attr}': '{uri}'")
-                                break
-                        
-                        if not title and not uri:
-                            if chunk_idx < 3:
-                                logger.info(f"🔍 Chunk {chunk_idx} no recognizable structure - skipping")
-                            continue
-                    
-                    # Avoid duplicate sources and validate real URLs
-                    source_key = f"{title}|{uri}"
-                    if source_key not in unique_sources and uri != '#' and uri.startswith(('http://', 'https://')):
-                        # Extract real domain from Google grounding redirect URLs
-                        display_uri = uri
-                        clean_title = title
-                        
-                        # Check if this is a Google grounding redirect URL
-                        if 'vertexaisearch.cloud.google.com/grounding-api-redirect' in uri:
-                            # Try to extract the real domain from the title if possible
-                            import re
-                            domain_match = re.search(r'([a-zA-Z0-9-]+\.[a-zA-Z]{2,})', title)
-                            if domain_match:
-                                real_domain = domain_match.group(1)
-                                display_uri = f"https://{real_domain}"
-                                clean_title = real_domain
-                                logger.info(f"🔍 Extracted real domain: {real_domain} from grounding redirect")
-                        
-                        unique_sources.add(source_key)
-                        source = {
-                            "title": clean_title,
-                            "uri": uri,  # Keep original URI for actual linking
-                            "display_uri": display_uri,  # For display purposes
-                            "credibility_score": 0.95,
-                            "type": f"{agent_type.title()} Research"
-                        }
-                        extracted_sources.append(source)
-                        logger.info(f"📚 Extracted source: {clean_title} -> {display_uri}")
-                        
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to process grounding chunk: {e}")
-                    continue
-            
-            # PRECISE CITATION PLACEMENT using Google's grounding supports
-            enhanced_content = accumulated_response
-            citations_added = 0
-            
-            logger.info(f"🔍 CITATION DEBUG: Starting citation processing for {agent_type}")
-            logger.info(f"   📄 Original content length: {len(accumulated_response)}")
-            logger.info(f"   📚 Extracted sources: {len(extracted_sources)}")
-            logger.info(f"   🎯 Grounding supports: {len(grounding_supports)}")
-            
-            # Process citations when we have either sources OR grounding supports
-            if extracted_sources or grounding_supports:
-                logger.info(f"🎯 CITATION ENGINE: Processing {len(extracted_sources)} sources and {len(grounding_supports)} grounding supports")
-                
-            # Try grounding supports first if available - ENHANCED DEBUGGING
-            if extracted_sources and grounding_supports:
-                logger.info(f"✅ Using Google's grounding supports for PRECISE citation placement")
-                logger.info(f"🔍 Processing {len(grounding_supports)} supports with {len(extracted_sources)} sources")
-            elif extracted_sources and not grounding_supports:
-                logger.warning(f"⚠️ No grounding supports available - Google didn't provide text positioning data")
-                logger.info(f"🔄 Will use intelligent pattern-based citation placement instead")
-            elif not extracted_sources and grounding_supports:
-                logger.warning(f"⚠️ No sources extracted from Google search, but we have {len(grounding_supports)} grounding supports")
-                logger.info(f"🔍 ATTEMPTING GROUNDING SUPPORT ANALYSIS: Checking if supports contain source information")
-                
-                # Analyze grounding supports to see what information is available
-                unique_chunk_indices = set()
-                for support_idx, support in enumerate(grounding_supports):
-                    try:
-                        if hasattr(support, 'grounding_chunk_indices') and support.grounding_chunk_indices:
-                            for chunk_idx in support.grounding_chunk_indices:
-                                unique_chunk_indices.add(chunk_idx)
-                                if support_idx < 3:  # Log first few for debugging
-                                    logger.info(f"🔍 Support {support_idx} references chunk index: {chunk_idx}")
-                                    
-                                    # Check if support has segment information
-                                    if hasattr(support, 'segment') and support.segment:
-                                        segment = support.segment
-                                        if hasattr(segment, 'text') and segment.text:
-                                            text_preview = segment.text[:100] + "..." if len(segment.text) > 100 else segment.text
-                                            logger.info(f"🔍 Support {support_idx} segment text: {text_preview}")
-                                    
-                    except Exception as e:
-                        logger.warning(f"⚠️ Failed to analyze grounding support {support_idx}: {e}")
-                        continue
-                
-                logger.info(f"🔍 Found {len(unique_chunk_indices)} unique chunk indices in grounding supports: {sorted(unique_chunk_indices)}")
-                
-                # If we have grounding supports with valid chunk indices, it means Google Search was successful
-                # but we're not extracting the source metadata properly. Let's be more aggressive in finding sources.
-                if unique_chunk_indices:
-                    logger.info(f"✅ GOOGLE SEARCH WAS SUCCESSFUL: {len(unique_chunk_indices)} source chunks referenced")
-                    logger.info(f"🔍 CREATING SOURCES: Converting grounding supports to proper citations with [1] [2] [3] format")
-                    
-                    # First priority: Use any real Google Search URLs found in grounding chunks
-                    if len(extracted_sources) < len(unique_chunk_indices):
-                        # If we didn't find enough real URLs, supplement with constructed sources
-                        logger.info(f"🔍 Found {len(extracted_sources)} real URLs, need {len(unique_chunk_indices)} total - creating additional sources")
-                        
-                        processed_supports = set()
-                        
-                        for idx, support in enumerate(grounding_supports[:10]):  # Limit to first 10 for performance
-                            if len(extracted_sources) >= len(unique_chunk_indices):
-                                break  # Have enough sources
-                                
-                            if idx in processed_supports:
-                                continue
-                            processed_supports.add(idx)
-                            
-                            # Try to extract real source information from grounding support
-                            source_title = None
-                            source_url = None
-                            content_preview = ""
-                            
-                            # Extract content preview from support segment
-                            if hasattr(support, 'segment') and hasattr(support.segment, 'text'):
-                                content_preview = support.segment.text[:200]
-                                
-                                # Try to extract company name, topic, or key terms for better title
-                                preview_lower = content_preview.lower()
-                                if any(term in preview_lower for term in ['financial results', 'earnings', 'revenue']):
-                                    source_title = f"{context.company_name} Financial Analysis - Market Research"
-                                elif any(term in preview_lower for term in ['valuation', 'price target', 'fair value']):
-                                    source_title = f"{context.company_name} Valuation Research - Analyst Reports"
-                                elif any(term in preview_lower for term in ['market share', 'competitive', 'industry']):
-                                    source_title = f"{context.company_name} Industry Analysis - Market Intelligence"
-                                elif any(term in preview_lower for term in ['risk', 'downside', 'headwinds']):
-                                    source_title = f"{context.company_name} Risk Assessment - Research Analysis"
-                                else:
-                                    # Use first meaningful words from the content
-                                    words = content_preview.split()[:6]
-                                    if len(words) >= 3:
-                                        source_title = ' '.join(words).strip('.,:;') + " - Market Research"
-                                    else:
-                                        source_title = f"{context.company_name} {agent_type.title()} Analysis - Source {len(extracted_sources) + 1}"
-                            
-                            # Create meaningful search URL based on the content context
-                            if not source_url:
-                                # Create a contextual search based on the analysis type and company
-                                search_terms = f"{context.company_name}+{agent_type}+analysis"
-                                source_url = f"https://www.google.com/search?q={search_terms.replace(' ', '+')}"
-                        
-                        source = {
-                            "title": source_title,
-                            "uri": source_url,
-                            "display_uri": source_title,
-                            "credibility_score": 0.85,
-                            "type": f"{agent_type.title()} Research"
-                        }
-                        extracted_sources.append(source)
-                        logger.info(f"📚 Created citation [{idx + 1}]: {source_title}")
-                    
-                    logger.info(f"✅ CREATED {len(extracted_sources)} numbered citations for Google Search results")
-                else:
-                    logger.warning(f"🚨 BEING HONEST: No valid source references found in grounding supports")
-                    logger.warning(f"🚨 Will provide analysis without external citations")
-            elif not extracted_sources and not grounding_supports:
-                logger.warning(f"🚨 NO REAL SOURCES FOUND: Google Search returned no results for {agent_type} analysis")
-                logger.warning(f"🚨 This is likely due to:")
-                logger.warning(f"   1. API key lacks Google Search grounding permissions")
-                logger.warning(f"   2. Google Search found no relevant results for this query")
-                logger.warning(f"   3. Network/connectivity issues with Google Search")
-                logger.warning(f"🚨 BEING HONEST: Will provide analysis WITHOUT fake citations")
-                
-                # DO NOT CREATE FAKE CITATIONS - be honest about lack of sources
-                extracted_sources = []
-                grounding_supports = []
-                
-                # Extract positional data from supports with multiple approaches
-                valid_supports = []
-                for support_idx, support in enumerate(grounding_supports):
-                    start_idx = None
-                    end_idx = None
-                    supported_text = ''
-                    
-                    # Method 1: Direct attributes
-                    if hasattr(support, 'start_index') and hasattr(support, 'end_index'):
-                        start_idx = getattr(support, 'start_index', 0)
-                        end_idx = getattr(support, 'end_index', 0)
-                        supported_text = getattr(support, 'text', '')
-                    
-                    # Method 2: Check segment structure (like PPT project)
-                    elif hasattr(support, 'segment') and support.segment:
-                        segment = support.segment
-                        if hasattr(segment, 'start_index') and hasattr(segment, 'end_index'):
-                            start_idx = getattr(segment, 'start_index', 0)
-                            end_idx = getattr(segment, 'end_index', 0)
-                            supported_text = getattr(segment, 'text', '')
-                    
-                    # Method 3: Alternative attribute names
-                    else:
-                        for start_attr in ['start', 'begin', 'start_pos']:
-                            if hasattr(support, start_attr):
-                                start_idx = getattr(support, start_attr, 0)
-                                break
-                        for end_attr in ['end', 'finish', 'end_pos']:
-                            if hasattr(support, end_attr):
-                                end_idx = getattr(support, end_attr, 0)
-                                break
-                    
-                    # Log the first few for debugging
-                    if support_idx < 3:
-                        logger.info(f"🔍 Support {support_idx+1}: start={start_idx}, end={end_idx}, text='{supported_text[:50]}...'")
-                    
-                    # Only add if we have valid positional data
-                    if start_idx is not None and end_idx is not None and start_idx < end_idx and end_idx > 0:
-                        valid_supports.append({
-                            'start_idx': start_idx,
-                            'end_idx': end_idx, 
-                            'text': supported_text,
-                            'original_support': support
-                        })
-                
-                logger.info(f"🔍 Found {len(valid_supports)} supports with valid positional data out of {len(grounding_supports)}")
-                
-                if valid_supports:
-                    logger.info(f"🔍 CITATION INSERTION DEBUG: Processing {len(valid_supports)} valid supports")
-                    
-                    # Sort supports by start_index in reverse order to avoid index shifting during insertion
-                    valid_supports.sort(key=lambda x: x['start_idx'], reverse=True)
-                    logger.info(f"   📊 Supports sorted in reverse order by position")
-                    
-                    for support_idx, support_data in enumerate(valid_supports):
-                        if citations_added >= len(extracted_sources):
-                            logger.info(f"   🛑 Reached max citations ({len(extracted_sources)}), stopping")
-                            break
-                            
-                        start_idx = support_data['start_idx']
-                        end_idx = support_data['end_idx']
-                        supported_text = support_data['text']
-                        
-                        # Get corresponding source index (map grounding_chunk_indices to source indices)
-                        source_idx = citations_added + 1  # Use sequential numbering
-                        
-                        logger.info(f"   🔍 Processing support {support_idx+1}/{len(valid_supports)}: pos {start_idx}-{end_idx}, will be citation [{source_idx}]")
-                        
-                        # Validate indices are within content bounds
-                        if start_idx >= 0 and end_idx <= len(enhanced_content) and start_idx < end_idx:
-                            # Extract actual text at these positions for verification
-                            actual_text = enhanced_content[start_idx:end_idx]
-                            
-                            # Insert citation at the end position
-                            citation_marker = f"[{source_idx}]"
-                            enhanced_content = enhanced_content[:end_idx] + citation_marker + enhanced_content[end_idx:]
-                            citations_added += 1
-                            
-                            # Note: Citation is inserted inline in enhanced_content, no separate streaming needed
-                            # This ensures citations appear exactly where they belong in the text
-                            
-                            logger.info(f"   ✅ INSERTED citation [{source_idx}] at position {end_idx}")
-                            logger.info(f"   📍 Cited text: '{actual_text[:100]}{'...' if len(actual_text) > 100 else ''}'")
-                            logger.info(f"   📝 Content around citation: '{enhanced_content[max(0, end_idx-50):end_idx + 20]}'")
-                        else:
-                            logger.warning(f"   ⚠️ Invalid indices: {start_idx}-{end_idx} (content length: {len(enhanced_content)})")
-                    
-                    logger.info(f"🎯 *** CITATION INSERTION COMPLETE: Added {citations_added} PRECISE citations ***")
-                else:
-                    logger.warning(f"⚠️ No valid positional data found in grounding supports - falling back to pattern matching")
-            
-            # Apply intelligent pattern-based citation placement if we need more citations or grounding supports didn't work
-            if extracted_sources and citations_added < len(extracted_sources):
-                # INTELLIGENT PATTERN-BASED CITATION PLACEMENT
-                logger.info("🎯 Using intelligent pattern-based citation placement for maximum accuracy")
-                
-                import re
-                
-                # Identify key factual statements that need citations
-                citation_patterns = [
-                    # Financial data patterns (revenue, earnings, etc.)
-                    r'(?:revenue|earnings|profit|loss|sales|income|cash flow|EBITDA|margin)[\s\w]*?(?:of|was|is|reached|grew|increased|decreased|declined)\s+[\$]?[\d,.]+[%]?[MBK]?',
-                    # Market data patterns  
-                    r'(?:market share|market cap|valuation|share price|stock price)[\s\w]*?(?:of|is|reached|trading at)\s+[\$]?[\d,.]+[%]?[MBK]?',
-                    # Percentage changes
-                    r'(?:grew|increased|decreased|declined|up|down)[\s\w]*?(?:by|to)\s+[\d,.]+%',
-                    # Financial ratios
-                    r'(?:P/E ratio|debt-to-equity|ROE|ROI|gross margin|operating margin)[\s\w]*?(?:of|is|stands at)\s+[\d,.]+[%]?',
-                    # Analyst data
-                    r'(?:price target|target price|analyst|rating|recommendation|upgrade|downgrade)[\s\w]*?[\$]?[\d,.]+',
-                    # Time-specific data
-                    r'(?:Q[1-4]|quarter|fiscal year|FY)\s+202[0-9][\s\w]*?[\$]?[\d,.]+[%]?[MBK]?',
-                    # Strong factual statements
-                    r'(?:reported|announced|disclosed|according to|data shows|research indicates)[\s\w]{10,100}',
-                ]
-                
-                # Find positions to insert citations based on factual content
-                citation_positions = []
-                for pattern in citation_patterns:
-                    for match in re.finditer(pattern, enhanced_content, re.IGNORECASE):
-                        end_pos = match.end()
-                        # Ensure citations aren't too close together
-                        if not any(abs(pos - end_pos) < 80 for pos in citation_positions):
-                            citation_positions.append(end_pos)
-                            logger.info(f"🎯 Found citation opportunity at position {end_pos}: '{enhanced_content[match.start():end_pos][:60]}...'")
-                            if len(citation_positions) >= len(extracted_sources):
-                                break
-                    if len(citation_positions) >= len(extracted_sources):
-                        break
-                
-                # Sort positions in reverse order to avoid index shifting
-                citation_positions.sort(reverse=True)
-                
-                # Insert citations at identified positions
-                for pos_idx, position in enumerate(citation_positions[:len(extracted_sources)]):
-                    citation_num = pos_idx + 1
-                    citation_marker = f" [{citation_num}]"
-                    enhanced_content = enhanced_content[:position] + citation_marker + enhanced_content[position:]
-                    citations_added += 1
-                    
-                    # Note: Citation inserted inline in enhanced_content, no separate streaming needed
-                    
-                    logger.info(f"✅ Added INTELLIGENT citation [{citation_num}] at position {position}")
-                
-                # Fallback to sentence distribution if not enough pattern matches found
-                if citations_added < len(extracted_sources):
-                    logger.info(f"🔄 Pattern matching found {citations_added}/{len(extracted_sources)} positions. Adding remaining via sentence distribution.")
-                    
-                    sentences = re.split(r'(?<=[.!?])\s+', enhanced_content)
-                    substantial_sentences = [s for s in sentences if len(s.strip()) > 100 and '##' not in s and '[' not in s]
-                    
-                    if substantial_sentences:
-                        remaining_citations = len(extracted_sources) - citations_added
-                        step = max(1, len(substantial_sentences) // remaining_citations) if remaining_citations > 0 else 1
-                        
-                        sentence_idx = 0
-                        while citations_added < len(extracted_sources) and sentence_idx < len(substantial_sentences):
-                            sentence = substantial_sentences[sentence_idx]
-                            citations_added += 1
-                            citation = f" [{citations_added}]"
-                            new_sentence = sentence.rstrip() + citation
-                            enhanced_content = enhanced_content.replace(sentence, new_sentence, 1)
-                            
-                            # Note: Citation inserted inline in enhanced_content via sentence replacement
-                            
-                            sentence_idx += step
-                
-                logger.info(f"📝 TOTAL: Added {citations_added} citations using intelligent pattern matching + distribution")
-            
-            # Final citation summary
-            if extracted_sources:
-                if citations_added > 0:
-                    logger.info(f"🎯 FINAL RESULT: Successfully added {citations_added}/{len(extracted_sources)} citations to content")
-                    logger.info(f"   📊 Citation coverage: {(citations_added/len(extracted_sources)*100):.1f}%")
-                else:
-                    logger.error(f"❌ CITATION FAILURE: No citations added despite having {len(extracted_sources)} sources!")
-                    logger.error(f"   🔧 This indicates a serious issue with citation placement logic")
-            
-            # Add citation completion notice directly to enhanced_content instead of streaming separately
-            if citations_added > 0:
-                enhanced_content += f"\n\n*✨ Enhanced with {citations_added} research citations*\n"
-                logger.info(f"✅ Citations added directly to enhanced_content - {citations_added} citations included")
-            else:
-                # Check if we had grounding supports (meaning Google Search was active)
-                if grounding_supports and len(grounding_supports) > 0:
-                    enhanced_content += f"\n\n*✅ Analysis enhanced with Google Search validation - Content grounded against web sources*\n"
-                    logger.info(f"ℹ️ No direct citations but content was validated against {len(grounding_supports)} web sources")
-                else:
-                    enhanced_content += f"\n\n*⚠️ Analysis based on AI knowledge - Google Search returned no external sources*\n"
-                    logger.info(f"ℹ️ No citations added - being honest about lack of external sources")
-            
-            # Add sources section directly to enhanced_content to avoid separate streaming that overwrites citations
-            if extracted_sources:
-                sources_section = "\n\n## 📚 Research Sources\n\n"
-                for i, source in enumerate(extracted_sources, 1):
-                    title = source.get('title', f'{agent_type.title()} Research Analysis - Source {i}')
-                    uri = source.get('uri', '#')
-                    display_uri = source.get('display_uri', uri)  # Use clean display URI if available
-                    
-                    # Use clean title for display
-                    display_title = title
-                    if 'vertexaisearch.cloud.google.com' not in display_uri:
-                        # Extract domain for cleaner display
-                        try:
-                            from urllib.parse import urlparse
-                            domain = urlparse(display_uri).netloc
-                            if domain and domain != title:
-                                display_title = domain
-                        except:
-                            pass
-                    
-                    # Compact citation format - smaller and more professional
-                    sources_section += f"**[{i}]** {display_title} "
-                    sources_section += f"<a href='{uri}' target='_blank' style='color: #007b7b; text-decoration: none; font-size: 11px;'>🔗</a><br/>\n"
-                
-                # Add sources directly to enhanced_content instead of streaming separately
-                enhanced_content += sources_section
-                logger.info(f"📚 Added {len(extracted_sources)} sources directly to enhanced_content to preserve citations")
-            else:
-                logger.info("ℹ️ No real Google search sources found - no sources section added")
-            
-            # CRITICAL: Send final enhanced content with all citations to replace accumulated content
-            citation_count_in_content = sum(1 for i in range(1, citations_added + 1) if f'[{i}]' in enhanced_content)
-            logger.info(f"🎯 Final verification: {citation_count_in_content}/{citations_added} citations in enhanced_content")
-            
-            # Always send final enhanced content to ensure proper formatting
-            logger.info(f"🔍 Final content check: citations_added={citations_added}, enhanced_content_length={len(enhanced_content) if enhanced_content else 0}")
+
+            enhanced_content = result["gpt-4.1"][0]+" "+result["gpt-4o"][0]
+            citations_count, extracted_sources = result["gpt-4o"][1], result["gpt-4o"][2]
             
             # Always send enhanced content if it exists (even without citations for proper formatting)
             if enhanced_content and len(enhanced_content) > 0:
                 # Add explicit debug logging for final message
                 logger.info(f"🚀 *** PREPARING streaming_ai_content_final message ***")
                 logger.info(f"   📄 Content length: {len(enhanced_content)}")
-                logger.info(f"   📚 Citations count: {citations_added}")
-                logger.info(f"   🔍 Citations in content: {sum(1 for i in range(1, citations_added + 1) if f'[{i}]' in enhanced_content)}")
-                
+                logger.info(f"   📚 Citations count: {citations_count}")
+
                 # Show actual citation content preview
                 import re
                 actual_citations = re.findall(r'\[(\d+)\]', enhanced_content)
@@ -1293,7 +691,7 @@ class UltraSophisticatedMultiAgentEngine:
                     "type": "streaming_ai_content_final",
                     "data": {
                         "content_complete": enhanced_content,
-                        "citations_count": citations_added,
+                        "citations_count": citations_count,
                         "replace_content": True  # Always replace for proper formatting
                     }
                 }
@@ -1302,8 +700,8 @@ class UltraSophisticatedMultiAgentEngine:
                 yield final_message
                 logger.info(f"✅ *** SUCCESSFULLY YIELDED streaming_ai_content_final message ***")
                 
-                if citations_added > 0:
-                    logger.info(f"✅ Sent enhanced content with {citations_added} inline citations ({len(enhanced_content)} chars)")
+                if citations_count > 0:
+                    logger.info(f"✅ Sent enhanced content with {citations_count} inline citations ({len(enhanced_content)} chars)")
                 else:
                     logger.info(f"✅ Sent enhanced content without citations for proper formatting ({len(enhanced_content)} chars)")
             else:

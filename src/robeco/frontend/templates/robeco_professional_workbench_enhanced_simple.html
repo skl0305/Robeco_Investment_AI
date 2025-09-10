@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Robeco Professional Workbench</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { font-family: Arial, sans-serif; margin: 16px; }
+      .row { display:flex; gap:8px; margin-bottom:10px; }
+      input, button { padding:8px; }
+      #streamingContent { border:1px solid #ddd; border-radius:8px; padding:12px; min-height:160px; }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin:0 0 12px 0; font-size:18px;">Professional Investment Analysis</h1>
+
+    <div class="row">
+      <input id="companyName" placeholder="Company" value="Apple" />
+      <input id="tickerSymbol" placeholder="Ticker" value="AAPL" />
+        <select id="analystType">
+        <option value="fundamentals">Fundamentals</option>
+        <option value="industry">Industry</option>
+        <option value="technical">Technical</option>
+        <option value="risk">Risk</option>
+        <option value="esg">ESG</option>
+        <option value="valuation">Valuation</option>
+        <option value="bull">Bull</option>
+        <option value="bear">Bear</option>
+        <option value="catalysts">Catalysts</option>
+        <option value="drivers">Drivers</option>
+        <option value="consensus">Consensus</option>
+        <option value="anti_consensus">Anti-Consensus</option>
+      </select>
+      <button id="startBtn">Start</button>
+    </div>
+
+    <div id="streamingContent">Waiting for analysis…</div>
+
+<script>
+        // DEBUG: Script started loading
+        var ws = null;
+        var pendingPayload = null;
+        var chunkBuffers = {};
+
+        function connectWS() {
+          if (ws && (ws.readyState === 0 || ws.readyState === 1)) { return; }
+          try {
+            var proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            var url = proto + window.location.host + '/ws/professional';
+            ws = new WebSocket(url);
+
+            ws.onopen = function () {
+              flushPending();
+            };
+
+            ws.onmessage = function (evt) {
+              try {
+                var msg = JSON.parse(evt.data);
+                var t = msg && msg.type ? msg.type : '';
+                var d = msg && msg.data ? msg.data : {};
+
+                if (t === 'connection_established') {
+                  flushPending();
+                } else if (t === 'streaming_status_update') {
+                  appendLine(d.message || '');
+                } else if (t === 'streaming_ai_content') {
+                  appendLine((d && d.content_chunk) ? d.content_chunk : '');
+                } else if (t === 'streaming_ai_content_chunked_start') {
+                  var id = d.chunk_id || 'default';
+                  chunkBuffers[id] = [];
+                } else if (t === 'streaming_ai_content_chunk') {
+                  var id2 = d.chunk_id || 'default';
+                  if (!chunkBuffers[id2]) { chunkBuffers[id2] = []; }
+                  chunkBuffers[id2].push(d.chunk_content || '');
+                } else if (t === 'streaming_ai_content_final') {
+                  if (d && d.assembly_mode === 'chunked') {
+                    var id3 = d.chunk_id || 'default';
+                    var assembled = (chunkBuffers[id3] || []).join('');
+                    replaceContent(assembled);
+                    delete chunkBuffers[id3];
+                  } else {
+                    replaceContent(d.content_complete || '');
+                  }
+                } else if (t === 'streaming_analysis_completed') {
+                  appendLine('Analysis completed.');
+                } else if (t === 'error_notification' || t === 'streaming_analysis_error') {
+                  appendLine('Error: ' + (d.error || d.message || 'Unknown'));
+                }
+              } catch (e) {}
+            };
+          } catch (e) {}
+        }
+
+        function flushPending() {
+          if (pendingPayload && ws && ws.readyState === 1) {
+            try { ws.send(JSON.stringify(pendingPayload)); } catch (e) {}
+            pendingPayload = null;
+            var sc = document.getElementById('streamingContent');
+            if (sc) { sc.textContent = 'Streaming…'; }
+          }
+        }
+
+        function appendLine(text) {
+          var sc = document.getElementById('streamingContent');
+          if (!sc) { return; }
+          var p = document.createElement('p');
+          p.textContent = text;
+          sc.appendChild(p);
+        }
+
+        function replaceContent(text) {
+          var sc = document.getElementById('streamingContent');
+          if (!sc) { return; }
+          sc.textContent = '';
+          var p = document.createElement('p');
+          p.textContent = text;
+          sc.appendChild(p);
+        }
+
+        function startAnalysis() {
+          var nameEl = document.getElementById('companyName');
+          var tickerEl = document.getElementById('tickerSymbol');
+          var analystEl = document.getElementById('analystType');
+          var company = nameEl ? String(nameEl.value || '') : '';
+          var ticker = tickerEl ? String(tickerEl.value || '') : '';
+          var analyst = analystEl ? String(analystEl.value || '') : 'fundamentals';
+          if (!company || !ticker) {
+            alert('Please enter both Company and Ticker.');
+            return;
+          }
+
+          connectWS();
+
+          var payload = {
+            type: 'start_analysis',
+            analyst: analyst,
+            company: company,
+            ticker: ticker,
+            user_query: ''
+          };
+
+          if (ws && ws.readyState === 1) {
+            try { ws.send(JSON.stringify(payload)); } catch (e) {}
+            var sc = document.getElementById('streamingContent');
+            if (sc) { sc.textContent = 'Streaming…'; }
+          } else {
+            pendingPayload = payload;
+            var sc2 = document.getElementById('streamingContent');
+            if (sc2) { sc2.textContent = 'Connecting…'; }
+          }
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+          var btn = document.getElementById('startBtn');
+          if (btn) {
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              startAnalysis();
+            });
+          }
+        });
+</script>
+  </body>
+</html>

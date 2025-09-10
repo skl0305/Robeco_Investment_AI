@@ -17,8 +17,8 @@ from pathlib import Path
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from google.genai import Client, types
-from api_key.gemini_api_key import get_intelligent_api_key
+# from google.genai import Client, types
+# from api_key.gemini_api_key import get_intelligent_api_key
 
 logger = logging.getLogger(__name__)
 
