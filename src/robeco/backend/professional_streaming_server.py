@@ -79,7 +79,7 @@ async def serve_workbench():
     """Serve the enhanced professional workbench interface"""
     try:
         # Try enhanced template first
-        enhanced_template_path = Path(__file__).parent.parent / "frontend" / "templates" / "robeco_professional_workbench_enhanced.html"
+        enhanced_template_path = Path(__file__).parent.parent / "frontend" / "templates" / "robeco_professional_workbench_enhanced_bak.html"
         logger.info(f"DEBUG: Looking for template at: {enhanced_template_path}")
         
         if enhanced_template_path.exists():
