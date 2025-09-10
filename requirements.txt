@@ -47,3 +47,6 @@ mkdocs-material>=9.0.0
 # Logging & Monitoring (optional)
 structlog>=23.0.0
 prometheus-client>=0.17.0
+
+#IDE proxy service
+git+https://${SYSTEM_ACCESSTOKEN}@dev.azure.com/robeco/QRR/_git/qdPythonUtils

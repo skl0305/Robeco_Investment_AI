@@ -502,7 +502,8 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
         company = message.get('company', 'Unknown Company')
         ticker = message.get('ticker', 'N/A')
         user_query = message.get('user_query', '')
-        
+
+        logger.info(f"🧠 Arguments: {company}, {ticker}, {analyst_type}")
         logger.info(f"🧠 Starting ultra-sophisticated sequential multi-agent analysis for {company} ({ticker})")
         
         # Fetch comprehensive stock data to feed to agents
