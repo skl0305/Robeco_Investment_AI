@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robeco Professional Investment Platform</title>
-    <meta name="description" content="Professional institutional investment research and analysis platform">
+    <title>Robeco Investment Platform</title>
+    <meta name="description" content="Investment research and analysis platform">
     
     <!-- Professional Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1105,6 +1105,41 @@
             font-size: 12px;
             color: var(--text-secondary);
             font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* Phase-specific styling */
+        .progress-text.phase-starting {
+            color: var(--robeco-blue);
+            font-weight: 600;
+        }
+
+        .progress-text.phase-complete {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .progress-text.phase-transition {
+            color: var(--robeco-orange);
+            font-weight: 600;
+        }
+
+        .progress-text.phase-working {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Loading spinner animation */
+        .loading-spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+            color: currentColor;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Ultra-Enhanced Analysis Display */
@@ -2037,7 +2072,7 @@
                 </div>
                 <div class="brand-text">
                     <div class="brand-title">Robeco</div>
-                    <div class="brand-subtitle">Professional Investment Platform</div>
+                    <div class="brand-subtitle">Investment Platform</div>
                 </div>
             </div>
             <div class="header-status">
@@ -2258,23 +2293,43 @@
                         Generate Investment Report
                     </div>
                     <div style="color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 16px;">
-                        Create professional report from all completed analyses
+                        Step 1: Generate HTML report → Step 2: Convert to Word document
                     </div>
-                    <button class="generate-report-btn" onclick="generateTemplateReport()" style="
-                        background: rgba(255,255,255,0.2); 
-                        color: white; 
-                        border: 2px solid rgba(255,255,255,0.3); 
-                        padding: 12px 24px; 
-                        border-radius: 8px; 
-                        font-weight: 600;
-                        font-size: 14px;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                        backdrop-filter: blur(10px);
-                    " onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.borderColor='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.borderColor='rgba(255,255,255,0.3)'">
-                        <i class="fas fa-magic" style="margin-right: 8px;"></i>
-                        Generate Professional Report
-                    </button>
+                    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                        <button class="generate-report-btn" onclick="generateTemplateReport()" style="
+                            background: rgba(255,255,255,0.2); 
+                            color: white; 
+                            border: 2px solid rgba(255,255,255,0.3); 
+                            padding: 12px 24px; 
+                            border-radius: 8px; 
+                            font-weight: 600;
+                            font-size: 14px;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            backdrop-filter: blur(10px);
+                        " onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.borderColor='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.borderColor='rgba(255,255,255,0.3)'">
+                            <i class="fas fa-magic" style="margin-right: 8px;"></i>
+                            Generate HTML Report
+                        </button>
+                        
+                        <button class="generate-word-btn" id="generateWordBtn" onclick="generateWordReport()" disabled style="
+                            background: rgba(255,140,0,0.1); 
+                            color: rgba(255,255,255,0.4); 
+                            border: 2px solid rgba(255,140,0,0.2); 
+                            padding: 12px 24px; 
+                            border-radius: 8px; 
+                            font-weight: 600;
+                            font-size: 14px;
+                            cursor: not-allowed;
+                            transition: all 0.2s ease;
+                            backdrop-filter: blur(10px);
+                            display: inline-block;
+                            opacity: 0.4;
+                        " title="Generate HTML report first to enable Word conversion">
+                            <i class="fas fa-file-word" style="margin-right: 8px;"></i>
+                            Generate Word Document
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2317,9 +2372,9 @@
                         <div class="welcome-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <div class="welcome-title">Professional Investment Analysis</div>
+                        <div class="welcome-title">Investment Analysis</div>
                         <div class="welcome-subtitle">
-                            Select a specialist analyst to begin comprehensive institutional-grade investment research
+                            Select a specialist analyst to begin comprehensive investment research
                         </div>
                         <div class="welcome-features">
                             <div class="feature-card">
@@ -2330,7 +2385,7 @@
                             <div class="feature-card">
                                 <div class="feature-icon"><i class="fas fa-brain"></i></div>
                                 <div class="feature-title">AI Analysis</div>
-                                <div class="feature-desc">Institutional-grade insights</div>
+                                <div class="feature-desc">Quality insights</div>
                             </div>
                             <div class="feature-card">
                                 <div class="feature-icon"><i class="fas fa-comments"></i></div>
@@ -2508,7 +2563,20 @@
                             <!-- Investment Report Viewer Page -->
                             <div class="analyst-page" id="reportPage" style="display: none;">
                                 <div class="report-viewer-container">
-                                    <!-- Raw HTML Code Generation Display -->
+                                    <!-- Final Rendered Report Display (Visual Report First) -->
+                                    <div class="report-section">
+                                        <div class="section-title">
+                                            <i class="fas fa-file-alt"></i>
+                                            Report
+                                        </div>
+                                        <div class="rendered-report-viewer" id="renderedReportViewer">
+                                            <div class="report-placeholder">
+                                                Investment report will appear here as AI generates the content...
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Raw HTML Code Generation Display (Below Visual Report) -->
                                     <div class="report-section">
                                         <div class="section-title">
                                             <i class="fas fa-code"></i>
@@ -2516,19 +2584,6 @@
                                         </div>
                                         <div class="raw-html-viewer" id="rawHtmlViewer">
                                             <pre><code id="rawHtmlCode">// Raw HTML code will appear here as it's being generated by AI...</code></pre>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Final Rendered Report Display -->
-                                    <div class="report-section">
-                                        <div class="section-title">
-                                            <i class="fas fa-file-alt"></i>
-                                            Final Rendered Report
-                                        </div>
-                                        <div class="rendered-report-viewer" id="renderedReportViewer">
-                                            <div class="report-placeholder">
-                                                Final rendered report will appear here after generation is complete...
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -3694,6 +3749,42 @@ stockInfoHtml += (stockData.business_summary ?
             poll();
         }
         
+        // Toggle file details visibility
+        function toggleFileDetails(button) {
+            const card = button.closest('.file-result-card');
+            const summary = card.querySelector('.file-summary');
+            
+            if (summary.style.maxHeight === '200px') {
+                summary.style.maxHeight = 'none';
+                button.textContent = 'Collapse';
+            } else {
+                summary.style.maxHeight = '200px';
+                button.textContent = 'Details';
+            }
+        }
+        
+        // Markdown to HTML converter for proper formatting
+        function convertMarkdownToHtml(text) {
+            if (!text) return '';
+            
+            // Convert markdown to HTML
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // **bold** to <strong>
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')              // *italic* to <em>
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')          // ### header to h3
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')           // ## header to h2
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')            // # header to h1
+                .replace(/^• (.*$)/gim, '<li>$1</li>')            // • bullet to <li>
+                .replace(/^- (.*$)/gim, '<li>$1</li>')            // - bullet to <li>
+                .replace(/\n\n/g, '</p><p>')                      // double newline to paragraphs
+                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')       // wrap <li> in <ul>
+                .replace(/<\/ul>\s*<ul>/g, '')                    // merge consecutive <ul>
+                .replace(/^(.*)$/gm, '<p>$1</p>')                 // wrap lines in <p>
+                .replace(/<p><\/p>/g, '')                         // remove empty paragraphs
+                .replace(/<p>(<h[1-6]>.*<\/h[1-6]>)<\/p>/g, '$1') // unwrap headers
+                .replace(/<p>(<ul>.*<\/ul>)<\/p>/gs, '$1');       // unwrap lists
+        }
+        
         function displayBulkAnalysisResults(results) {
             // Switch to analysis display if not already shown
             document.getElementById('welcomeScreen').style.display = 'none';
@@ -3701,10 +3792,10 @@ stockInfoHtml += (stockData.business_summary ?
             
             updateAnalysisTitle("📄 Bulk Document Analysis - " + currentProject.company + " (" + currentProject.ticker + ")");
             
-            // Create comprehensive results display
+            // Create comprehensive results display with improved spacing
             let resultsHtml = "" +
-                "<div class=\"bulk-results-container\" style=\"max-width: 100%; margin: 0 auto;\">" +
-                    "<div class=\"bulk-summary-card\" style=\"background: linear-gradient(135deg, var(--robeco-blue-alpha-05), var(--robeco-orange-alpha-05)); border-radius: 20px; padding: 32px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(15, 55, 102, 0.12);\">" +
+                "<div class=\"bulk-results-container\" style=\"max-width: 100%; margin: 0; padding: 0;\">" +
+                    "<div class=\"bulk-summary-card\" style=\"background: linear-gradient(135deg, var(--robeco-blue-alpha-05), var(--robeco-orange-alpha-05)); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(15, 55, 102, 0.08);\">" +
                         "<h2 style=\"color: var(--robeco-navy); margin-bottom: 16px; display: flex; align-items: center; gap: 12px;\">" +
                             "<i class=\"fas fa-chart-line\" style=\"color: var(--robeco-blue);\"></i>" +
                             "Document Analysis Summary" +
@@ -3712,27 +3803,28 @@ stockInfoHtml += (stockData.business_summary ?
                         "<div style=\"color: var(--text-secondary); font-size: 16px; margin-bottom: 20px;\">" +
                             "Analyzed " + results.file_results.length + " documents using AI-powered analysis" +
                         "</div>" +
-                        "<div class=\"consolidated-insights\" style=\"background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px;\">" +
-                            "<h3 style=\"color: var(--robeco-blue); margin-bottom: 12px;\">📊 Consolidated Summary</h3>" +
-                            "<div style=\"white-space: pre-wrap; line-height: 1.6; color: var(--text-primary);\">" + results.consolidated_summary.substring(0, 1000) + (results.consolidated_summary.length > 1000 ? '...' : '') + "</div>" +
+                        "<div class=\"consolidated-insights\" style=\"background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid var(--robeco-blue);\">" +
+                            "<h3 style=\"color: var(--robeco-blue); margin-bottom: 8px; font-size: 16px;\">📊 Consolidated Summary</h3>" +
+                            "<div style=\"line-height: 1.5; color: var(--text-primary); font-size: 13px; max-height: 400px; overflow-y: auto;\">" + convertMarkdownToHtml(results.consolidated_summary) + "</div>" +
                         "</div>" +
                     "</div>" +
                     "" +
                     "<div class=\"individual-files\" style=\"display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;\">";
             
-            // Add individual file results
+            // Add individual file results with improved layout
             results.file_results.forEach((file, index) => {
                 let fileCard = '' +
-                    '<div class="file-result-card" style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0, 31, 63, 0.08); border: 1px solid var(--border-light);">' +
-                        '<div class="file-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">' +
-                            '<i class="fas fa-file-alt" style="color: var(--robeco-orange);"></i>' +
-                            '<div>' +
-                                '<h4 style="color: var(--robeco-navy); margin: 0; font-size: 14px;">' + file.filename + '</h4>' +
-                                '<div style="font-size: 11px; color: var(--text-muted);">' + file.file_type + ' • Confidence: ' + (file.confidence_score * 100).toFixed(0) + '%</div>' +
+                    '<div class="file-result-card" style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0, 31, 63, 0.06); border: 1px solid var(--border-light);">' +
+                        '<div class="file-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-light);">' +
+                            '<i class="fas fa-file-alt" style="color: var(--robeco-orange); font-size: 16px;"></i>' +
+                            '<div style="flex: 1;">' +
+                                '<h4 style="color: var(--robeco-navy); margin: 0; font-size: 14px; font-weight: 600;">' + file.filename + '</h4>' +
+                                '<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">' + file.file_type + ' • Confidence: ' + (file.confidence_score * 100).toFixed(0) + '%</div>' +
                             '</div>' +
+                            '<button onclick="toggleFileDetails(this)" style="background: var(--robeco-blue); color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer;">Details</button>' +
                         '</div>' +
-                        '<div class="file-summary" style="color: var(--text-primary); font-size: 14px; line-height: 1.5; margin-bottom: 12px;">' +
-                            file.analysis_summary +
+                        '<div class="file-summary" style="color: var(--text-primary); font-size: 13px; line-height: 1.5; max-height: 200px; overflow-y: auto;">' +
+                            convertMarkdownToHtml(file.analysis_summary) +
                         '</div>';
                 
                 if (file.key_insights.length > 0) {
@@ -4168,6 +4260,42 @@ stockInfoHtml += (stockData.business_summary ?
                     console.error('❌ REPORT_GENERATION_ERROR received:', message.data);
                     handleReportGenerationError(message.data);
                     break;
+                    
+                case 'report_generation_section_complete':
+                    console.log('📑 REPORT_SECTION_COMPLETE received:', message.data);
+                    handleReportSectionComplete(message.data);
+                    break;
+                    
+                case 'report_generation_complete':
+                    console.log('✅ REPORT_GENERATION_COMPLETE received:', message.data);
+                    handleReportGenerationFinalComplete(message.data);
+                    break;
+                    
+                // Word generation handlers
+                case 'word_generation_started':
+                    console.log('📄 WORD_GENERATION_STARTED received:', message.data);
+                    handleWordGenerationStarted(message.data);
+                    break;
+                    
+                case 'word_generation_progress':
+                    console.log('📄 WORD_GENERATION_PROGRESS received:', message.data);
+                    handleWordGenerationProgress(message.data);
+                    break;
+                    
+                case 'word_generation_completed':
+                    console.log('✅ WORD_GENERATION_COMPLETED received:', message.data);
+                    handleWordGenerationCompleted(message.data);
+                    break;
+                    
+                case 'word_generation_error':
+                    console.error('❌ WORD_GENERATION_ERROR received:', message.data);
+                    handleWordGenerationError(message.data);
+                    break;
+                    
+                case 'progress':
+                    console.log('🔄 PROGRESS received:', message.data);
+                    handleReportProgress(message.data);
+                    break;
             }
         }
 
@@ -4416,6 +4544,58 @@ stockInfoHtml += (stockData.business_summary ?
         }
 
         // Report Generation Handlers
+        async function initializeRawHtmlWithCSS() {
+            // Load complete CSScode.txt structure to show basic template immediately
+            try {
+                const response = await fetch('/static/Report Example/CSScode.txt');
+                if (response.ok) {
+                    const cssTemplate = await response.text();
+                    // Add generation indicator to the template
+                    const enhancedTemplate = cssTemplate.replace(
+                        '</body>',
+                        `
+<!-- 🔄 AI Content Generation Area -->
+<div class="presentation-container">
+    <div class="slide">
+        <div class="section-title">🔄 AI Generating Investment Report...</div>
+        <p>Investment analysis in progress...</p>
+    </div>
+</div>
+
+</body>`
+                    );
+                    document.getElementById('rawHtmlCode').textContent = enhancedTemplate;
+                    console.log('✅ Raw HTML initialized with complete CSS template structure');
+                } else {
+                    console.warn('⚠️ Could not load CSScode.txt, using fallback template');
+                    // Fallback to basic template
+                    const fallbackTemplate = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robeco - Investment Analysis</title>
+    <style>
+        :root { --robeco-blue: #005F90; }
+        .presentation-container { width: 1620px; margin: 0; }
+        .slide { width: 1620px; height: 2291px; padding: 105px 98px; }
+        .section-title { font-size: 25.5px; font-weight: 700; color: var(--robeco-blue); }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="slide">
+            <div class="section-title">🔄 AI Generating Investment Report...</div>
+        </div>
+    </div>
+</body>
+</html>`;
+                    document.getElementById('rawHtmlCode').textContent = fallbackTemplate;
+                }
+            } catch (error) {
+                console.error('❌ Error loading CSS template:', error);
+            }
+        }
+
         function handleReportGenerationStarted(data) {
             console.log('📋 Report generation started for', data.ticker);
             
@@ -4426,36 +4606,250 @@ stockInfoHtml += (stockData.business_summary ?
             // Switch to report viewer page
             switchToAnalystPage('report');
             
-            // Clear previous content
-            document.getElementById('rawHtmlCode').textContent = '// Generating report for ' + data.company + ' (' + data.ticker + ')...\n\n';
-            document.getElementById('renderedReportViewer').innerHTML = '<div class="report-placeholder">Generating professional investment report...</div>';
+            // Initialize Raw HTML with CSS template structure first
+            initializeRawHtmlWithCSS();
+            
+            // Clear rendered report viewer and reset completion state
+            const renderedReportViewer = document.getElementById('renderedReportViewer');
+            renderedReportViewer.innerHTML = '<div class="report-placeholder">🔄 Generating investment report...</div>';
+            
+            // Clear completion markers to allow new streaming updates
+            renderedReportViewer.removeAttribute('data-report-completed');
+            renderedReportViewer.removeAttribute('data-completion-time');
+            console.log('🔄 WEBSOCKET DEBUG - Completion markers cleared, ready for new streaming');
             
             showUserDebugSuccess('Report Generation Started', 
-                'Generating professional investment report for ' + data.company + ' using all completed analyses');
+                'Generating investment report for ' + data.company + ' using all completed analyses');
         }
 
 
-        function handleReportGenerationCompleted(data) {
-            console.log('✅ Report generation completed:', data);
+        function handleReportSectionComplete(data) {
+            console.log('📑 Report section completed:', data.section, '- Progress:', data.progress + '%');
+            console.log('📄 Content length received:', data.content ? data.content.length : 'none');
+            console.log('🔍 DEBUG: data keys:', Object.keys(data));
+            console.log('🔍 DEBUG: data.characters:', data.characters);
+            console.log('🔍 DEBUG: Content preview (first 200 chars):', data.content ? data.content.substring(0, 200) : 'NONE');
+            
+            // Update raw HTML with ACCUMULATED content (not replacing)
+            const rawHtmlCode = document.getElementById('rawHtmlCode');
+            if (rawHtmlCode && data.content) {
+                // Add section progress comment at the top
+                const sectionProgressComment = `<!-- 📊 REPORT GENERATION PROGRESS: ${data.section.toUpperCase()} COMPLETE (${data.progress}%) -->
+<!-- 📄 ACCUMULATED CONTENT: ${(data.characters/1000).toFixed(1)}k characters -->
+<!-- ✅ This contains all content from previous sections plus this section -->
+
+`;
+                rawHtmlCode.textContent = sectionProgressComment + data.content;
+                rawHtmlCode.scrollTop = rawHtmlCode.scrollHeight; // Auto-scroll to bottom
+                console.log('✅ Updated raw HTML code with accumulated content:', data.content.length, 'chars');
+            }
+            
+            // Update rendered report viewer with ACCUMULATED content
+            const renderedReportViewer = document.getElementById('renderedReportViewer');
+            if (renderedReportViewer && data.content) {
+                // Add a visible progress indicator at the top of the content
+                let contentWithProgress = data.content;
+                
+                // Add progress indicator based on section
+                const sectionProgress = {
+                    'overview': 'Step 1/3: Overview & Investment Thesis Complete',
+                    'analysis': 'Step 2/3: Overview + Analysis Complete', 
+                    'financial': 'Step 3/3: Complete Report (All Sections)'
+                };
+                
+                const progressIndicator = `
+                    <div style="background: #005F90; color: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; text-align: center; font-weight: bold;">
+                        📊 ${sectionProgress[data.section] || 'Report Generation In Progress'} - ${data.progress}%
+                        <br><small>Content: ${(data.characters/1000).toFixed(1)}k characters accumulated</small>
+                    </div>
+                `;
+                
+                // SMOOTH ACCUMULATIVE DISPLAY: Don't replace content, build it up gradually
+                console.log('🔍 SMOOTH ACCUMULATION DEBUG:');
+                console.log('   - Section:', data.section);
+                console.log('   - Content length:', data.content ? data.content.length : 'null');
+                
+                // Get current content in the viewer
+                const currentContent = renderedReportViewer.innerHTML;
+                const isFirstSection = data.section === 'overview' || currentContent.trim() === '';
+                
+                console.log('   - Is first section?', isFirstSection);
+                console.log('   - Current content length:', currentContent.length);
+                
+                if (isFirstSection) {
+                    // First section: Show progress indicator + content directly
+                    console.log('   ✅ First section - showing directly');
+                    const finalDisplayContent = progressIndicator + data.content;
+                    renderedReportViewer.innerHTML = finalDisplayContent;
+                } else {
+                    // Subsequent sections: Update progress indicator and add new slides smoothly
+                    console.log('   ✅ Subsequent section - updating progress and content smoothly');
+                    
+                    // Extract just the new slides from the accumulated content
+                    // The backend sends ALL slides (accumulated), but we want to show growth
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = data.content;
+                    const allSlides = Array.from(tempDiv.querySelectorAll('div.slide'));
+                    
+                    // Count slides currently displayed
+                    const currentSlides = renderedReportViewer.querySelectorAll('div.slide');
+                    console.log('   - Current slides in DOM:', currentSlides.length);
+                    console.log('   - Total slides from backend:', allSlides.length);
+                    
+                    // Update progress indicator (replace the old one)
+                    const existingProgress = renderedReportViewer.querySelector('div[style*="background: #005F90"]');
+                    if (existingProgress) {
+                        existingProgress.outerHTML = progressIndicator;
+                    }
+                    
+                    // Add any new slides that aren't already displayed
+                    for (let i = currentSlides.length; i < allSlides.length; i++) {
+                        console.log(`   📄 Adding new slide ${i + 1}:`, allSlides[i].id || 'no-id');
+                        // Add with a smooth fade-in effect
+                        const newSlide = allSlides[i].cloneNode(true);
+                        newSlide.style.opacity = '0';
+                        newSlide.style.transition = 'opacity 0.5s ease-in';
+                        renderedReportViewer.appendChild(newSlide);
+                        
+                        // Trigger fade-in after a brief delay
+                        setTimeout(() => {
+                            newSlide.style.opacity = '1';
+                        }, 100);
+                    }
+                }
+                
+                // DEBUG: Verify what's actually in the DOM after smooth accumulation
+                const finalSlides = renderedReportViewer.querySelectorAll('div.slide');
+                console.log('🔍 SMOOTH ACCUMULATION VERIFICATION:');
+                console.log('   📄 Total slides now in DOM:', finalSlides.length);
+                console.log('   📄 Slide IDs in DOM:', Array.from(finalSlides).map(slide => slide.id).filter(id => id));
+                console.log('   ✅ Content accumulation method:', isFirstSection ? 'DIRECT_LOAD' : 'SMOOTH_APPEND');
+                
+                renderedReportViewer.scrollTop = renderedReportViewer.scrollHeight; // Auto-scroll to bottom
+                console.log('✅ Smooth accumulative display completed - slides grow incrementally, not replaced');
+            }
+            
+            // Show section completion notification
+            showUserDebugSuccess(`${data.section.toUpperCase()} Section Complete`, 
+                `${data.status} (${(data.characters/1000).toFixed(1)}k chars ACCUMULATED)`);
+        }
+        
+        function handleReportGenerationFinalComplete(data) {
+            console.log('✅ Final report generation completed:', data);
+            console.log('📄 Final HTML length:', data.final_html ? data.final_html.length : 'none');
             
             // Clear report generation mode
             isGeneratingReport = false;
             
+            // Update with final accumulated HTML
+            const rawHtmlCode = document.getElementById('rawHtmlCode');
+            if (rawHtmlCode && data.final_html) {
+                // Add final completion comment
+                const finalCompletionComment = `<!-- ✅ COMPLETE INVESTMENT REPORT GENERATED SUCCESSFULLY -->
+<!-- 📊 TOTAL CONTENT: ${(data.final_html.length/1000).toFixed(1)}k characters -->
+<!-- 🎯 All 3 sections included: Overview + Analysis + Financial -->
+
+`;
+                rawHtmlCode.textContent = finalCompletionComment + data.final_html;
+                rawHtmlCode.scrollTop = 0; // Scroll to top to see completion message
+                console.log('✅ Updated raw HTML with final content:', data.final_html.length, 'chars');
+            }
+            
+            // Display final rendered report (without progress indicator)
+            const renderedReportViewer = document.getElementById('renderedReportViewer');
+            if (renderedReportViewer && data.final_html) {
+                // Add final completion indicator
+                const completionIndicator = `
+                    <div style="background: #28a745; color: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; text-align: center; font-weight: bold;">
+                        ✅ Complete Investment Report Generated Successfully!
+                        <br><small>Total content: ${(data.final_html.length/1000).toFixed(1)}k characters</small>
+                    </div>
+                `;
+                
+                renderedReportViewer.innerHTML = completionIndicator + data.final_html;
+                renderedReportViewer.scrollTop = 0; // Scroll to top to see completion message
+                console.log('✅ Updated rendered report with final content and completion indicator:', data.final_html.length, 'chars');
+            }
+            
+            // Store the HTML report for Word conversion
+            latestHtmlReport = data.final_html;
+            console.log('📄 HTML report stored for Word conversion:', latestHtmlReport ? latestHtmlReport.length : 0, 'characters');
+            
+            // Enable Word generation button
+            const wordBtn = document.getElementById('generateWordBtn');
+            if (wordBtn && latestHtmlReport) {
+                // Enable and style the Word button
+                wordBtn.disabled = false;
+                wordBtn.style.opacity = '1';
+                wordBtn.style.cursor = 'pointer';
+                wordBtn.style.background = 'rgba(255,140,0,0.2)';
+                wordBtn.style.color = 'white';
+                wordBtn.style.borderColor = 'rgba(255,140,0,0.3)';
+                
+                console.log('✅ Word generation button enabled after HTML report completion');
+                
+                // Show Word availability notification
+                showUserDebugSuccess('Word Export Available', 
+                    '📄 HTML report ready\n✅ Word document conversion now available\n🔄 Click "Generate Word Document" button');
+            }
+            
+            // Show final success notification
+            showUserDebugSuccess('Complete Report Generated Successfully', 
+                `✅ ${data.status}\n` +
+                `📄 Content: ${(data.characters/1000).toFixed(1)}k characters\n` + 
+                `📑 Sections: ${data.sections_completed.join(', ')}\n` +
+                `🎨 Report ready for viewing and export`);
+        }
+
+        function handleReportGenerationCompleted(data) {
+            console.log('✅ Report generation completed (LEGACY):', data);
+            console.log('🔍 WEBSOCKET DEBUG - handleReportGenerationCompleted data keys:', Object.keys(data));
+            console.log('🔍 WEBSOCKET DEBUG - data.report_html length:', data.report_html ? data.report_html.length : 'NULL');
+            console.log('🔍 WEBSOCKET DEBUG - data.raw_content length:', data.raw_content ? data.raw_content.length : 'NULL');
+            
+            // Clear report generation mode  
+            isGeneratingReport = false;
+            
             // Show success notification with details
             showUserDebugSuccess('Report Generated Successfully', 
-                `Professional investment report completed for ${data.ticker} using ${data.template_used}\n` +
+                `Investment report completed for ${data.ticker} using ${data.template_used}\n` +
                 `Content: ${(data.content_length/1000).toFixed(1)}k chars | Final: ${(data.final_length/1000).toFixed(1)}k chars`);
             
             // Display raw HTML code in the code viewer (replace any accumulated content)
             if (data.raw_content) {
-                document.getElementById('rawHtmlCode').textContent = data.raw_content;
-                console.log('📄 Raw HTML content displayed:', data.raw_content.length, 'characters');
+                const rawHtmlElement = document.getElementById('rawHtmlCode');
+                if (rawHtmlElement) {
+                    rawHtmlElement.textContent = data.raw_content;
+                    console.log('✅ WEBSOCKET DEBUG - Raw HTML content set successfully:', data.raw_content.length, 'characters');
+                } else {
+                    console.error('❌ WEBSOCKET DEBUG - rawHtmlCode element not found!');
+                }
+            } else {
+                console.warn('⚠️ WEBSOCKET DEBUG - No raw_content provided in completion data');
             }
             
-            // Display final rendered report in the viewer
+            // Display final rendered report in the viewer - THIS IS THE CRITICAL PART
             if (data.report_html) {
-                document.getElementById('renderedReportViewer').innerHTML = data.report_html;
-                console.log('🎨 Rendered report displayed:', data.report_html.length, 'characters');
+                const renderedReportElement = document.getElementById('renderedReportViewer');
+                if (renderedReportElement) {
+                    // FORCE the content update and prevent any subsequent overrides
+                    renderedReportElement.innerHTML = data.report_html;
+                    
+                    // Add a completion marker to prevent future overwrites
+                    renderedReportElement.setAttribute('data-report-completed', 'true');
+                    renderedReportElement.setAttribute('data-completion-time', new Date().toISOString());
+                    
+                    console.log('✅ WEBSOCKET DEBUG - Rendered report content set successfully:', data.report_html.length, 'characters');
+                    console.log('🔒 WEBSOCKET DEBUG - Report marked as completed, subsequent updates blocked');
+                    
+                    // Scroll to top to show the complete report
+                    renderedReportElement.scrollTop = 0;
+                } else {
+                    console.error('❌ WEBSOCKET DEBUG - renderedReportViewer element not found!');
+                }
+            } else {
+                console.error('❌ WEBSOCKET DEBUG - No report_html provided in completion data!');
+                console.log('🔍 WEBSOCKET DEBUG - Available data fields:', Object.keys(data));
             }
             
             // Optional: Also save to localStorage for persistence
@@ -4480,6 +4874,50 @@ stockInfoHtml += (stockData.business_summary ?
             
             localStorage.setItem('robeco_generated_reports', JSON.stringify(savedReports));
             console.log('📄 Report saved to local storage');
+            
+            // Store the HTML report for Word conversion
+            latestHtmlReport = data.raw_content || data.report_html;
+            console.log('📄 HTML report stored for Word conversion:', latestHtmlReport ? latestHtmlReport.length : 0, 'characters');
+            
+            // Show Word generation button
+            const wordBtn = document.getElementById('generateWordBtn');
+            if (wordBtn && latestHtmlReport) {
+                // Enable and style the Word button
+                wordBtn.disabled = false;
+                wordBtn.style.opacity = '1';
+                wordBtn.style.cursor = 'pointer';
+                wordBtn.style.background = 'rgba(255,140,0,0.2)';
+                wordBtn.style.color = 'white';
+                wordBtn.style.borderColor = 'rgba(255,140,0,0.3)';
+                wordBtn.title = 'Click to generate Word document from HTML report';
+                
+                // Add hover effects back
+                wordBtn.onmouseover = function() {
+                    if (!this.disabled) {
+                        this.style.background = 'rgba(255,140,0,0.3)';
+                        this.style.borderColor = 'rgba(255,140,0,0.5)';
+                    }
+                };
+                wordBtn.onmouseout = function() {
+                    if (!this.disabled) {
+                        this.style.background = 'rgba(255,140,0,0.2)';
+                        this.style.borderColor = 'rgba(255,140,0,0.3)';
+                    }
+                };
+                
+                console.log('📄 Word generation button enabled');
+                
+                // Show additional success message about Word conversion being available
+                setTimeout(() => {
+                    showUserDebugSuccess('Word Export Available', 
+                        'You can now convert your HTML report to Word format!',
+                        [{
+                            text: 'Generate Word Document',
+                            action: () => generateWordReport()
+                        }]
+                    );
+                }, 2000); // Show after 2 seconds delay
+            }
         }
 
         function handleReportGenerationError(data) {
@@ -4487,6 +4925,19 @@ stockInfoHtml += (stockData.business_summary ?
             
             // Clear report generation mode
             isGeneratingReport = false;
+            
+            // Clear any stored HTML report and disable Word button
+            latestHtmlReport = null;
+            const wordBtn = document.getElementById('generateWordBtn');
+            if (wordBtn) {
+                wordBtn.disabled = true;
+                wordBtn.style.opacity = '0.4';
+                wordBtn.style.cursor = 'not-allowed';
+                wordBtn.style.background = 'rgba(255,140,0,0.1)';
+                wordBtn.style.color = 'rgba(255,255,255,0.4)';
+                wordBtn.style.borderColor = 'rgba(255,140,0,0.2)';
+                wordBtn.title = 'Generate HTML report first to enable Word conversion';
+            }
             
             // Update raw HTML viewer to show error
             document.getElementById('rawHtmlCode').textContent = '// Report generation failed: ' + data.error;
@@ -4506,41 +4957,340 @@ stockInfoHtml += (stockData.business_summary ?
         function handleReportGenerationProgress(data) {
             console.log('📊 Report progress:', data.status, '-', data.message);
             
-            // Update progress in the raw HTML viewer
-            const rawHtmlCode = document.getElementById('rawHtmlCode');
-            if (rawHtmlCode) {
-                rawHtmlCode.textContent = `// ${data.message}\n// Progress: ${data.progress}%\n// Status: ${data.status}\n\n`;
-            }
+            // DO NOT update raw HTML viewer - preserve accumulated content
+            // The raw HTML should only show actual report content, not progress messages
             
-            // Show progress notification
+            // Handle special phase transitions with enhanced notifications
+            if (data.phase) {
+                switch(data.phase) {
+                    case 'call1_starting':
+                        showUserDebugInfo('AI Generation Started', '🚀 Beginning overview and analysis generation...');
+                        break;
+                    case 'call1_complete':
+                        showUserDebugSuccess('Phase 1 Complete', '✅ Overview & Analysis (Slides 1-5) generated successfully!');
+                        break;
+                    case 'transition':
+                        showUserDebugInfo('Preparing Next Phase', '🔄 Preparing industry analysis and financial deep dive...');
+                        break;
+                    case 'call2_starting':
+                        showUserDebugInfo('Phase 2 Started', '🚀 Beginning industry analysis & financial deep dive...');
+                        break;
+                    default:
+                        showUserDebugSuccess('Report Progress', data.message + ` (${data.progress}%)`);
+                }
+            } else {
+                // Standard progress notification
+                showUserDebugSuccess('Report Progress', data.message + ` (${data.progress}%)`);
+            }
+        }
+
+        function handleReportProgress(data) {
+            console.log('🔄 Report progress update:', data.message, '- Progress:', data.progress + '%');
+            
+            // Show progress notification WITHOUT clearing accumulated content
             showUserDebugSuccess('Report Progress', data.message + ` (${data.progress}%)`);
+            
+            // Update progress bar if it exists but DON'T touch the content areas
+            updateProgress(data.message, data.progress, data.phase);
         }
 
         function handleReportGenerationStreaming(data) {
-            console.log('🔄 Streaming HTML chunk:', data.chunk_number, 'chunks,', data.accumulated_html.length, 'total chars');
+            // ULTRA-DEBUG: Comprehensive frontend logging to match backend debug
+            console.log('🔄 Streaming HTML chunk:', data.chunk_number, 'chunks,', data.accumulated_html ? data.accumulated_html.length : 0, 'total chars');
             
-            // Update raw HTML code viewer with accumulated content
+            // ULTRA-DEBUG: Log debug info if available
+            if (data.debug_info) {
+                console.log('🛠️ DEBUG INFO:', 
+                    `slides=${data.debug_info.slides_detected}, ` +
+                    `page=${data.debug_info.last_page_detected}, ` +
+                    `ocf=${data.debug_info.operating_cash_flow_seen}, ` +
+                    `content="${(data.debug_info.recent_content_sample || '').substring(0, 80)}..."`
+                );
+                
+                // ULTRA-DEBUG: Alert for Call 2 critical milestones
+                if (data.call_phase && data.call_phase.startsWith('call2')) {
+                    console.log('🚨 CALL 2 TRACKING:', 
+                        `chunk=${data.chunk_number}, ` +
+                        `slides=${data.debug_info.slides_detected}, ` +
+                        `page=${data.debug_info.last_page_detected}, ` +
+                        `ocf=${data.debug_info.operating_cash_flow_seen}`
+                    );
+                    
+                    // Critical failure point detection
+                    if (data.debug_info.operating_cash_flow_seen && data.debug_info.last_page_detected === 10) {
+                        console.warn('⚠️ CRITICAL: Call 2 at slide 10 + Operating Cash Flow - HIGH RISK of early stopping!');
+                    }
+                    
+                    // Progress tracking for Call 2
+                    if (data.debug_info.last_page_detected >= 11) {
+                        console.log('✅ PROGRESS: Call 2 successfully past slide 10 danger zone');
+                    }
+                }
+            }
+            
+            // Show progress updates during report generation
+            if (data.message) {
+                updateProgress(data.message, data.progress || 0);
+            }
+            
+            // Enhanced streaming progress notification with debug info
+            if (data.chunk_number && data.chunk_number % 25 === 0) {
+                let debugInfo = '';
+                if (data.debug_info) {
+                    debugInfo = ` [Slides: ${data.debug_info.slides_detected}, Page: ${data.debug_info.last_page_detected}]`;
+                }
+                
+                showUserDebugSuccess('AI Generation Progress', 
+                    `📝 ${data.message || 'Generating content'} (${data.chunk_number} chunks, ${((data.accumulated_html?.length || 0) / 1000).toFixed(1)}k chars)${debugInfo}`);
+            }
+            
+            // ULTRA-DEBUG: Log milestone achievements for Call 2
+            if (data.call_phase && data.call_phase.startsWith('call2') && data.chunk_number) {
+                if (data.chunk_number === 100) {
+                    console.log('📊 CALL 2 MILESTONE 100: Early generation progress check');
+                } else if (data.chunk_number === 200) {
+                    console.log('📊 CALL 2 MILESTONE 200: Mid-generation check - should see multiple slides');
+                } else if (data.chunk_number === 400) {
+                    console.log('📊 CALL 2 MILESTONE 400: Late generation - should be approaching completion');
+                }
+            }
+            
+            // Update raw HTML code viewer with progressive accumulative content
             const rawHtmlCode = document.getElementById('rawHtmlCode');
             if (rawHtmlCode && data.accumulated_html) {
-                rawHtmlCode.textContent = data.accumulated_html;
+                let htmlContent = data.accumulated_html;
+                
+                // Initialize accumulated raw HTML storage if not exists
+                if (!window.accumulatedRawHtml) {
+                    window.accumulatedRawHtml = '';
+                }
+                
+                // Handle different phases for progressive accumulative raw HTML display
+                if (data.status === 'css_template_loaded') {
+                    // Initialize with CSS template content
+                    window.accumulatedRawHtml = htmlContent + `
+
+<!-- 🤖 AI GENERATION READY TO START -->
+<!-- 📊 CSS Template loaded from CSScode.txt -->
+
+`;
+                    rawHtmlCode.textContent = window.accumulatedRawHtml;
+                } else if (data.status === 'final_complete') {
+                    // For final complete, use the locally accumulated HTML (which has everything)
+                    console.log('🏁 Final complete - using window.accumulatedRawHtml:', window.accumulatedRawHtml ? window.accumulatedRawHtml.length : 0, 'chars');
+                    console.log('🏁 Backend data.accumulated_html:', data.accumulated_html ? data.accumulated_html.length : 0, 'chars');
+                    
+                    // Use local accumulated content which has been building up during streaming
+                    let finalHtml = window.accumulatedRawHtml;
+                    
+                    // Add final completion marker
+                    finalHtml += `
+
+<!-- 🎉 REPORT GENERATION COMPLETE -->
+</body>
+</html>`;
+                    
+                    rawHtmlCode.textContent = finalHtml;
+                    console.log('✅ Raw HTML updated with complete accumulated content:', finalHtml.length, 'chars');
+                } else if (data.call_phase === 'call1' && data.chunk_number === 1) {
+                    // At the start of Call 1, add separator and start accumulating
+                    window.accumulatedRawHtml += `
+<!-- 🤖 CALL 1 STARTED -->
+<!-- 📊 Phase: CALL 1 (Slides 1-7) -->
+
+` + htmlContent;
+                    rawHtmlCode.textContent = window.accumulatedRawHtml;
+                } else if (data.call_phase === 'call2' && data.chunk_number === 1) {
+                    // At the start of Call 2, add separator and continue accumulating
+                    window.accumulatedRawHtml += `
+
+<!-- 🤖 CALL 1 COMPLETE - STARTING CALL 2 -->
+<!-- 📊 Phase: CALL 2 (Slides 8-15) -->
+
+` + htmlContent;
+                    rawHtmlCode.textContent = window.accumulatedRawHtml;
+                } else if (data.call_phase === 'call1' || data.call_phase === 'call2') {
+                    // For streaming phases, truly accumulate content progressively  
+                    if (data.call_phase === 'call1') {
+                        // For Call 1 streaming, replace only the Call 1 content
+                        const cssAndStart = window.accumulatedRawHtml.split('<!-- 🤖 CALL 1 STARTED -->')[0];
+                        window.accumulatedRawHtml = cssAndStart + `<!-- 🤖 CALL 1 STARTED -->
+<!-- 📊 Phase: CALL 1 (Slides 1-7) -->
+` + htmlContent;
+                    } else if (data.call_phase === 'call2') {
+                        // For Call 2 streaming, keep all Call 1 content and replace only Call 2 content
+                        const beforeCall2 = window.accumulatedRawHtml.split('<!-- 🤖 CALL 2 STARTED -->')[0];
+                        window.accumulatedRawHtml = beforeCall2 + `<!-- 🤖 CALL 2 STARTED -->
+<!-- 📊 Phase: CALL 2 (Slides 8-15) -->
+` + htmlContent;
+                    }
+                    rawHtmlCode.textContent = window.accumulatedRawHtml;
+                }
                 
                 // Auto-scroll to bottom to show latest content
                 rawHtmlCode.scrollTop = rawHtmlCode.scrollHeight;
+                console.log('📄 Raw HTML progressively updated:', window.accumulatedRawHtml.length, 'total chars');
             }
             
-            // Update rendered report viewer with live preview
+            // Update rendered report viewer with live preview during streaming
             const renderedReportViewer = document.getElementById('renderedReportViewer');
+            
+            // CHECK: Don't override if report is already completed
+            if (renderedReportViewer && renderedReportViewer.getAttribute('data-report-completed') === 'true') {
+                console.log('🔒 WEBSOCKET STREAMING BLOCKED - Report already completed, ignoring streaming update');
+                return;
+            }
+            
             if (renderedReportViewer && data.accumulated_html) {
-                // Add streaming indicator
+                // Add enhanced streaming indicator for report generation
                 let streamingHtml = data.accumulated_html;
-                if (data.status === 'streaming_html') {
-                    streamingHtml += '<div class="streaming-indicator" style="background: #0066CC; color: white; padding: 10px; margin: 10px 0; border-radius: 5px; font-weight: bold;">🔄 AI Generating Content... (' + data.chunk_number + ' chunks)</div>';
+                // Handle different streaming phases
+                if (data.status && data.status.startsWith('streaming_html') && isGeneratingReport) {
+                    const statusMessage = data.message || 'Generating content';
+                    const spinnerStyle = 'display: inline-block; animation: spin 1s linear infinite; margin-right: 8px;';
+                    const callPhase = data.call_phase || 'generation';
+                    const phaseLabel = callPhase === 'call1' ? 'CALL 1 (Slides 1-7)' : 
+                                     callPhase === 'call2' ? 'CALL 2 (Slides 8-15)' : 
+                                     'AI Generation';
+                    
+                    // Store the current call content separately to prevent mixing
+                    if (callPhase === 'call1') {
+                        // During Call 1, show only Call 1 content
+                        streamingHtml = `
+                            <div class="live-generation-banner" style="background: linear-gradient(135deg, #005F90, #FF6B35); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 12px rgba(0,95,144,0.3);">
+                                <div style="${spinnerStyle}">⚡</div>
+                                🤖 Live ${phaseLabel}: ${statusMessage}
+                                <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+                                    Chunk ${data.chunk_number} • ${(data.accumulated_html.length / 1000).toFixed(1)}k characters • Real-time streaming
+                                </div>
+                            </div>
+                        ` + data.accumulated_html;
+                        
+                        // Store Call 1 content for later combination
+                        window.call1Content = data.accumulated_html;
+                    } else if (callPhase === 'call2') {
+                        // During Call 2, validate Call 1 is complete before showing combination
+                        const call1Html = window.call1Content || '';
+                        
+                        // Check if Call 1 is properly completed (contains slide 7)
+                        const call1Complete = call1Html.includes('Page 7 / 15');
+                        
+                        if (!call1Complete) {
+                            // If Call 1 is not complete, show warning and only Call 1 content
+                            streamingHtml = `
+                                <div class="warning-banner" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold;">
+                                    ⚠️ Call 1 incomplete - waiting for completion before showing Call 2
+                                </div>
+                            ` + call1Html;
+                        } else {
+                            // Call 1 is complete, continue with Call 2 in same document with proper spacing
+                            let call2Html = data.accumulated_html;
+                            
+                            // Add proper spacing between Call 1 and Call 2
+                            let combinedHtml = call1Html + `
+
+<!-- ===== CALL 2 CONTINUATION (Slides 8-15) ===== -->
+
+` + call2Html;
+                            
+                            streamingHtml = `
+                                <div class="live-generation-banner" style="background: linear-gradient(135deg, #005F90, #FF6B35); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 12px rgba(0,95,144,0.3);">
+                                    <div style="${spinnerStyle}">⚡</div>
+                                    🤖 Live ${phaseLabel}: ${statusMessage}
+                                    <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+                                        Chunk ${data.chunk_number} • ${(data.accumulated_html.length / 1000).toFixed(1)}k characters • Real-time streaming
+                                    </div>
+                                </div>
+                            ` + combinedHtml;
+                        }
+                    } else {
+                        // Default streaming
+                        streamingHtml = `
+                            <div class="live-generation-banner" style="background: linear-gradient(135deg, #005F90, #FF6B35); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 12px rgba(0,95,144,0.3);">
+                                <div style="${spinnerStyle}">⚡</div>
+                                🤖 Live ${phaseLabel}: ${statusMessage}
+                                <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+                                    Chunk ${data.chunk_number} • ${(data.accumulated_html.length / 1000).toFixed(1)}k characters • Real-time streaming
+                                </div>
+                            </div>
+                        ` + data.accumulated_html;
+                    }
+                }
+                
+                // Handle Call 1 incomplete - show warning
+                else if (data.status === 'call1_incomplete') {
+                    const call1Html = data.accumulated_html || '';
+                    streamingHtml = `
+                        <div class="error-banner" style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 20px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold; font-size: 16px;">
+                            🚨 CALL 1 INCOMPLETE: Missing slide 7 - Generation stopped early
+                            <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">
+                                Please retry the generation. Current content: ${call1Html.length.toLocaleString()} characters
+                            </div>
+                        </div>
+                    ` + call1Html;
+                    
+                    // Update the main streaming content
+                    if (streamingContainer) {
+                        streamingContainer.innerHTML = streamingHtml;
+                    }
+                    
+                    // Update raw HTML view
+                    rawHtmlContent = streamingHtml;
+                    updateRawHtmlView();
+                    
+                    // Update rendered preview 
+                    updateRenderedPreview(streamingHtml);
+                    
+                    console.error('🚨 CALL 1 INCOMPLETE detected - missing slide 7');
+                }
+                
+                // Handle Call 1 completion - show only Call 1 content
+                else if (data.status === 'call1_complete') {
+                    // Validate Call 1 completion before storing
+                    const call1Html = data.accumulated_html;
+                    const call1Complete = call1Html.includes('Page 7 / 15');
+                    
+                    if (!call1Complete) {
+                        console.warn('⚠️ Call 1 marked complete but missing slide 7!');
+                        streamingHtml = `
+                            <div class="warning-banner" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold;">
+                                ⚠️ Call 1 incomplete - missing slide 7 (${call1Html.length.toLocaleString()} chars generated)
+                            </div>
+                        ` + call1Html;
+                    } else {
+                        // Store complete Call 1 content for combining with Call 2
+                        window.call1Content = call1Html;
+                        streamingHtml = `
+                            <div class="completion-banner" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold;">
+                                ✅ ${data.message} (All 7 slides generated)
+                            </div>
+                        ` + call1Html;
+                    }
+                }
+                
+                // Handle Call 2 completion - this will be replaced by final complete
+                else if (data.status === 'call2_complete') {
+                    // Don't update the display here, wait for final_complete
+                    return;
+                }
+                
+                // Handle final completion - show complete report
+                else if (data.status === 'final_complete') {
+                    streamingHtml = `
+                        <div class="completion-banner" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; margin: 0 0 20px 0; border-radius: 8px; text-align: center; font-weight: bold;">
+                            🎉 ${data.message}
+                        </div>
+                    ` + data.accumulated_html;
+                    
+                    // Mark report as completed to prevent further streaming updates
+                    if (renderedReportViewer) {
+                        renderedReportViewer.setAttribute('data-report-completed', 'true');
+                    }
                 }
                 
                 renderedReportViewer.innerHTML = streamingHtml;
-                
-                // Auto-scroll to bottom
-                renderedReportViewer.scrollTop = renderedReportViewer.scrollHeight;
+                renderedReportViewer.scrollTop = renderedReportViewer.scrollHeight; // Auto-scroll to bottom
+                console.log('🎨 Rendered report updated with streaming preview:', streamingHtml.length, 'chars');
             }
             
             // Update streaming status message
@@ -4585,9 +5335,49 @@ stockInfoHtml += (stockData.business_summary ?
             document.getElementById('analysisTitle').innerHTML = '<i class="fas fa-chart-area"></i> ' + title;
         }
 
-        function updateProgress(message, percentage) {
-            document.getElementById('progressText').textContent = message;
-            document.getElementById('progressBar').style.width = percentage + '%';
+        function updateProgress(message, percentage, phase = null) {
+            const progressText = document.getElementById('progressText');
+            const progressBar = document.getElementById('progressBar');
+            
+            // Update basic progress
+            progressText.textContent = message;
+            progressBar.style.width = percentage + '%';
+            
+            // Add phase-specific styling and icons
+            if (phase) {
+                let phaseIcon = '';
+                let phaseClass = '';
+                
+                switch(phase) {
+                    case 'call1_starting':
+                        phaseIcon = '🚀 ';
+                        phaseClass = 'phase-starting';
+                        break;
+                    case 'call1_complete':
+                        phaseIcon = '✅ ';
+                        phaseClass = 'phase-complete';
+                        break;
+                    case 'transition':
+                        phaseIcon = '🔄 ';
+                        phaseClass = 'phase-transition';
+                        break;
+                    case 'call2_starting':
+                        phaseIcon = '🚀 ';
+                        phaseClass = 'phase-starting';
+                        break;
+                    default:
+                        phaseIcon = '⚡ ';
+                        phaseClass = 'phase-working';
+                }
+                
+                progressText.innerHTML = phaseIcon + message;
+                progressText.className = 'progress-text ' + phaseClass;
+                
+                // Add loading spinner for active phases
+                if (phase === 'call1_starting' || phase === 'transition' || phase === 'call2_starting') {
+                    progressText.innerHTML += ' <span class="loading-spinner">●</span>';
+                }
+            }
         }
 
         function addResearchSource(source) {
@@ -4646,19 +5436,11 @@ stockInfoHtml += (stockData.business_summary ?
         function appendStreamingContent(content) {
             console.log('💻 appendStreamingContent called with:', content ? content.length : 'NO CONTENT', 'chars');
             
-            // If we're generating a report, show raw HTML in the report viewer
+            // During report generation, this function is NOT used (report uses handleReportGenerationStreaming)
+            // But for regular analysis streaming, continue as normal
             if (isGeneratingReport) {
-                const rawHtmlCode = document.getElementById('rawHtmlCode');
-                if (rawHtmlCode && content) {
-                    // Append content to raw HTML viewer
-                    rawHtmlCode.textContent += content;
-                    // Scroll to bottom
-                    const rawHtmlViewer = document.getElementById('rawHtmlViewer');
-                    if (rawHtmlViewer) {
-                        rawHtmlViewer.scrollTop = rawHtmlViewer.scrollHeight;
-                    }
-                    console.log('📄 Raw HTML content updated:', content.length, 'chars added');
-                }
+                console.log('ℹ️ Report generation in progress - this streaming content is for regular analysis, not report generation');
+                // For report generation, we rely on handleReportGenerationStreaming instead
                 return;
             }
             
@@ -4700,14 +5482,44 @@ stockInfoHtml += (stockData.business_summary ?
             setTimeout(() => { if (errorDiv.parentNode) errorDiv.remove(); }, 8000);
         }
         
-        function showUserDebugSuccess(title, message) {
+        function showUserDebugSuccess(title, message, actions = null) {
             const successDiv = document.createElement('div');
             successDiv.style.cssText = 'position: fixed; top: 120px; right: 20px; background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 6px; padding: 10px; max-width: 280px; z-index: 2000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px;';
             
-            successDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 4px;"><span style="color: #48bb78; font-size: 12px;">✅</span><strong style="color: #2f855a; font-size: 12px;">' + title + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 14px; cursor: pointer; color: #2f855a;">×</button></div><div style="color: #2f855a; font-size: 11px; margin-top: 4px;">' + message + '</div>';
+            let actionsHTML = '';
+            if (actions && actions.length > 0) {
+                actionsHTML = '<div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">';
+                actions.forEach(action => {
+                    const buttonId = 'action-btn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    actionsHTML += `<button id="${buttonId}" style="
+                        background: #2f855a; 
+                        color: white; 
+                        border: none; 
+                        padding: 4px 8px; 
+                        border-radius: 4px; 
+                        font-size: 11px; 
+                        cursor: pointer;
+                        transition: background 0.2s ease;
+                    " onmouseover="this.style.background='#38a169'" onmouseout="this.style.background='#2f855a'">${action.text}</button>`;
+                    
+                    // Store action for later execution
+                    setTimeout(() => {
+                        const btn = document.getElementById(buttonId);
+                        if (btn) {
+                            btn.onclick = () => {
+                                action.action();
+                                successDiv.remove();
+                            };
+                        }
+                    }, 100);
+                });
+                actionsHTML += '</div>';
+            }
+            
+            successDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 4px;"><span style="color: #48bb78; font-size: 12px;">✅</span><strong style="color: #2f855a; font-size: 12px;">' + title + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 14px; cursor: pointer; color: #2f855a;">×</button></div><div style="color: #2f855a; font-size: 11px; margin-top: 4px;">' + message + '</div>' + actionsHTML;
             
             document.body.appendChild(successDiv);
-            setTimeout(() => { if (successDiv.parentNode) successDiv.remove(); }, 5000);
+            setTimeout(() => { if (successDiv.parentNode) successDiv.remove(); }, actions ? 10000 : 5000); // Longer timeout if actions are present
         }
         
         function showUserDebugWarning(title, message, suggestions) {
@@ -5091,6 +5903,13 @@ stockInfoHtml += (stockData.business_summary ?
                 currentAnalyst: currentAnalystType
             });
             
+            // CRITICAL: During report generation, DO NOT overwrite accumulated section content
+            if (isGeneratingReport) {
+                console.log('🚫 BLOCKED: handleFinalContentWithCitations during report generation - preserving section accumulated content');
+                console.log('📊 Report generation in progress - final content handler ignored to preserve section accumulation');
+                return;
+            }
+            
             // CRITICAL DEBUGGING - Check citations in handler
             if (data.content_complete) {
                 const handlerCitations = (data.content_complete.match(/\[(\d+)\]/g) || []).length;
@@ -5326,7 +6145,7 @@ stockInfoHtml += (stockData.business_summary ?
             
             const shareData = {
                 title: currentProject.company + ' ' + currentAnalysis + ' Analysis',
-                text: 'Professional ' + currentAnalysis + ' analysis for ' + currentProject.company + ' (' + currentProject.ticker + ')',
+                text: currentAnalysis + ' analysis for ' + currentProject.company + ' (' + currentProject.ticker + ')',
                 url: window.location.href
             };
             
@@ -5343,6 +6162,17 @@ stockInfoHtml += (stockData.business_summary ?
             if (!currentProject) {
                 showUserDebugError('No Project', 'Please set up a project first before generating a report.');
                 return;
+            }
+            
+            // Clear accumulated raw HTML for new report generation
+            window.accumulatedRawHtml = '';
+            window.lastAccumulatedContent = '';
+            window.call1Content = '';
+            
+            // Clear raw HTML display
+            const rawHtmlCode = document.getElementById('rawHtmlCode');
+            if (rawHtmlCode) {
+                rawHtmlCode.textContent = 'Raw HTML Code Generation\n\n<!-- 🤖 Report Generation Starting... -->';
             }
             
             console.log('📋 Generating template-based report for', currentProject.ticker);
@@ -5371,7 +6201,7 @@ stockInfoHtml += (stockData.business_summary ?
             });
             
             // Show generation started message
-            showUserDebugSuccess('Report Generation Started', 'Generating professional investment report using ' + Object.keys(analysesData).join(', ') + ' analyses');
+            showUserDebugSuccess('Report Generation Started', 'Generating investment report using ' + Object.keys(analysesData).join(', ') + ' analyses');
             
             // Send report generation request via WebSocket
             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -5381,7 +6211,9 @@ stockInfoHtml += (stockData.business_summary ?
                         company_name: currentProject.company,
                         ticker: currentProject.ticker,
                         analyses_data: analysesData,
-                        report_focus: 'comprehensive'
+                        report_focus: 'comprehensive',
+                        investment_objective: currentProject.query || 'Comprehensive investment analysis',
+                        user_query: currentProject.query || 'Perform comprehensive investment analysis'
                     }
                 };
                 
@@ -5391,6 +6223,129 @@ stockInfoHtml += (stockData.business_summary ?
                 showUserDebugError('Connection Error', 'WebSocket connection not available. Please refresh and try again.');
             }
         }
+
+        // Global variable to store latest HTML report for Word conversion
+        let latestHtmlReport = null;
+
+        function generateWordReport() {
+            console.log('📄 generateWordReport called');
+            console.log('📄 currentProject:', currentProject);
+            console.log('📄 latestHtmlReport length:', latestHtmlReport ? latestHtmlReport.length : 0);
+            
+            if (!currentProject) {
+                showUserDebugError('No Project Setup', 
+                    'Please set up an investment project first before generating documents.',
+                    [
+                        'Enter a company name and ticker symbol in the project setup section',
+                        'Click "Set Up Investment Project" to begin',
+                        'Complete at least one analyst analysis',
+                        'Then generate an HTML report before converting to Word'
+                    ]
+                );
+                return;
+            }
+
+            if (!latestHtmlReport || latestHtmlReport.trim().length === 0) {
+                showUserDebugError('No HTML Report Available', 
+                    'You must generate an HTML report first before converting to Word format.',
+                    [
+                        'Complete multiple analyst analyses (Fundamentals, Technical, Risk, etc.)',
+                        'Click "Generate HTML Report" button to create the report',
+                        'Wait for the HTML report generation to complete successfully',
+                        'Then the Word generation button will become available'
+                    ]
+                );
+                return;
+            }
+
+            // Validate HTML report contains actual content
+            if (latestHtmlReport.length < 1000) {
+                showUserDebugError('Invalid HTML Report', 
+                    'The HTML report appears to be incomplete or corrupted. Please regenerate the HTML report first.',
+                    [
+                        'Check if the HTML report generation completed successfully',
+                        'Try generating the HTML report again',
+                        'Ensure all analyst analyses are complete before generating report'
+                    ]
+                );
+                return;
+            }
+
+            console.log('📄 Generating Word document for', currentProject.ticker);
+
+            // Send Word generation request via WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const wordRequest = {
+                    type: 'generate_word_report',
+                    data: {
+                        company_name: currentProject.company,
+                        ticker: currentProject.ticker,
+                        html_content: latestHtmlReport
+                    }
+                };
+
+                console.log('📤 Sending Word generation request:', wordRequest);
+                ws.send(JSON.stringify(wordRequest));
+
+                // Show loading state
+                const wordBtn = document.getElementById('generateWordBtn');
+                if (wordBtn) {
+                    wordBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating...';
+                    wordBtn.disabled = true;
+                }
+
+            } else {
+                showUserDebugError('Connection Error', 'WebSocket connection not available. Please refresh and try again.');
+            }
+        }
+
+        function handleWordGenerationStarted(data) {
+            console.log('📄 Word generation started:', data);
+            showUserDebugSuccess('Word Generation Started', `Converting report for ${data.company_name} to Word format...`);
+        }
+
+        function handleWordGenerationProgress(data) {
+            console.log('📄 Word generation progress:', data);
+            // Update UI with progress if needed
+        }
+
+        function handleWordGenerationCompleted(data) {
+            console.log('✅ Word generation completed:', data);
+            
+            // Reset button state
+            const wordBtn = document.getElementById('generateWordBtn');
+            if (wordBtn) {
+                wordBtn.innerHTML = '<i class="fas fa-file-word" style="margin-right: 8px;"></i>Generate Word Document';
+                wordBtn.disabled = false;
+            }
+
+            // Show success message with download option
+            showUserDebugSuccess('Word Document Ready', 
+                `Word document generated successfully for ${data.company_name}! Click to download.`,
+                [{
+                    text: 'Download Word Document',
+                    action: () => {
+                        // Trigger download
+                        const downloadUrl = data.download_url || `/api/download/word?file_path=${encodeURIComponent(data.file_path)}`;
+                        window.open(downloadUrl, '_blank');
+                    }
+                }]
+            );
+        }
+
+        function handleWordGenerationError(data) {
+            console.error('❌ Word generation error:', data);
+            
+            // Reset button state
+            const wordBtn = document.getElementById('generateWordBtn');
+            if (wordBtn) {
+                wordBtn.innerHTML = '<i class="fas fa-file-word" style="margin-right: 8px;"></i>Generate Word Document';
+                wordBtn.disabled = false;
+            }
+
+            showUserDebugError('Word Generation Failed', data.message || 'Failed to generate Word document');
+        }
+
 
         function exportAnalysis() {
             // Export all cached analyses

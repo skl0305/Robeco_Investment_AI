@@ -41,7 +41,7 @@ def test_google_search():
         
         # Use the newer SDK method
         model = genai.GenerativeModel(
-            "gemini-2.0-flash-exp",
+            "gemini-2.5-flash",
             tools=[{"google_search": {}}]
         )
         

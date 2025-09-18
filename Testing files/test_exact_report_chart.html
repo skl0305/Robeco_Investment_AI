@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exact Report Chart Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        .stock-chart-container {
+            width: 100%;
+            height: 400px;
+            background-color: #f0f0f0;
+            border: 2px solid #005F90;
+            margin: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Exact Chart Code from Generated Report</h2>
+    <div class="stock-chart-container" id="stock-price-line-chart">
+        <script type="text/javascript">
+            // Ensure D3 is loaded and chart renders properly
+            function renderStockChart() {
+                if (typeof d3 === 'undefined') {
+                    document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">D3.js library not available. Chart cannot be rendered.</p>';
+                    return;
+                }
+                
+                try {
+                    const stockData = [{'date': '2020-10-01', 'price': 57.01}, {'date': '2020-11-01', 'price': 57.65}, {'date': '2020-12-01', 'price': 56.85}, {'date': '2021-01-01', 'price': 57.58}, {'date': '2021-02-01', 'price': 60.35}, {'date': '2021-03-01', 'price': 61.26}, {'date': '2021-04-01', 'price': 62.02}, {'date': '2021-05-01', 'price': 58.5}, {'date': '2021-06-01', 'price': 57.99}, {'date': '2021-07-01', 'price': 59.09}, {'date': '2021-08-01', 'price': 63.48}, {'date': '2021-09-01', 'price': 64.14}, {'date': '2021-10-01', 'price': 65.82}, {'date': '2021-11-01', 'price': 62.45}, {'date': '2021-12-01', 'price': 66.83}, {'date': '2022-01-01', 'price': 58.69}, {'date': '2022-02-01', 'price': 59.79}, {'date': '2022-03-01', 'price': 60.89}, {'date': '2022-04-01', 'price': 76.4}, {'date': '2022-05-01', 'price': 73.63}, {'date': '2022-06-01', 'price': 68.98}, {'date': '2022-07-01', 'price': 66.12}, {'date': '2022-08-01', 'price': 67.54}, {'date': '2022-09-01', 'price': 53.95}, {'date': '2022-10-01', 'price': 55.54}, {'date': '2022-11-01', 'price': 62.41}, {'date': '2022-12-01', 'price': 61.36}, {'date': '2023-01-01', 'price': 63.18}, {'date': '2023-02-01', 'price': 64.06}, {'date': '2023-03-01', 'price': 63.1}, {'date': '2023-04-01', 'price': 61.79}, {'date': '2023-05-01', 'price': 54.81}, {'date': '2023-06-01', 'price': 53.78}, {'date': '2023-07-01', 'price': 56.29}, {'date': '2023-08-01', 'price': 49.16}, {'date': '2023-09-01', 'price': 49.56}, {'date': '2023-10-01', 'price': 46.74}, {'date': '2023-11-01', 'price': 47.21}, {'date': '2023-12-01', 'price': 50.52}, {'date': '2024-01-01', 'price': 49.19}, {'date': '2024-02-01', 'price': 52.73}, {'date': '2024-03-01', 'price': 54.26}, {'date': '2024-04-01', 'price': 50.53}, {'date': '2024-05-01', 'price': 45.56}, {'date': '2024-06-01', 'price': 45.9}, {'date': '2024-07-01', 'price': 44.94}, {'date': '2024-08-01', 'price': 40.18}, {'date': '2024-09-01', 'price': 40.25}, {'date': '2024-10-01', 'price': 39.23}, {'date': '2024-11-01', 'price': 38.67}, {'date': '2024-12-01', 'price': 33.74}, {'date': '2025-01-01', 'price': 32.95}, {'date': '2025-02-01', 'price': 33.6}, {'date': '2025-03-01', 'price': 33.34}, {'date': '2025-04-01', 'price': 32.87}, {'date': '2025-05-01', 'price': 37.85}, {'date': '2025-06-01', 'price': 36.26}, {'date': '2025-07-01', 'price': 38.31}, {'date': '2025-08-01', 'price': 33.5}, {'date': '2025-09-01', 'price': 33.74}];
+                    
+                    const margin = {top: 20, right: 30, bottom: 40, left: 60},
+                        width = 500 - margin.left - margin.right,
+                        height = 300 - margin.top - margin.bottom;
+
+                    // Clear any existing chart
+                    d3.select("#stock-price-line-chart").selectAll("*").remove();
+
+                    const svg = d3.select("#stock-price-line-chart")
+                        .append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                    const parseDate = d3.timeParse("%Y-%m-%d");
+                    stockData.forEach(d => {
+                        d.date = parseDate(d.date);
+                        d.price = +d.price;
+                    });
+
+                    const x = d3.scaleTime()
+                        .domain(d3.extent(stockData, d => d.date))
+                        .range([0, width]);
+
+                    const y = d3.scaleLinear()
+                        .domain([31.23, 80.22])
+                        .range([height, 0]);
+
+                    // Add axes
+                    svg.append("g")
+                        .attr("transform", `translate(0,${height})`)
+                        .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%Y")));
+
+                    svg.append("g")
+                        .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("$.2f")));
+
+                    // Create line generator
+                    const line = d3.line()
+                        .x(d => x(d.date))
+                        .y(d => y(d.price))
+                        .curve(d3.curveMonotoneX);
+
+                    // Add the line
+                    svg.append("path")
+                        .datum(stockData)
+                        .attr("fill", "none")
+                        .attr("stroke", "#005F90")
+                        .attr("stroke-width", 2)
+                        .attr("d", line);
+
+                    // Add current price point
+                    const lastPoint = stockData[stockData.length - 1];
+                    svg.append("circle")
+                        .attr("cx", x(lastPoint.date))
+                        .attr("cy", y(lastPoint.price))
+                        .attr("r", 4)
+                        .attr("fill", "#C62828");
+
+                    // Add current price label
+                    svg.append("text")
+                        .attr("x", x(lastPoint.date) + 10)
+                        .attr("y", y(lastPoint.price) - 10)
+                        .attr("fill", "#C62828")
+                        .style("font-size", "12px")
+                        .style("font-weight", "bold")
+                        .text(`$${lastPoint.price.toFixed(2)}`);
+                        
+                    console.log('Stock chart rendered successfully');
+                    
+                } catch (error) {
+                    console.error('Chart rendering error:', error);
+                    document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">Chart rendering failed: ' + error.message + '</p>';
+                }
+            }
+            
+            // Multiple rendering strategies to ensure chart displays
+            // Strategy 1: Immediate render if DOM is ready
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                setTimeout(renderStockChart, 100);
+            } else {
+                document.addEventListener('DOMContentLoaded', renderStockChart);
+            }
+            
+            // Strategy 2: Backup render after page load
+            window.addEventListener('load', function() {
+                setTimeout(renderStockChart, 200);
+            });
+            
+            // Strategy 3: Force render after delay to ensure chart appears
+            setTimeout(function() {
+                if (d3.select("#stock-price-line-chart svg").empty()) {
+                    console.log('Chart not rendered yet, forcing render...');
+                    renderStockChart();
+                }
+            }, 1000);
+        </script>
+    </div>
+    <p>This is the exact chart code from your generated report. If this works, then the issue might be with the CSS or container styling in the full report.</p>
+</body>
+</html>

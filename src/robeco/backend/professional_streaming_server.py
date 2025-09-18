@@ -37,6 +37,9 @@ from robeco.backend.bulk_file_processor import bulk_processor, BulkAnalysisSessi
 # Import template report generator
 from robeco.backend.template_report_generator import template_report_generator
 
+# Import Word report generator
+from robeco.backend.word_report_generator import word_report_generator
+
 # Import for chat functionality
 try:
     from google import genai
@@ -195,6 +198,10 @@ async def websocket_endpoint(websocket: WebSocket):
             elif message_type == 'generate_report':
                 # Handle report generation request
                 await handle_report_generation(websocket, connection_id, message)
+            
+            elif message_type == 'generate_word_report':
+                # Handle Word document generation request
+                await handle_word_report_generation(websocket, connection_id, message)
             
             elif message_type == 'ping':
                 # Handle ping for connection health
@@ -1616,6 +1623,48 @@ async def cleanup_upload_session(session_id: str):
         logger.error(f"❌ Session cleanup failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/download/word")
+async def download_word_document(file_path: str):
+    """
+    Download generated Word document
+    """
+    try:
+        import os
+        from fastapi.responses import FileResponse
+        from pathlib import Path
+        
+        # Validate file path and existence
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not file_path_obj.suffix.lower() == '.docx':
+            raise HTTPException(status_code=400, detail="Invalid file type")
+        
+        # Security check - ensure file is in expected directory
+        if not str(file_path_obj).startswith('/tmp/'):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Generate appropriate filename
+        filename = file_path_obj.name
+        
+        logger.info(f"📥 Serving Word document download: {filename}")
+        
+        return FileResponse(
+            path=str(file_path_obj),
+            filename=filename,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Word download failed: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Download failed: {e}"
+        )
+
 async def handle_bulk_analysis_streaming(websocket: WebSocket, connection_id: str, message: Dict):
     """Handle bulk file analysis with real-time streaming"""
     
@@ -1816,58 +1865,6 @@ Generate the complete investment report CONTENT now, incorporating all analyst i
     
     return prompt
 
-async def _combine_css_with_content(content: str) -> str:
-    """Combine fixed CSS code with AI-generated content"""
-    
-    try:
-        # Load the fixed CSS file (complete HTML with CSS)
-        with open('/Users/skl/Desktop/Robeco Reporting/Report Example/CSScode.txt', 'r', encoding='utf-8') as f:
-            css_file_content = f.read()
-        
-        logger.info(f"✅ Loaded CSS file: {len(css_file_content)} characters")
-        
-        # Extract CSS from between <style> tags
-        import re
-        css_match = re.search(r'<style>(.*?)</style>', css_file_content, re.DOTALL)
-        if css_match:
-            css_code = css_match.group(1).strip()
-        else:
-            # Fallback: use entire file content if no <style> tags found
-            css_code = css_file_content
-        
-        # Extract HTML head section (fonts, scripts, etc.) from CSS file
-        head_match = re.search(r'<head>(.*?)</head>', css_file_content, re.DOTALL)
-        additional_head_content = ""
-        if head_match:
-            head_content = head_match.group(1)
-            # Extract link and script tags (exclude title and style)
-            link_script_pattern = r'(<link[^>]*>|<script[^>]*>.*?</script>)'
-            links_scripts = re.findall(link_script_pattern, head_content, re.DOTALL)
-            additional_head_content = '\n    '.join(links_scripts)
-        
-        # Combine CSS with content
-        combined_report = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robeco Investment Analysis</title>
-    {additional_head_content}
-    <style>
-{css_code}
-    </style>
-</head>
-<body>
-{content}
-</body>
-</html>"""
-        
-        logger.info(f"✅ Combined CSS + content: {len(combined_report)} total characters")
-        return combined_report
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to combine CSS with content: {e}")
-        return content
 
 async def _generate_template_guided_content(prompt: str) -> str:
     """Generate ONLY content using AI with template guidance and all analyst outputs"""
@@ -1920,9 +1917,12 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
         company = data.get('company_name', data.get('company', ''))
         report_focus = data.get('report_focus', 'comprehensive')
         analyses_data = data.get('analyses_data', {})
+        investment_objective = data.get('investment_objective', '')
+        user_query = data.get('user_query', '')
         
         logger.info(f"📊 Starting report generation for {company} ({ticker}) - Focus: {report_focus}")
         logger.info(f"📋 Received analyses data: {list(analyses_data.keys()) if analyses_data else 'NONE'}")
+        logger.info(f"🎯 Investment Objective: '{investment_objective}' | User Query: '{user_query}'")
         logger.info(f"📋 Message keys: {list(message.keys())}")
         logger.info(f"📋 Full message data keys: {list(message.get('data', {}).keys()) if message.get('data') else 'NO DATA KEY'}")
         logger.info(f"🔍 DEBUG: Full message structure: {json.dumps(message, indent=2, default=str)[:1000]}...")
@@ -1950,7 +1950,11 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
             # Load the Robeco template as one-shot example
             template_content = ""
             try:
-                with open('/Users/skl/Desktop/Robeco Reporting/Report Example/Robeco_InvestmentCase_Template.txt', 'r', encoding='utf-8') as f:
+                # Use relative path from project root
+                current_file = Path(__file__)
+                project_root = current_file.parent.parent.parent.parent  # Go up from backend/src/robeco/ to root
+                template_path = project_root / "Report Example" / "Robeco_InvestmentCase_Template.txt"
+                with open(template_path, 'r', encoding='utf-8') as f:
                     template_content = f.read()
                 logger.info(f"✅ Loaded Robeco template: {len(template_content)} characters")
             except Exception as e:
@@ -1973,7 +1977,9 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 company_name=company,
                 ticker=ticker,
                 analyses_data=analyses_data,
-                report_focus=report_focus
+                report_focus=report_focus,
+                investment_objective=investment_objective,
+                user_query=user_query
             )
             
         else:
@@ -1993,8 +1999,8 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
             }))
             return
         
-        # Combine with CSS to create final report
-        final_report_html = await _combine_css_with_content(report_content)
+        # The template_report_generator already returns complete HTML with CSS
+        final_report_html = report_content
         
         # Send final report completion message with proper type
         await websocket.send_text(json.dumps({
@@ -2030,19 +2036,123 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
             }
         }))
 
-def find_available_port(preferred_port=8005, max_attempts=10):
-    """Find an available port starting from preferred_port"""
+def kill_process_on_port(port):
+    """Kill any process running on the specified port - Enhanced reliability"""
+    import subprocess
+    import signal
+    import psutil
+    
+    killed_any = False
+    
+    # Method 1: Try psutil with proper connection handling
+    try:
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                # Get connections separately to avoid attribute issues
+                connections = proc.net_connections()
+                for conn in connections:
+                    if hasattr(conn, 'laddr') and conn.laddr.port == port:
+                        logger.info(f"🔫 Killing process {proc.info['name']} (PID: {proc.info['pid']}) on port {port}")
+                        proc.kill()
+                        proc.wait(timeout=3)
+                        killed_any = True
+                        break
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, AttributeError):
+                continue
+            except Exception:
+                continue
+    except Exception as e:
+        logger.debug(f"Method 1 (psutil) failed: {e}")
+        
+    # Method 2: Use lsof and kill (more reliable on macOS)
+    try:
+        result = subprocess.run(['lsof', '-ti', f':{port}'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0 and result.stdout.strip():
+            pids = result.stdout.strip().split('\n')
+            for pid in pids:
+                if pid.strip():
+                    try:
+                        logger.info(f"🔫 Killing process PID {pid.strip()} on port {port}")
+                        subprocess.run(['kill', '-9', pid.strip()], timeout=3, check=True)
+                        killed_any = True
+                    except subprocess.CalledProcessError:
+                        continue
+    except Exception as e:
+        logger.debug(f"Method 2 (lsof) failed: {e}")
+    
+    # Method 3: Try netstat approach
+    try:
+        result = subprocess.run(['netstat', '-tulpn'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            lines = result.stdout.split('\n')
+            for line in lines:
+                if f':{port}' in line and 'LISTEN' in line:
+                    parts = line.split()
+                    if len(parts) > 6:
+                        pid_info = parts[6]
+                        if '/' in pid_info:
+                            pid = pid_info.split('/')[0]
+                            try:
+                                logger.info(f"🔫 Killing process PID {pid} on port {port} (netstat method)")
+                                subprocess.run(['kill', '-9', pid], timeout=3, check=True)
+                                killed_any = True
+                            except subprocess.CalledProcessError:
+                                continue
+    except Exception as e:
+        logger.debug(f"Method 3 (netstat) failed: {e}")
+    
+    return killed_any
+
+def force_use_port_8005():
+    """Kill any process on port 8005 and ensure it's available"""
     import socket
+    import time
+    import subprocess
     
-    for port in range(preferred_port, preferred_port + max_attempts):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('0.0.0.0', port))
-                return port
-        except OSError:
-            continue
+    port = 8005
+    logger.info(f"🎯 Forcing use of port {port}")
     
-    raise Exception(f"No available ports found in range {preferred_port}-{preferred_port + max_attempts - 1}")
+    # Check if port is in use
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', port))
+            logger.info(f"✅ Port {port} is already available")
+            return port
+    except OSError:
+        logger.info(f"🔍 Port {port} is occupied, attempting to free it...")
+        
+        # Try multiple attempts to kill processes
+        for attempt in range(3):
+            logger.info(f"🔄 Attempt {attempt + 1} to free port {port}")
+            
+            # Kill process on port
+            killed = kill_process_on_port(port)
+            
+            # Wait a bit longer for the port to be freed
+            time.sleep(3)
+            
+            # Verify port is now available
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('0.0.0.0', port))
+                    logger.info(f"✅ Successfully freed port {port}")
+                    return port
+            except OSError:
+                if attempt < 2:  # Not the last attempt
+                    logger.warning(f"⚠️ Port {port} still occupied, trying again...")
+                    continue
+                else:
+                    logger.error(f"❌ Port {port} still occupied after {attempt + 1} attempts")
+                    logger.error(f"🚀 FORCE MODE: PROCEEDING WITH PORT {port} ANYWAY - NO ALTERNATIVES!")
+                    # Force kill with stronger methods
+                    subprocess.run(['sudo', 'lsof', '-ti', f':{port}', '|', 'xargs', 'sudo', 'kill', '-9'], 
+                                 shell=True, capture_output=True)
+                    time.sleep(2)
+                    return port
+
+# Removed find_available_port function - ONLY USE PORT 8005!
 
 async def generate_report_with_streaming(
     websocket: WebSocket,
@@ -2050,7 +2160,9 @@ async def generate_report_with_streaming(
     company_name: str,
     ticker: str,
     analyses_data: Dict[str, Any],
-    report_focus: str = "comprehensive"
+    report_focus: str = "comprehensive",
+    investment_objective: str = None,
+    user_query: str = None
 ) -> str:
     """Generate report with real-time streaming updates to frontend"""
     
@@ -2103,12 +2215,38 @@ async def generate_report_with_streaming(
             }))
             
             stock = yf.Ticker(ticker)
+            
+            # Get financial statements in the correct format for the template generator
+            financials_df = stock.financials if hasattr(stock, 'financials') else None
+            balance_sheet_df = stock.balance_sheet if hasattr(stock, 'balance_sheet') else None
+            cashflow_df = stock.cashflow if hasattr(stock, 'cashflow') else None
+            
+            # Convert DataFrames to the expected annual format with proper date keys
+            income_statement_annual = {}
+            balance_sheet_annual = {}
+            cashflow_annual = {}
+            
+            if financials_df is not None and not financials_df.empty:
+                for date_col in financials_df.columns:
+                    date_str = date_col.strftime('%Y-%m-%d') if hasattr(date_col, 'strftime') else str(date_col)
+                    income_statement_annual[date_str] = financials_df[date_col].to_dict()
+            
+            if balance_sheet_df is not None and not balance_sheet_df.empty:
+                for date_col in balance_sheet_df.columns:
+                    date_str = date_col.strftime('%Y-%m-%d') if hasattr(date_col, 'strftime') else str(date_col)
+                    balance_sheet_annual[date_str] = balance_sheet_df[date_col].to_dict()
+                    
+            if cashflow_df is not None and not cashflow_df.empty:
+                for date_col in cashflow_df.columns:
+                    date_str = date_col.strftime('%Y-%m-%d') if hasattr(date_col, 'strftime') else str(date_col)
+                    cashflow_annual[date_str] = cashflow_df[date_col].to_dict()
+            
             financial_data = {
                 'info': stock.info,
-                'history': stock.history(period="1y").to_dict() if hasattr(stock, 'history') else {},
-                'financials': stock.financials.to_dict() if hasattr(stock, 'financials') else {},
-                'balance_sheet': stock.balance_sheet.to_dict() if hasattr(stock, 'balance_sheet') else {},
-                'cashflow': stock.cashflow.to_dict() if hasattr(stock, 'cashflow') else {}
+                'history': stock.history(period="5y", interval="1mo").to_dict() if hasattr(stock, 'history') else {},
+                'income_statement_annual': income_statement_annual,
+                'balance_sheet_annual': balance_sheet_annual,
+                'cashflow_annual': cashflow_annual
             }
             logger.info(f"✅ Fetched yfinance data for {ticker}: {len(str(financial_data)):,} characters")
         except Exception as e:
@@ -2127,7 +2265,7 @@ async def generate_report_with_streaming(
             }
         }))
         
-        # Generate the report with real streaming from AI
+        # Generate the report with real streaming from AI (uses 2-call architecture internally)
         report_content = await generator.generate_report_with_websocket_streaming(
             company_name=company_name,
             ticker=ticker,
@@ -2135,7 +2273,9 @@ async def generate_report_with_streaming(
             report_focus=report_focus,
             websocket=websocket,
             connection_id=connection_id,
-            financial_data=financial_data
+            financial_data=financial_data,
+            investment_objective=investment_objective,
+            user_query=user_query
         )
         
         # Send final processing status
@@ -2169,6 +2309,89 @@ async def generate_report_with_streaming(
         }))
         raise
 
+async def handle_word_report_generation(websocket: WebSocket, connection_id: str, message: Dict):
+    """Handle Word document generation from HTML report"""
+    
+    try:
+        # Extract parameters
+        data = message.get('data', {})
+        html_content = data.get('html_content', '')
+        company_name = data.get('company_name', '')
+        ticker = data.get('ticker', '')
+        
+        logger.info(f"📄 Starting Word report generation for {company_name} ({ticker})")
+        
+        if not html_content:
+            raise ValueError("No HTML content provided for Word conversion")
+        
+        # Send start notification
+        await websocket.send_text(json.dumps({
+            "type": "word_generation_started",
+            "data": {
+                "ticker": ticker,
+                "company_name": company_name,
+                "message": f"📄 Converting HTML report to Word document for {company_name}...",
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Send progress update
+        await websocket.send_text(json.dumps({
+            "type": "word_generation_progress",
+            "data": {
+                "status": "parsing_html",
+                "message": "🔍 Parsing HTML content and extracting structure...",
+                "progress": 20,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Generate Word document
+        output_path = await word_report_generator.convert_html_to_word(
+            html_content=html_content,
+            company_name=company_name,
+            ticker=ticker
+        )
+        
+        # Send progress update
+        await websocket.send_text(json.dumps({
+            "type": "word_generation_progress", 
+            "data": {
+                "status": "converting_styles",
+                "message": "🎨 Converting CSS styles to Word formatting...",
+                "progress": 60,
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        # Send completion notification
+        await websocket.send_text(json.dumps({
+            "type": "word_generation_completed",
+            "data": {
+                "ticker": ticker,
+                "company_name": company_name,
+                "file_path": output_path,
+                "message": f"✅ Word document generated successfully for {company_name}",
+                "download_url": f"/api/download/word?file_path={output_path}",
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+        
+        logger.info(f"✅ Word document generated: {output_path}")
+        
+    except Exception as e:
+        logger.error(f"❌ Word generation failed: {e}")
+        
+        # Send error notification
+        await websocket.send_text(json.dumps({
+            "type": "word_generation_error",
+            "data": {
+                "error": str(e),
+                "message": f"❌ Word generation failed: {str(e)[:100]}...",
+                "timestamp": datetime.now().isoformat()
+            }
+        }))
+
 def main():
     """Main application entry point"""
     logger.info("🚀 Starting Robeco Ultra-Sophisticated Professional Streaming Server")
@@ -2176,13 +2399,52 @@ def main():
     logger.info("🔧 Cross-agent synthesis with maximum AI utilization")
     logger.info("📊 Professional-grade streaming reports with Google Search grounding")
     
-    # Find available port, preferring 8005
+    # Force use of port 8005 (kill any existing process)
     try:
-        port = find_available_port(8005)
-        logger.info(f"🌐 Server will be available at: http://0.0.0.0:{port}")
+        port = force_use_port_8005()
         
-        if port != 8005:
-            logger.info(f"💡 Port 8005 was busy, using port {port} instead")
+        # Get IP addresses for display
+        import requests
+        import socket
+        
+        def get_public_ip_server():
+            try:
+                response = requests.get('https://ifconfig.me', timeout=5)
+                return response.text.strip()
+            except:
+                try:
+                    response = requests.get('https://api.ipify.org', timeout=5)
+                    return response.text.strip()
+                except:
+                    return "Unable to detect"
+
+        def get_local_ip_server():
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                local_ip = s.getsockname()[0]
+                s.close()
+                return local_ip
+            except:
+                return "127.0.0.1"
+        
+        public_ip = get_public_ip_server()
+        local_ip = get_local_ip_server()
+        
+        logger.info(f"🌐 Server will be available at: http://0.0.0.0:{port}")
+        logger.info(f"🎯 Successfully secured port {port}")
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("🌍 INTERNET ACCESS URLS - SHARE WITH OUTSIDERS:")
+        logger.info("=" * 80)
+        logger.info(f"📍 Main App: http://{public_ip}:{port}/")
+        logger.info(f"📍 Workbench: http://{public_ip}:{port}/workbench")
+        logger.info(f"📍 Local Network: http://{local_ip}:{port}/")
+        logger.info("=" * 80)
+        logger.info("⚠️  ROUTER MUST FORWARD PORT 8005 FOR INTERNET ACCESS")
+        logger.info("💡 Copy these URLs and share them worldwide!")
+        logger.info("=" * 80)
+        logger.info("")
         
         uvicorn.run(
             app,

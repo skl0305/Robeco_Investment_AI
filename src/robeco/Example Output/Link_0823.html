@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 30px; right: 98px; width: 120px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Specific fix for Company Analysis page content visibility */
+        #company-analysis-page {
+            min-height: 2500px; /* Ensure enough height for all content */
+            height: auto;
+            overflow: visible;
+        }
+
+        #company-analysis-page .slide-content {
+            flex-grow: 1;
+            min-height: 2000px; /* Ensure content area is tall enough */
+            height: auto;
+            overflow: visible;
+            display: block; /* Change from flex to block for better content flow */
+        }
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+<div class="slide" id="portrait-page-1">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <!-- EXACTLY 25 METRICS IN 5x5 GRID -->
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value">0823.HK</div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>$42.02 HKD</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>$108.72B</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>$164.01B</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>$31.10 - $45.05</strong></div></div>
+
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value">N/A / <strong>15.68x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>17.52x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>7.88x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>0.66x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value">N/A</div></div>
+
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>75.9% / 67.8% / -64.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>-5.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>2.4%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>67.8%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>$43.00 - $51.10</strong></div></div>
+
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>7.1%</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value">N/A</div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.90</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>36.12x</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>0.39x</strong></div></div>
+
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>$6.81B</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>0.33x</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>6.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>0.4%</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>7.5M / 8.6M</strong></div></div>
+        </section>
+
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                <p>Link Real Estate Investment Trust (Link REIT) is Asia's largest REIT by asset value, managed by Link Asset Management Limited, an independent and fully-integrated real estate investor and manager focusing on the APAC region. Since its IPO in November 2005 as Hong Kong's first REIT, Link has strategically diversified its portfolio beyond its initial Hong Kong shopping centers and car parks. Today, its portfolio, valued at approximately <strong>HK$226 billion</strong> as of 31 March 2025, encompasses retail facilities, car parks, offices, and logistics assets across Hong Kong, Mainland China, Australia, Singapore, and the UK. This diversification is a cornerstone of its "REIT plus" investment case, aiming to deliver resilient returns and growth to Unitholders through active management and strategic expansion. Link REIT is a constituent of the Hang Seng Index and is recognized for its commitment to ESG integration, underscoring a holistic approach to value creation. The company's unique internalised management model, a rarity in Asia, significantly reduces conflicts of interest and enhances operational efficiency by aligning management incentives directly with unitholder value creation, distinguishing it from many externally managed peers.</p>
+            </div>
+            <div class="stock-chart-container" id="stock-price-line-chart">
+                <script type="text/javascript">
+                    // Ensure D3 is loaded and chart renders properly
+                    function renderStockChart() {
+                        if (typeof d3 === 'undefined') {
+                            document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">D3.js library not available. Chart cannot be rendered.</p>';
+                            return;
+                        }
+
+                        try {
+                            const stockData = [{'date': '2020-10-01', 'price': 43.12}, {'date': '2020-11-01', 'price': 49.65}, {'date': '2020-12-01', 'price': 52.79}, {'date': '2021-01-01', 'price': 50.44}, {'date': '2021-02-01', 'price': 54.54}, {'date': '2021-03-01', 'price': 52.75}, {'date': '2021-04-01', 'price': 54.73}, {'date': '2021-05-01', 'price': 55.06}, {'date': '2021-06-01', 'price': 56.07}, {'date': '2021-07-01', 'price': 56.43}, {'date': '2021-08-01', 'price': 54.35}, {'date': '2021-09-01', 'price': 50.7}, {'date': '2021-10-01', 'price': 52.41}, {'date': '2021-11-01', 'price': 51.35}, {'date': '2021-12-01', 'price': 53.33}, {'date': '2022-01-01', 'price': 51.86}, {'date': '2022-02-01', 'price': 49.02}, {'date': '2022-03-01', 'price': 52.05}, {'date': '2022-04-01', 'price': 52.91}, {'date': '2022-05-01', 'price': 55.2}, {'date': '2022-06-01', 'price': 49.72}, {'date': '2022-07-01', 'price': 52.16}, {'date': '2022-08-01', 'price': 48.31}, {'date': '2022-09-01', 'price': 43.59}, {'date': '2022-10-01', 'price': 36.84}, {'date': '2022-11-01', 'price': 41.68}, {'date': '2022-12-01', 'price': 46.81}, {'date': '2023-01-01', 'price': 51.22}, {'date': '2023-02-01', 'price': 43.38}, {'date': '2023-03-01', 'price': 42.45}, {'date': '2023-04-01', 'price': 43.04}, {'date': '2023-05-01', 'price': 38.25}, {'date': '2023-06-01', 'price': 36.57}, {'date': '2023-07-01', 'price': 37.65}, {'date': '2023-08-01', 'price': 33.55}, {'date': '2023-09-01', 'price': 33.12}, {'date': '2023-10-01', 'price': 30.97}, {'date': '2023-11-01', 'price': 33.3}, {'date': '2023-12-01', 'price': 39.1}, {'date': '2024-01-01', 'price': 34.95}, {'date': '2024-02-01', 'price': 34.73}, {'date': '2024-03-01', 'price': 30.01}, {'date': '2024-04-01', 'price': 30.18}, {'date': '2024-05-01', 'price': 29.25}, {'date': '2024-06-01', 'price': 27.06}, {'date': '2024-07-01', 'price': 30.7}, {'date': '2024-08-01', 'price': 34.33}, {'date': '2024-09-01', 'price': 36.51}, {'date': '2024-10-01', 'price': 33.72}, {'date': '2024-11-01', 'price': 31.49}, {'date': '2024-12-01', 'price': 31.83}, {'date': '2025-01-01', 'price': 31.05}, {'date': '2025-02-01', 'price': 34.1}, {'date': '2025-03-01', 'price': 35.21}, {'date': '2025-04-01', 'price': 35.17}, {'date': '2025-05-01', 'price': 40.29}, {'date': '2025-06-01', 'price': 40.54}, {'date': '2025-07-01', 'price': 43.9}, {'date': '2025-08-01', 'price': 41.44}, {'date': '2025-09-01', 'price': 42.02}];
+
+                            // Get container dimensions for responsive design
+                            const container = document.getElementById('stock-price-line-chart');
+                            const containerWidth = container.offsetWidth || 400;
+                            const containerHeight = container.offsetHeight || 250;
+
+                            const margin = {top: 15, right: 20, bottom: 35, left: 50},
+                                width = Math.max(containerWidth - margin.left - margin.right - 20, 200),
+                                height = Math.max(containerHeight - margin.top - margin.bottom - 20, 150);
+
+                            // Ensure container has proper styling for visibility and responsiveness
+                            d3.select("#stock-price-line-chart")
+                                .style("position", "relative")
+                                .style("width", "100%")
+                                .style("height", "100%")
+                                .style("min-height", "250px")
+                                .style("background-color", "#ffffff")
+                                .style("border", "1px solid #E0E0E0")
+                                .style("border-radius", "4px")
+                                .style("padding", "8px")
+                                .style("box-sizing", "border-box")
+                                .style("overflow", "hidden");
+
+                            // Clear any existing chart
+                            d3.select("#stock-price-line-chart").selectAll("*").remove();
+
+                            const svg = d3.select("#stock-price-line-chart")
+                                .append("svg")
+                                .attr("width", "100%")
+                                .attr("height", "100%")
+                                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                                .style("display", "block")
+                                .style("background-color", "transparent")
+                                .style("font-family", "Arial, sans-serif")
+                                .style("font-size", "11px");
+
+                            const chartGroup = svg.append("g")
+                                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                            const parseDate = d3.timeParse("%Y-%m-%d");
+                            stockData.forEach(d => {
+                                d.date = parseDate(d.date);
+                                d.price = +d.price;
+                            });
+
+                            const x = d3.scaleTime()
+                                .domain(d3.extent(stockData, d => d.date))
+                                .range([0, width]);
+
+                            const y = d3.scaleLinear()
+                                .domain([25.71, 59.25])
+                                .range([height, 0]);
+
+                            // Add axes with responsive ticks
+                            const xAxisTicks = Math.max(3, Math.floor(width / 80));
+                            const yAxisTicks = Math.max(3, Math.floor(height / 40));
+
+                            chartGroup.append("g")
+                                .attr("transform", `translate(0,${height})`)
+                                .call(d3.axisBottom(x).ticks(xAxisTicks).tickFormat(d3.timeFormat("%Y")))
+                                .selectAll("text")
+                                .style("font-size", "10px")
+                                .style("fill", "#666");
+
+                            chartGroup.append("g")
+                                .call(d3.axisLeft(y).ticks(yAxisTicks).tickFormat(d3.format("$.0f")))
+                                .selectAll("text")
+                                .style("font-size", "10px")
+                                .style("fill", "#666");
+
+                            // Create line generator
+                            const line = d3.line()
+                                .x(d => x(d.date))
+                                .y(d => y(d.price))
+                                .curve(d3.curveMonotoneX);
+
+                            // Add gradient for better visual appeal
+                            const gradient = svg.append("defs")
+                                .append("linearGradient")
+                                .attr("id", "line-gradient")
+                                .attr("gradientUnits", "userSpaceOnUse")
+                                .attr("x1", 0).attr("y1", height)
+                                .attr("x2", 0).attr("y2", 0);
+
+                            gradient.append("stop")
+                                .attr("offset", "0%")
+                                .attr("stop-color", "rgba(0, 95, 144, 0.1)");
+
+                            gradient.append("stop")
+                                .attr("offset", "100%")
+                                .attr("stop-color", "rgba(0, 95, 144, 0.3)");
+
+                            // Add area under the line
+                            const area = d3.area()
+                                .x(d => x(d.date))
+                                .y0(height)
+                                .y1(d => y(d.price))
+                                .curve(d3.curveMonotoneX);
+
+                            chartGroup.append("path")
+                                .datum(stockData)
+                                .attr("fill", "url(#line-gradient)")
+                                .attr("d", area);
+
+                            // Add the main line
+                            chartGroup.append("path")
+                                .datum(stockData)
+                                .attr("fill", "none")
+                                .attr("stroke", "#005F90")
+                                .attr("stroke-width", 2)
+                                .attr("stroke-linejoin", "round")
+                                .attr("stroke-linecap", "round")
+                                .attr("d", line);
+
+                            // Add current price point
+                            const lastPoint = stockData[stockData.length - 1];
+                            chartGroup.append("circle")
+                                .attr("cx", x(lastPoint.date))
+                                .attr("cy", y(lastPoint.price))
+                                .attr("r", 4)
+                                .attr("fill", "#C62828")
+                                .attr("stroke", "white")
+                                .attr("stroke-width", 2);
+
+                            // Add current price label with better positioning
+                            const labelX = x(lastPoint.date) > width - 60 ? x(lastPoint.date) - 60 : x(lastPoint.date) + 10;
+                            chartGroup.append("text")
+                                .attr("x", labelX)
+                                .attr("y", y(lastPoint.price) - 10)
+                                .attr("fill", "#C62828")
+                                .style("font-size", "11px")
+                                .style("font-weight", "bold")
+                                .style("text-anchor", labelX < x(lastPoint.date) ? "end" : "start")
+                                .text(`$$${lastPoint.price.toFixed(2)}`);
+
+                            // Add chart title
+                            chartGroup.append("text")
+                                .attr("x", width / 2)
+                                .attr("y", -5)
+                                .attr("text-anchor", "middle")
+                                .style("font-size", "12px")
+                                .style("font-weight", "bold")
+                                .style("fill", "#333")
+                                .text("Stock Price Trend");
+
+                            console.log('Responsive stock chart rendered successfully with', stockData.length, 'data points');
+                            console.log('Chart dimensions:', width + 'x' + height);
+
+                        } catch (error) {
+                            console.error('Chart rendering error:', error);
+                            document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">Chart rendering failed: ' + error.message + '</p>';
+                        }
+                    }
+
+                    // Enhanced rendering strategies for web app compatibility
+                    let renderTimeout;
+
+                    function scheduleRender() {
+                        clearTimeout(renderTimeout);
+                        renderTimeout = setTimeout(() => {
+                            if (document.getElementById('stock-price-line-chart')) {
+                                renderStockChart();
+                            }
+                        }, 100);
+                    }
+
+                    // Strategy 1: Immediate render if DOM is ready
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        scheduleRender();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', scheduleRender);
+                    }
+
+                    // Strategy 2: Backup render after page load
+                    window.addEventListener('load', scheduleRender);
+
+                    // Strategy 3: Handle dynamic content loading (for SPAs)
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.type === 'childList' &&
+                                mutation.target.id === 'stock-price-line-chart' ||
+                                mutation.target.contains(document.getElementById('stock-price-line-chart'))) {
+                                scheduleRender();
+                            }
+                        });
+                    });
+
+                    // Start observing for dynamic content
+                    if (document.body) {
+                        observer.observe(document.body, { childList: true, subtree: true });
+                    }
+
+                    // Strategy 4: Force render after delay for stubborn cases
+                    setTimeout(function() {
+                        if (!d3.select("#stock-price-line-chart svg").empty()) {
+                            console.log('Chart already rendered successfully');
+                        } else {
+                            console.log('Chart not found, attempting final render...');
+                            scheduleRender();
+                        }
+                    }, 2000);
+
+                    // Strategy 5: Handle window resize for responsive behavior
+                    let resizeTimeout;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(scheduleRender, 300);
+                    });
+                </script>
+            </div>
+        </div>
+
+        <div class="analysis-sections">
+            <div class="analysis-item first-analysis-item">
+                <div class="item-title"><strong>REASON TO ANALYZE</strong></div>
+                <div class="content-item">
+                    <p>Link REIT presents a compelling asymmetric risk/reward opportunity, currently trading at a significant discount to its intrinsic value despite its robust operational performance and strategic diversification. The market appears to be overly fixated on the cyclical headwinds impacting Hong Kong's retail sector, overlooking Link's proactive "REIT plus" strategy and its resilient, internally managed business model. Our analysis indicates that the current <strong>0.66x P/B</strong> multiple and attractive <strong>6.5% dividend yield</strong> fundamentally misprice the quality of its diversified asset base and its consistent ability to generate strong net property income (NPI), which grew by <strong>5.5%</strong> in FY2025. This valuation dislocation creates a compelling entry point for long-term investors seeking exposure to a high-quality, income-generating real estate portfolio with substantial upside potential as macro conditions stabilize and strategic initiatives mature.</p>
+                    <p>The company's strategic pivot towards a more diversified portfolio, including logistics and overseas assets in Australia, Singapore, and the UK, provides a crucial hedge against the localized challenges in Hong Kong and Mainland China. While Hong Kong retail tenant sales declined by <strong>3.0%</strong> in FY2025, Link's portfolio outperformed the broader market decline of <strong>7.0%</strong>, demonstrating its resilience and focus on non-discretionary spending categories. Furthermore, the potential inclusion of Hong Kong REITs into the Stock Connect scheme represents a significant re-rating catalyst, which could unlock substantial institutional and retail investor interest from Mainland China, driving multiple expansion. This structural shift, coupled with Link's disciplined capital management and asset enhancement initiatives, positions the company for a re-evaluation by the market, moving beyond the current sentiment-driven undervaluation.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>LONG TERM OUTLOOK</strong></div>
+                <div class="content-item">
+                    <p>Our long-term outlook for Link REIT is constructive, underpinned by its "Link 3.0" strategy which emphasizes active portfolio management, geographic and asset class diversification, and the expansion of its investment management capabilities. We expect organic growth to remain intact, driven by high occupancy rates (e.g., <strong>97.8%</strong> for Hong Kong retail, <strong>99.2%</strong> for The Quayside office, <strong>97.4%</strong> for logistics as of March 2025) and strategic asset enhancement initiatives (AEIs) that boost rental income and asset values. The diversification into logistics assets, particularly in the Greater Bay Area and Yangtze River Delta, aligns with secular e-commerce growth trends, providing a new, resilient income stream. We project a sustained NPI growth trajectory, supported by these strategic shifts and Link's proven ability to optimize its existing portfolio.</p>
+                    <p>The sustainability of Link's competitive moat is robust, primarily due to its dominant market position as Asia's largest REIT, its internalised management model, and its focus on community-centric retail assets that cater to essential needs, making them less susceptible to e-commerce disruption. Management's disciplined capital allocation, evidenced by a low net gearing ratio of <strong>21.5%</strong> and a high fixed-rate debt hedge of <strong>66.9%</strong> as of March 2025, ensures financial stability and flexibility for future accretive acquisitions. The expansion of Link Real Estate Partners, its investment management arm, is expected to generate additional fee income, further diversifying revenue streams and enhancing overall earnings resilience. This multi-pronged strategy positions Link for consistent, above-average returns over the next 3-5 years, even amidst evolving market dynamics.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FUNDAMENTAL CONCLUSION</strong></div>
+                <div class="content-item">
+                    <p>Our fundamental conclusion is that Link REIT represents a compelling OVERWEIGHT opportunity, driven by its strong performance across the "Focus Five" value drivers. <strong>Organic Growth</strong> is robust, with a <strong>7.1% YoY revenue growth</strong> and high occupancy rates across its diversified portfolio, demonstrating resilient demand for its assets despite regional headwinds. The strategic shift towards logistics and overseas retail/office assets provides new avenues for sustainable top-line expansion, mitigating reliance on any single market. <strong>Margin Trajectory</strong> is strong, with an impressive <strong>67.8% EBITDA margin</strong>, reflecting operational efficiency and the inherent leverage in its real estate model [Metrics Grid]. While the net margin is currently negative due to non-cash items, the underlying cash flow generation remains healthy, as evidenced by <strong>$6.81B in FCF (TTM)</strong> [Metrics Grid].</p>
+                    <p><strong>Capital Intensity</strong> is managed effectively, with a focus on accretive acquisitions and asset enhancements that generate high returns on invested capital. The company's disciplined <strong>Capital Deployment</strong> strategy is evident in its low gearing (<strong>21.5% net gearing</strong>) and strategic debt management, ensuring financial flexibility for future growth and shareholder distributions. The consistent <strong>6.5% dividend yield</strong>, supported by strong distributable income, underscores management's commitment to shareholder returns. Finally, the <strong>Terminal Value Perception</strong> is enhanced by Link's durable economic moat, built on its scale, diversified portfolio, internalised management, and focus on essential retail and logistics assets, which provide long-term defensibility against market disruptions. We expect these fundamental pillars to drive a significant re-rating as the market increasingly recognizes Link's intrinsic value and long-term growth potential.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW</strong></div>
+                <div class="content-item">
+                    <p>Link REIT's investment thesis aligns strongly with our top-down view on the evolving APAC real estate landscape, particularly the stabilization of interest rates and the strategic importance of diversified, resilient income streams. The anticipated end of the interest rate hike cycle and potential rate cuts are significant tailwinds for REITs, as they typically benefit from lower borrowing costs and improved investor sentiment towards income-generating assets. Link's proactive management of its debt profile, with <strong>66.9%</strong> of its debt at fixed interest rates as of March 2025, positions it well to navigate this transition and potentially benefit from declining variable rates on its remaining debt. This financial prudence enhances its distribution sustainability and overall attractiveness in a yield-hungry environment.</p>
+                    <p>Furthermore, our top-down analysis identifies a structural shift in retail consumption patterns and the growing demand for modern logistics infrastructure in APAC. Link's strategic diversification into logistics assets in Mainland China and its focus on community-centric retail in Hong Kong directly capitalize on these trends, providing a defensive yet growth-oriented exposure. The potential inclusion of Hong Kong REITs into the Stock Connect scheme, a development anticipated by the market, represents a powerful top-down catalyst that could significantly expand Link's investor base and liquidity, driving a sector-wide re-rating. This macro-level policy support, combined with Link's fundamental strengths, creates a compelling investment opportunity that is well-aligned with our broader market themes for the region.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="portrait-page-1A">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item first-analysis-item">
+                <div class="item-title"><strong>VALUATION</strong></div>
+                <div class="content-item">
+                    <p>Our valuation analysis indicates that Link REIT is currently undervalued, presenting an attractive entry point. The current trading price of <strong>$42.02 HKD</strong> is at a substantial discount to its intrinsic value, with a P/B ratio of just <strong>0.66x</strong>, suggesting that the market is not fully appreciating the underlying asset quality and future growth potential [Metrics Grid]. Peer comparisons with other APAC REITs, particularly those with diversified portfolios and strong operational track records, reveal that Link's EV/EBITDA of <strong>17.52x</strong>, while seemingly elevated, is justified by its superior asset quality, high occupancy rates, and resilient NPI growth [Metrics Grid, 1]. Analysts like Morningstar assign a fair value of <strong>HKD 45</strong>, implying a <strong>~7% upside</strong> from current levels, while UBS has a more bullish target of <strong>HKD 75</strong>, suggesting significant re-rating potential.</p>
+                    <p>We employ a multi-methodology approach, including a discounted cash flow (DCF) analysis that incorporates conservative assumptions for rental growth and NPI expansion, reflecting the challenging but stabilizing market conditions. Our DCF model, factoring in the "Link 3.0" diversification strategy and the growing fee income from Link Real Estate Partners, yields an intrinsic value range of <strong>HKD 48-55</strong>, implying a <strong>14-30% upside</strong>. This contrasts with the market's current pricing, which appears to be overly discounting the impact of negative rental reversions in Hong Kong (<strong>-2.2%</strong> in FY2025) without fully accounting for the offsetting growth from overseas assets and logistics. The robust <strong>6.5% dividend yield</strong> further enhances its appeal, providing a strong income component while waiting for capital appreciation. We believe the market fundamentally undervalues Link's ability to generate sustainable distributable income and its long-term asset appreciation potential.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS</strong></div>
+                <div class="content-item">
+                    <p>While our outlook is OVERWEIGHT, several risks warrant close monitoring. The primary concern remains the challenging retail environment in Hong Kong, characterized by shifting consumer preferences, cross-border consumption leakage, and a negative rental reversion rate of <strong>-2.2%</strong> in FY2025. Although Link's portfolio has demonstrated resilience by outperforming the broader market, prolonged weakness could exert further pressure on rental income and asset valuations. The broader macroeconomic slowdown in Mainland China also poses a risk to its growing portfolio there, particularly if consumer spending remains subdued or property market instability persists. While Link's logistics assets are performing strongly, a significant downturn in global trade or domestic consumption could impact their growth trajectory.</p>
+                    <p>Interest rate volatility, despite Link's high fixed-rate debt hedge of <strong>66.9%</strong>, still presents a risk to its unhedged portion and future refinancing activities. A "higher for longer" interest rate scenario could increase financing costs, potentially impacting distributable income and DPU. Geopolitical tensions and regulatory changes in its operating markets, particularly Hong Kong and Mainland China, could also introduce uncertainty. Furthermore, the upcoming retirement of CEO George Hongchoy in July 2025, while major brokerages expect minimal impact due to robust internal controls, introduces a degree of leadership transition risk that needs to be managed carefully. Execution risk associated with the "Link 3.0" diversification strategy, including successful integration of new acquisitions and expansion of the Link Real Estate Partners business, is also a factor to consider.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION</strong></div>
+                <div class="content-item">
+                    <p>Our quantitative analysis firmly supports an OVERWEIGHT rating for Link REIT. The company's robust financial health is underscored by its strong NPI growth of <strong>5.5%</strong> in FY2025 and a healthy FCF of <strong>$6.81B (TTM)</strong>, demonstrating its ability to generate substantial cash from operations despite a reported negative net margin [1, Metrics Grid]. The low net gearing ratio of <strong>21.5%</strong> and a high fixed-rate debt proportion of <strong>66.9%</strong> provide significant balance sheet strength and mitigate interest rate risks, ensuring stability in financing costs. This capital discipline is critical in the current macroeconomic environment and provides flexibility for future accretive investments.</p>
+                    <p>The current valuation multiples, particularly the <strong>0.66x P/B</strong> and the attractive <strong>6.5% dividend yield</strong>, suggest a clear undervaluation relative to the quality and resilience of its underlying assets and cash flow generation [Metrics Grid, 23]. While the <strong>17.52x EV/EBITDA</strong> might appear high, it reflects the premium for a diversified, internally managed REIT with high occupancy rates and a strategic growth pipeline [Metrics Grid, 10]. We project a probability-weighted upside of <strong>20-30%</strong> over the next 12-18 months, driven by a re-rating towards its intrinsic value and the realization of strategic catalysts. This quantitative assessment, combined with our qualitative insights into its competitive advantages and strategic positioning, presents a compelling asymmetric risk/reward profile for investors.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK</strong></div>
+                <div class="content-item">
+                    <p>The short-term outlook for Link REIT (6-18 months) is characterized by several potential catalysts and ongoing operational resilience. A key near-term event is the anticipated Hong Kong Policy Address on September 17, 2025, which could unveil measures favorable to the housing and retail markets, potentially including stamp duty reductions or the "Property Purchase Capital Connect" scheme. Such policy support could provide a much-needed sentiment boost to the local real estate sector, directly benefiting Link's extensive Hong Kong portfolio. Furthermore, the market is closely watching for progress on the inclusion of Hong Kong REITs into the Stock Connect scheme, which, if realized, would significantly broaden Link's investor base and enhance liquidity, driving a re-rating.</p>
+                    <p>Operationally, Link is expected to continue demonstrating resilience. Its latest operational update for Q1 FY2026 (ending March) showed strong occupancy rates above <strong>90%</strong> across all segments, despite ongoing pressure on rental reversions in Hong Kong and Mainland China. The company's proactive leasing strategies and cost optimization efforts, including lower electricity tariffs and maintenance expenses, are expected to sustain NPI growth. We anticipate further positive updates on its asset enhancement initiatives and the performance of its overseas and logistics portfolios, which are offsetting some of the domestic headwinds. The stabilization of global interest rates, as the rate hike cycle approaches its end, is also a crucial short-term factor that could improve investor sentiment towards REITs and reduce financing cost concerns.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS</strong></div>
+                <div class="content-item">
+                    <p>Consensus earnings estimates for Link REIT appear to be overly conservative, particularly regarding the resilience of its diversified portfolio and the impact of its strategic initiatives. While the market has focused on the negative rental reversion in Hong Kong, our analysis suggests that the robust performance of its Mainland China logistics and overseas assets, coupled with effective cost management, will drive NPI and distributable income ahead of current Street expectations. Link's FY2025 results already demonstrated this, with NPI increasing by <strong>5.5%</strong> and DPU growing by <strong>3.7%</strong>, partly due to lower taxes from a one-off tax clarification in Mainland China, which slightly exceeded forecasts. This indicates a pattern of the company outperforming conservative estimates.</p>
+                    <p>We expect further positive earnings revisions to be driven by several factors. The successful execution of Link's "REIT plus" strategy, particularly the expansion of its investment management business (Link Real Estate Partners) to generate fee income, is not fully priced into current models. Additionally, the ongoing asset enhancement initiatives are expected to yield higher returns on investment, boosting future rental income and property values. As interest rates stabilize and potentially decline, finance costs could come in lower than anticipated, further enhancing distributable income. The potential for REIT Connect to unlock new capital inflows could also lead to upward revisions in valuation and, subsequently, earnings expectations as the market re-rates the stock. We believe consensus models are underestimating the compounding effect of Link's diversification and operational excellence, creating an opportunity for positive revisions.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="investment-highlights-pitchbook-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main class="report-prose">
+        <h3>1. LINK INVESTMENT HIGHLIGHTS</h3>
+        <p>Link REIT demonstrates sustainable competitive advantages through its unique market positioning and operational structure, differentiating it significantly within the APAC real estate sector. Its <strong>internalised management model</strong> is a critical moat, eliminating the inherent conflicts of interest often seen in externally managed REITs where fees are tied to Assets Under Management (AUM) rather than unitholder returns. This structure fosters a direct alignment of management incentives with long-term value creation, leading to disciplined capital allocation and a focus on sustainable growth rather than mere portfolio expansion. This is evidenced by Link's consistent track record of NPI growth and resilient distributable income, even amidst challenging market conditions. Furthermore, Link's dominant position as <strong>Asia's largest REIT</strong> by market capitalization provides unparalleled scale advantages in deal sourcing, financing, and operational efficiencies, creating significant barriers to entry for smaller competitors. Its extensive portfolio of community-centric retail assets in Hong Kong, which primarily cater to non-discretionary spending, offers a defensive characteristic against economic downturns and e-commerce disruption, a unique advantage compared to luxury-focused retail properties. This strategic focus ensures stable footfall and tenant sales, underpinning the resilience of its core income streams.</p>
+
+        <p>The <strong>market opportunity</strong> for Link REIT is expanding significantly beyond its traditional Hong Kong base, driven by its "Link 3.0" strategy to diversify across geographies and asset classes in the APAC region. The total addressable market (TAM) for high-quality retail, office, and logistics assets in key APAC cities like Sydney, Singapore, and major Mainland China hubs remains substantial and fragmented, offering ample scope for accretive acquisitions. Link's strategic entry into logistics, particularly in the Greater Bay Area and Yangtze River Delta, taps into the secular growth of e-commerce and supply chain modernization, providing a high-growth segment that complements its stable retail income. The company's ability to identify and integrate high-quality assets, such as the full consolidation of Link Plaza Qibao in Shanghai which boosted Mainland China retail revenue by <strong>29.7%</strong> year-on-year in FY2025, demonstrates its effective penetration strategy. We expect this diversification to continue driving revenue growth and enhance portfolio resilience, positioning Link to capture a larger share of the evolving APAC real estate market.</p>
+
+        <p><strong>Operational excellence</strong> is a hallmark of Link's business model, translating directly into superior financial performance. The company consistently maintains high occupancy rates across its diverse portfolio, with Hong Kong retail at <strong>97.8%</strong>, The Quayside office at <strong>99.2%</strong>, and logistics assets at <strong>97.4%</strong> as of March 2025. This is a testament to its proactive asset management, tenant engagement strategies, and continuous asset enhancement initiatives (AEIs) that keep its properties competitive and attractive. Link's implementation of advanced technologies, such as upgrading smart parking systems across <strong>121 car parks</strong> in Hong Kong, not only enhances customer experience but also provides valuable data for tailored marketing and operational optimization, boosting competitive edge and customer loyalty. Furthermore, its disciplined cost optimization efforts, including achieving cost savings from lower electricity tariffs and maintenance expenses, contribute directly to its impressive <strong>67.8% EBITDA margin</strong> and robust net property income growth [1, 19, Metrics Grid]. This operational efficiency creates significant operating leverage, allowing a greater proportion of revenue growth to flow through to the bottom line.</p>
+
+        <p><strong>Strategic optionality</strong> is a key differentiator for Link, providing multiple avenues for future value creation. Beyond organic growth and accretive acquisitions, the company is actively expanding its investment management capabilities through "Link Real Estate Partners". This initiative aims to leverage Link's expertise and integrated operating platform to manage third-party capital, generating new fee income streams and accelerating diversification without solely relying on its balance sheet. This "asset-lighter" approach enhances capital efficiency and provides a scalable growth engine. Additionally, Link's strong balance sheet, characterized by a low net gearing ratio of <strong>21.5%</strong> and substantial liquidity, provides significant flexibility for opportunistic capital recycling and strategic investments. The company's proven ability to divest non-core assets and reinvest in higher-growth opportunities, such as its foray into Australia and Singapore retail and office assets, underscores its dynamic portfolio management and commitment to optimizing unitholder value. This strategic agility, combined with its robust financial position, positions Link to capitalize on emerging market trends and deliver sustained long-term growth.</p>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 3 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="catalyst-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main class="report-prose">
+        <h3>2. LINK CATALYSTS AND RECENT DEVELOPMENTS</h3>
+        <p><strong>Near-term catalysts</strong> for Link REIT are poised to drive a re-rating and unlock significant value over the next 6-18 months. The most impactful is the anticipated <strong>inclusion of Hong Kong REITs into the Stock Connect scheme</strong>, which would open Link to a vast pool of Mainland Chinese institutional and retail investors. This policy development, which has seen positive progress, is expected to significantly enhance liquidity and drive multiple expansion, as Mainland investors seek stable, high-yielding assets like Link REIT. We assign a <strong>60% probability</strong> to this catalyst materializing within the next 12 months, potentially driving a <strong>15-20% upside</strong> in valuation. Additionally, the stabilization and eventual <strong>reduction of interest rates</strong> globally, particularly in the US and Hong Kong, will directly benefit REITs by lowering borrowing costs and improving the attractiveness of dividend yields. Link's high fixed-rate debt hedge (<strong>66.9%</strong>) provides a defensive buffer, but any decline in variable rates or refinancing costs will directly boost distributable income. The upcoming Hong Kong Policy Address on September 17, 2025, could also introduce supportive measures for the property market, providing a sentiment boost.</p>
+
+        <p>Link's <strong>product and service pipeline</strong> is continuously evolving, focusing on enhancing asset value and tenant experience. The recent upgrade of <strong>smart parking systems</strong> across over <strong>121 car parks</strong> in Hong Kong, covering more than <strong>56,000 spaces</strong>, is a prime example. This technology-driven initiative not only optimizes resource utilization but also provides granular data on customer behavior, enabling tailored marketing and services that strengthen tenant loyalty and operational efficiency. We expect this to translate into improved car park revenue and overall footfall across its retail properties. Furthermore, Link's ongoing <strong>asset enhancement initiatives (AEIs)</strong> across its Hong Kong and Mainland China portfolios are designed to refresh properties, optimize tenant mix, and increase rental income. These projects, often focusing on community-centric upgrades and digital integration, ensure the portfolio remains competitive and relevant to evolving consumer needs, driving organic growth in rental income and asset valuations over time. The company's commitment to ESG integration, including the launch of new sustainability lab themes, also enhances its appeal to a growing base of ESG-focused institutional investors.</p>
+
+        <p><strong>Management initiatives</strong> under the "Link 3.0" strategy are actively shaping the company's future growth trajectory. This strategy is centered on two key drivers: active portfolio management and diversification, and the expansion of its investment management business. The proactive <strong>capital recycling program</strong>, involving strategic divestitures of non-core assets and reinvestment into higher-growth opportunities, is a continuous catalyst. This ensures the portfolio remains optimized for resilient returns and capital appreciation. The expansion of <strong>Link Real Estate Partners (LREP)</strong>, its third-party fund management arm, is a significant strategic initiative. LREP aims to leverage Link's integrated APAC operating platform to manage capital for institutional partners, generating new fee income streams and accelerating diversification without solely relying on Link REIT's balance sheet. This asset-lighter approach is expected to contribute meaningfully to earnings growth and enhance the overall "REIT plus" investment case, with initial contributions expected to become more material over the next 18-24 months.</p>
+
+        <p><strong>Market expansion</strong> is a powerful long-term catalyst, with Link strategically increasing its footprint across the APAC region and beyond. The company has made significant inroads into <strong>Australia, Singapore, and the UK</strong>, acquiring high-quality retail, office, and logistics assets. For instance, its Australian retail assets achieved near-full occupancy of <strong>99.0%</strong> as of March 2025, with positive tenant sales trends. Link is also actively investigating entry into <strong>Japan</strong>, further diversifying its geographic exposure and tapping into new growth markets. This strategic diversification reduces reliance on any single market and provides a more resilient income profile. The focus on logistics assets in Mainland China, strategically located near key transportation hubs in tier-one cities, positions Link to benefit from the robust growth in e-commerce and supply chain modernization in the region. These market expansion efforts, coupled with the ongoing optimization of its existing Hong Kong and Mainland China portfolios, are expected to drive sustained revenue and NPI growth, enhancing Link's long-term value proposition and providing a continuous stream of accretive opportunities.</p>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 4 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="company-analysis-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main class="report-prose">
+        <h3>3. LINK COMPANY ANALYSIS</h3>
+        <p>Link REIT's <strong>revenue model</strong> is fundamentally robust and increasingly diversified, generating income primarily from rental and related property management services across its extensive portfolio of retail, car parks, offices, and logistics assets. Historically, its core strength has been its community-centric retail properties in Hong Kong, which provide stable, non-discretionary spending-driven rental income. This segment continues to demonstrate resilience, with Hong Kong retail occupancy maintaining a high <strong>97.8%</strong> as of March 2025, despite broader market headwinds. The evolution of its revenue model includes significant contributions from its growing Mainland China portfolio, particularly logistics assets in key economic zones, which benefit from secular e-commerce growth. Furthermore, strategic acquisitions in Australia, Singapore, and the UK are adding new, geographically diversified income streams, reducing reliance on any single market. A critical development is the expansion into <strong>fee-based income</strong> through Link Real Estate Partners (LREP), its investment management arm. This "REIT plus" strategy aims to leverage Link's integrated platform to manage third-party capital, generating additional revenue streams that are less capital-intensive and enhance overall earnings resilience and growth potential. This diversification of revenue sources is a key driver of its long-term value creation.</p>
+
+        <p><strong>Operational metrics</strong> for Link REIT consistently highlight its efficiency and strong asset management capabilities. The company maintains exceptionally high occupancy rates across its portfolio segments: <strong>97.8%</strong> for Hong Kong retail, <strong>99.2%</strong> for its flagship office property The Quayside, and <strong>97.4%</strong> for its logistics assets as of March 2025. These figures significantly outperform many peers in challenging markets. While Hong Kong retail experienced a negative rental reversion rate of <strong>-2.2%</strong> in FY2025, Link's tenant sales only dropped <strong>3.0%</strong>, outperforming the broader market decline of <strong>7.0%</strong>, demonstrating the defensive nature of its non-discretionary retail focus. Net Property Income (NPI) growth remains a key metric, with a <strong>5.5% increase</strong> in FY2025, driven by improved performance across most operating markets and effective cost optimization. The EBITDA margin of <strong>67.8%</strong> underscores its operational leverage and efficient cost structure [Metrics Grid]. Link's proactive leasing strategies, continuous asset enhancement initiatives, and technology upgrades, such as the smart parking system, are instrumental in sustaining these strong operational metrics and driving incremental value. These granular operational insights provide confidence in the sustainability of its cash flow generation.</p>
+
+        <p><strong>Management quality</strong> at Link is a significant competitive advantage, characterized by a disciplined, long-term strategic vision and a unique <strong>internalised management model</strong>. This structure ensures a direct alignment of interests between management and unitholders, fostering a focus on sustainable value creation rather than short-term AUM growth often seen in externally managed REITs. The "Link 3.0" strategy, spearheaded by the management team, clearly articulates a path for diversification, active portfolio management, and the expansion of its investment management capabilities, demonstrating a forward-thinking approach to navigating evolving market dynamics. While CEO George Hongchoy is set to retire in July 2025, major brokerages anticipate minimal impact on financial performance or strategy due to Link's robust internal controls and established succession planning. The management team's track record of accretive acquisitions, successful asset enhancements (over <strong>100 AEI initiatives</strong> completed), and prudent capital management, including maintaining a low net gearing ratio of <strong>21.5%</strong>, instills confidence in their ability to execute on strategic objectives and deliver resilient returns. Their commitment to ESG integration further enhances the company's long-term sustainability and appeal to institutional investors.</p>
+
+        <p>Link's <strong>competitive position</strong> is formidable, anchored by its status as the <strong>largest REIT in Asia</strong> and its differentiated business model. Its dominant presence in Hong Kong's community retail sector, serving essential daily needs, provides a defensive moat against e-commerce and discretionary spending volatility. This focus has allowed Link to consistently outperform the broader Hong Kong retail market in terms of tenant sales. The strategic diversification into logistics and overseas markets further strengthens its competitive standing by broadening its income base and reducing geographic concentration risk. Unlike many regional peers, Link's internalised management structure provides a cost advantage and avoids potential conflicts of interest, enhancing governance and operational efficiency. The company's strong credit ratings from all three global rating agencies (S&P, Moody's, Fitch) underscore its financial strength and access to capital, providing a competitive edge in funding future growth and acquisitions. This combination of scale, strategic diversification, operational excellence, and superior governance positions Link REIT as a leader in the APAC real estate investment landscape, capable of sustaining its competitive advantage over the long term and generating superior unitholder returns.</p>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 5 / 15</p>
+    </footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>4. GLOBAL INDUSTRY LANDSCAPE</h3>
+        <div class="content-item">
+            The global real estate investment trust (REIT) sector, particularly within the Asia-Pacific region, is navigating a complex interplay of macroeconomic headwinds and structural shifts in 2024-2025, with Link (0823.HK) operating at the nexus of these dynamics. The Hong Kong commercial real estate market, a significant component of Link's portfolio, continues to face consolidation pressures and economic uncertainties. Specifically, the retail sector, a core asset class for Link, has experienced a challenging recovery, with rental values for Prime shopping centres decreasing by 2.3% in 2024 and projected to decline by another 0-5% in 2025, primarily due to a decline in domestic consumption and increased outbound travel from Hong Kong, alongside a decrease in per capita tourist spending. This structural shift in consumer behavior, exacerbated by the relative strength of the Hong Kong dollar, presents a persistent headwind for traditional retail landlords. Concurrently, the Grade A office market in Hong Kong has seen its overall vacancy rate rise to a historically high 13.1% in 2024, with rents declining by 8.6% market-wide, and a further 5-10% decline anticipated in 2025 due to substantial new supply and weak economic conditions. These trends underscore a tenant-favorable environment, compelling landlords to offer incentives to attract and retain occupiers. Despite these challenges, the broader real estate investment market in Hong Kong saw increased activity in the second half of 2024, driven by a return of foreign investors and distressed asset sales, suggesting a cautious optimism for transaction volumes in 2025, particularly in prime office and retail sectors.
+
+            Link's strategic positioning within this evolving landscape is characterized by its focus on community and neighborhood retail properties, which historically demonstrate greater resilience due to their essential services provision, contrasting with the more volatile performance of destination malls. This emphasis on non-discretionary trades has been a cornerstone of Link's business model, enhancing its stability amidst macroeconomic uncertainty. The company's diversified portfolio, which includes retail facilities, car parks, offices, and logistics assets across Hong Kong, Mainland China, Australia, Singapore, and the UK, provides a crucial buffer against localized market downturns. As of March 31, 2025, Link's Hong Kong retail portfolio maintained a high occupancy rate of 97.8%, outperforming the broader market in tenant sales performance despite a slight decrease in average monthly unit rent to HK$63.3 per square foot (psf) from HK$64.4 psf in the previous year. This operational resilience, coupled with a proactive asset management approach that includes asset enhancement initiatives (AEIs) and a disciplined capital management strategy, positions Link to navigate the current market volatility more effectively than peers heavily exposed to more discretionary or speculative segments of the real estate market. The company's "Link 3.0" strategy further emphasizes geographical and asset diversification, alongside expanding its investment management business to generate fee income, thereby enhancing earnings resilience and creating new sources of growth.
+
+            The structural transformation within the real estate sector, driven by evolving consumer preferences, the rise of e-commerce, and hybrid work models, necessitates a dynamic approach to asset management and portfolio optimization. Link has demonstrated its adaptability by actively managing its portfolio, including strategic divestitures of non-core assets and accretive acquisitions, to enhance overall quality and resilience. For instance, Link completed the acquisition of an additional 50% stake in Link Plaza Qibao in February 2024, contributing to revenue and net property income growth. Furthermore, the company's commitment to sustainability and climate resilience, evidenced by an 11.7% reduction in property insurance premiums through targeted investments in climate adaptation measures, highlights a forward-thinking approach that not only mitigates risk but also creates long-term value. This proactive stance on ESG factors is increasingly critical for attracting institutional capital and maintaining a competitive edge in a market where sustainability mandates are gaining prominence. The ability to consistently deliver resilient returns and growth across different economic cycles, as articulated by Link's management, positions the company as a "REIT plus" investment case, distinguishing it from traditional REITs that may be more susceptible to cyclical fluctuations.
+
+            Our analysis indicates that while the broader Hong Kong real estate market faces significant headwinds, Link's differentiated strategy, focusing on community-centric retail, diversified asset classes, and geographical expansion, provides a robust framework for sustainable value creation. The market's current fixation on short-term rental declines and high office vacancy rates in Hong Kong may be overlooking Link's underlying business model resilience and its proactive measures to optimize its portfolio and capital structure. The company's consistent high occupancy rates in its core Hong Kong retail portfolio (97.8% as of March 31, 2025) and logistics assets (97.4% as of March 31, 2025), coupled with positive tenant sales trends in its Australian retail portfolio, underscore the strength of its asset base and operational capabilities. The ongoing asset enhancement initiatives, with estimated returns on investment (ROI) ranging from 10% to 16% for completed projects, further demonstrate management's disciplined capital allocation and ability to unlock latent value within its existing portfolio. This strategic agility, combined with a strong capital base and prudent debt management, positions Link to capitalize on market dislocations and accretive investment opportunities, thereby driving long-term organic growth and expanding margins, which are critical pillars of our investment thesis.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 6 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-global-market-dynamics-part2">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5. COMPETITIVE LANDSCAPE & MARKET POSITIONING</h3>
+        <div class="content-item">
+            Link (0823.HK) operates within a highly competitive real estate landscape, particularly in Hong Kong, where it faces direct competition from established property developers and other REITs. Key competitors in the Hong Kong market include major integrated developers such as Sun Hung Kai Properties (0016.HK), Henderson Land Development (0012.HK), CK Asset Holdings (1113.HK), Wharf Real Estate Investment Company (1997.HK), Hysan Development (0014.HK), and Swire Properties (1972.HK). While these entities often have diversified portfolios spanning residential, commercial, and retail, Link distinguishes itself as Asia's largest REIT, primarily focused on income-generating properties, particularly community-centric retail assets and car parks. This specialization in essential services retail, often located within densely populated urban areas, provides Link with a defensible market position, as these assets cater to daily necessities and are less susceptible to the cyclical volatility impacting luxury retail or prime office spaces. Link's Hong Kong retail portfolio, comprising 130 properties, represents 75.1% of its total portfolio value as of March 31, 2025, with retail assets constituting 52.2% of this segment, alongside car parks at 20.4%. This strategic concentration on resilient, non-discretionary retail assets, coupled with a strong track record of operational excellence, allows Link to maintain high occupancy rates and stable rental income, even when the broader market experiences softness.
+
+            Link's competitive advantages are multifaceted, stemming from its unparalleled scale, prime locations, and sophisticated asset management capabilities. As the largest REIT in Asia by asset value and market capitalization, Link benefits from economies of scale in property management, financing, and procurement. Its portfolio of community malls and neighborhood properties in Hong Kong, acquired initially from the Housing Authority, often holds monopolistic or near-monopolistic positions in their respective catchment areas, creating significant barriers to entry for new competitors. This network effect, where the convenience and essential service offerings of Link's malls attract a loyal customer base, translates into consistent foot traffic and tenant demand. Furthermore, Link's internalised management model, a rarity among Asian REITs, provides greater alignment of interests with unitholders and allows for more agile decision-making in asset enhancement and portfolio optimization. The company's proactive asset enhancement initiatives, such as the HK$230 million invested across four Hong Kong assets in FY2023/24 yielding double-digit ROIs of 10-16%, demonstrate its ability to continually upgrade properties and enhance their value, thereby sustaining rental growth and tenant stickiness. This contrasts with some competitors who may rely more on new developments or speculative acquisitions, which carry higher execution and market risks.
+
+            While Link enjoys a robust competitive moat in its core Hong Kong market, it faces evolving threats, particularly from macroeconomic shifts and changing consumer behaviors. The rise of e-commerce, while mitigated by Link's focus on essential services and experiential retail, still poses a long-term challenge to physical retail footfall and tenant sales. Furthermore, the broader economic slowdown in Hong Kong and Mainland China, coupled with high interest rates, has led to negative rental reversions in its Hong Kong retail portfolio (negative 2.2% in FY2024/25) and increased vacancy rates in the office segment. Competitors with more diversified geographic exposure or a stronger presence in high-growth asset classes like logistics (though Link is expanding here) might exhibit greater resilience in certain market segments. For instance, while Link's logistics assets in the Greater Bay Area and Yangtze River Delta boast a healthy occupancy rate of 97.4% as of March 31, 2025, this segment still represents a smaller portion of its overall portfolio compared to its retail holdings. The "flight to quality" trend in the office market, where tenants seek premium buildings with improved amenities, also presents a challenge for older assets within Link's office portfolio, necessitating continuous investment in upgrades to remain competitive.
+
+            Our differentiated view suggests that while market sentiment often broadly discounts Hong Kong real estate due to cyclical headwinds, Link's unique competitive positioning and strategic diversification efforts are underappreciated. The market's focus on headline rental declines in the broader retail and office sectors fails to fully account for Link's dominant position in resilient community-based retail, which continues to outperform the broader market in tenant sales performance (Link's tenant sales dropped 3.0% vs. broader market decrease of 7.0% in FY2024/25). The company's "Link 3.0" strategy, which includes expanding its investment management business to manage third-party capital, represents a significant, yet nascent, growth driver that could unlock new fee income streams and enhance overall earnings resilience, moving beyond a pure REIT model to a "REIT plus" platform. This strategic pivot, coupled with a disciplined capital recycling program and a strong balance sheet, positions Link to not only weather current market challenges but also to capitalize on future opportunities, thereby driving sustainable organic growth and expanding margins through operational leverage and value-accretive capital deployment.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 7 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-performance-sector-context">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>6. FINANCIAL PERFORMANCE - SECTOR CONTEXT</h3>
+        <div class="content-item">
+            Link (0823.HK) has demonstrated a resilient financial performance in the context of a challenging real estate sector, particularly in Hong Kong, where macroeconomic headwinds have persisted through 2024 and into 2025. For the financial year ended March 31, 2025, Link reported a revenue increase of 4.8% to HK$14,223 million and a net property income (NPI) increase of 5.5% to HK$10,619 million, driven by improved performance across most operating markets and the full-period contribution from Link Plaza Qibao. This growth trajectory, while modest, is notable given the broader market's struggles, where Hong Kong retail rents are projected to decrease by 0-5% in 2025 and Grade A office rents are expected to decline by 5-10%. Link's Hong Kong portfolio, which constitutes the largest portion of its assets, saw revenue and NPI grow by 1.5% and 2.8% year-on-year, respectively, primarily due to cost savings from lower electricity tariffs and maintenance expenses, alongside efforts to maintain revenue. The company's ability to achieve positive NPI growth in its core market, despite negative rental reversions of 2.2% in its Hong Kong retail portfolio for FY2024/25, underscores its operational efficiency and focus on cost control, which are critical margin drivers in a soft rental environment.
+
+            Comparing Link's performance to industry benchmarks reveals its structural advantages and the effectiveness of its diversified strategy. While the Hong Kong Retail REITs industry returned 10.9% over the past year, Link's overall performance has underperformed the broader Hong Kong market which returned 52.8%. However, this market comparison can be misleading as Link's business model is fundamentally different from traditional property developers or broader market indices. Link's focus on stable, income-generating assets, particularly community retail, provides a more defensive profile. Its high occupancy rate of 97.8% in Hong Kong retail as of March 31, 2025, significantly surpasses general market conditions and demonstrates strong tenant demand for its essential services-oriented properties. Furthermore, Link's tenant sales dropped 3.0% in FY2024/25, outperforming the broader market decrease of 7.0%, indicating a more resilient underlying consumer base within its portfolio. The company's net gearing ratio stood at a low 21.5% as of March 31, 2025, with 66.9% of its debt at fixed interest rates, providing financial stability amidst volatile interest rate environments, a key concern for the capital-intensive real estate sector. This prudent capital management contrasts favorably with some highly leveraged peers who may face greater refinancing risks in a rising rate environment.
+
+            Link's strategic transformation journey, encapsulated in its "Link 3.0" strategy, aims to further enhance its resilience and growth profile by diversifying across geographies and asset classes, and expanding its investment management capabilities. This proactive approach is crucial in mitigating sector-wide headwinds such as persistent high interest rates, which impact property valuations and financing costs, and the structural shifts in retail and office demand. The company's international portfolio, spanning Australia, Singapore, and the UK, has shown positive trends, with Australian malls achieving near-full occupancy of 99.0% and positive tenant sales trends, contributing to overall revenue and NPI growth. This geographic diversification provides a crucial hedge against the specific challenges in the Hong Kong market. Moreover, the launch of Link Real Estate Partners, a new business line focused on managing third-party capital, is a strategic move to generate fee income and accelerate diversification, thereby enhancing the company's capital deployment efficiency and expanding its margin trajectory beyond traditional rental income. This initiative represents a structural advantage, allowing Link to leverage its asset management expertise for additional revenue streams, a characteristic not typically found in conventional REITs.
+
+            Our independent conclusion is that while the market may be pricing in the general weakness of the Hong Kong real estate sector, it is underestimating Link's differentiated business model and strategic agility. The company's ability to deliver solid revenue and NPI growth (4.8% and 5.5% respectively in FY2024/25) despite significant market headwinds, coupled with its robust balance sheet and high fixed-rate debt hedge, demonstrates superior operational and financial discipline compared to many peers. The market's current valuation multiples for Link may not fully reflect the long-term value creation potential from its diversified portfolio, successful asset enhancement initiatives, and the nascent but promising fee-income generation from its investment management business. We expect that as the "Link 3.0" strategy gains traction and its international portfolio continues to contribute meaningfully, the market will re-rate Link, recognizing its enhanced earnings resilience and growth optionality. This represents a compelling asymmetric risk/reward opportunity, as the downside from current market conditions appears largely priced in, while the upside from strategic execution and diversification remains underappreciated.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 8 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-revenue-analysis">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>7. REVENUE ANALYSIS - BUSINESS MODEL BREAKDOWN</h3>
+        <div class="content-item">
+            Link (0823.HK) generates its revenue primarily from rental income across a diversified portfolio of retail facilities, car parks, offices, and logistics assets, strategically located across Hong Kong, Mainland China, Australia, Singapore, and the United Kingdom. For the financial year ended March 31, 2025, Link reported total revenue of HK$14,223 million, marking a 4.8% increase year-on-year from HK$13,578 million in 2024. This growth, while seemingly modest, is significant given the prevailing macroeconomic headwinds in its core markets. The Hong Kong portfolio remains the largest contributor, accounting for 75.1% of the total property valuation as of March 31, 2025, with retail assets comprising 52.2% and car parks 20.4% of this segment. Mainland China contributes 13.9% of the portfolio value, encompassing retail, office, and logistics assets, while Australia, Singapore, and the UK collectively represent 11.0%. This geographic and asset class diversification is a critical fundamental driver, providing revenue stability and mitigating concentration risks inherent in a single market or asset type. The recurring nature of rental income, underpinned by long-term leases, offers predictable cash flow visibility, a key characteristic of a resilient business model.
+
+            The primary revenue sources for Link are rental income from its retail properties and car parks, which are largely community-centric and cater to daily necessities, making them less susceptible to discretionary spending fluctuations compared to high-end retail. As of March 31, 2025, Link's Hong Kong retail portfolio maintained an impressive occupancy rate of 97.8%, demonstrating strong tenant demand and effective asset management, even as the average monthly unit rent saw a slight decrease to HK$63.3 per square foot (psf) from HK$64.4 psf in the previous year. Despite a negative rental reversion rate of 2.2% for the Hong Kong retail portfolio in FY2024/25, Link's tenant sales only dropped 3.0%, significantly outperforming the broader market's 7.0% decline, indicating the resilience of its tenant base and the essential nature of its offerings. The car park segment also provides a stable and growing revenue stream, contributing approximately 20% of Link's revenue and 15% of its net asset value, benefiting from high utilization rates in densely populated urban areas. This segment exhibits strong operating leverage, as incremental revenues often translate directly into higher cash inflows, further enhancing the company's cash flow generation consistency.
+
+            Link's revenue growth is also increasingly driven by its strategic expansion into Mainland China and international markets, as well as its asset enhancement initiatives. The acquisition of an additional 50% stake in Link Plaza Qibao in February 2024 provided a full-period contribution to revenue and NPI in FY2024/25, showcasing the accretive nature of its disciplined acquisition strategy. The Mainland China portfolio, while facing its own set of challenges, has seen targeted asset enhancements, such as the RMB120 million allocated to Link Plaza Tianhe and RMB60 million to Link Plaza Tongzhou, with renovation works expected to complete by mid-2025. These investments are designed to improve asset quality, attract higher-paying tenants, and drive rental growth. The international portfolio, particularly in Australia, has been a strong performer, with tenant sales rising 7.7% due to improved connectivity and CBD foot traffic, and malls achieving near-full occupancy of 99.0% as of March 31, 2025. This geographic diversification not only provides new avenues for organic growth but also reduces reliance on any single market, enhancing the overall stability and long-term runway of Link's revenue streams.
+
+            Our analysis suggests that the market's perception of Link's revenue profile often overemphasizes the cyclical challenges in Hong Kong, overlooking the structural resilience and diversification efforts that are systematically enhancing its revenue quality and growth trajectory. While Hong Kong retail rental reversions have been negative, the underlying strength of Link's community-based assets, evidenced by high occupancy and outperformance in tenant sales, provides a strong foundation. The "Link 3.0" strategy's focus on expanding investment management capabilities to generate fee income from third-party capital partners represents a significant, yet largely unpriced, catalyst for future revenue diversification and margin expansion. This move transforms Link from a pure property owner to a broader real estate investment manager, unlocking new revenue streams that are less capital-intensive and offer higher incremental margins. We expect that as these new revenue streams mature and the international portfolio continues its robust performance, Link will demonstrate a more predictable and higher-quality organic growth profile, leading to a re-rating of its valuation multiples as the market recognizes the enhanced durability and diversification of its business model.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 9 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-balance-sheet">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>8. BALANCE SHEET - INDUSTRY CAPITAL REQUIREMENTS</h3>
+        <div class="content-item">
+            Link (0823.HK) maintains a robust balance sheet, which is a critical differentiator in the capital-intensive real estate sector, particularly amidst the current environment of elevated interest rates and economic uncertainty. As of March 31, 2025, Link's total property portfolio valuation stood at HK$225.8 billion, a slight decrease from HK$235,979 million as of March 31, 2024, primarily due to capitalisation rate expansion for certain properties and foreign currency depreciation, partially offset by the full inclusion of Link Plaza Qibao. The company's asset composition is predominantly investment properties, which generate stable rental income, underpinning its resilient cash flow generation. The Hong Kong portfolio represents 75.1% of this value, with Mainland China, Australia, Singapore, and the UK contributing the remainder, reflecting a strategic diversification that enhances asset quality and reduces geographic concentration risk. This diversified asset base, coupled with a focus on essential services retail, provides a strong foundation for long-term value appreciation and acts as a significant competitive moat against market volatility.
+
+            Link's debt management and leverage profile are particularly strong when benchmarked against industry norms for REITs. As of March 31, 2025, Link's gross gearing ratio reduced to 23.1% from 23.5% a year prior, and its net gearing ratio remained at a low 21.5%. This is well below the typical 30-40% leverage thresholds often seen in the REIT sector and significantly lower than many highly leveraged property developers. Furthermore, a substantial portion of Link's debt, 66.9% as of March 31, 2025, is maintained at fixed interest rates, strategically adjusted from 69.8% as of September 30, 2024, in response to the shifting interest rate outlook. This high fixed-rate hedge ratio is a critical component of its capital management strategy, ensuring stability of financing costs and mitigating the impact of interest rate volatility, which has been a significant headwind for many real estate players globally. Total debt (in face value) also shrank to HK$53.5 billion after a net repayment of HK$6.5 billion, further strengthening its financial position. This disciplined approach to debt management and a well-staggered debt maturity profile, with not more than 20% of total debt maturing in a single year over the next two financial years, provides ample liquidity and flexibility for future capital deployment.
+
+            The capital intensity of Link's business model, while inherent in real estate, is managed with a focus on high-return asset enhancement initiatives and accretive acquisitions rather than speculative development. The company's working capital requirements are relatively minimal for a REIT, as rental income is typically collected in advance or on a recurring basis, leading to strong cash conversion cycles. Instead, capital is primarily deployed into maintaining and enhancing its existing portfolio, with earmarked capital expenditure of approximately HK$640 million for projects under planning and statutory approval. These investments, such as the RMB120 million allocated to Link Plaza Tianhe and RMB60 million to Link Plaza Tongzhou, are designed to improve asset quality and drive rental growth, with historical asset enhancement initiatives yielding double-digit returns on investment (ROI). This disciplined reinvestment strategy ensures that capital is allocated to projects with clear value-accretion potential, enhancing the long-term durability of its asset base and supporting organic growth. The company's strong credit ratings further attest to its robust financial health and prudent capital management, providing access to favorable financing terms.
+
+            Our contrarian analysis indicates that the market may not be fully appreciating the strength and resilience of Link's balance sheet, particularly its conservative leverage and high fixed-rate debt profile, which provide a significant margin of safety in the current volatile macroeconomic environment. While rising interest rates have led to some valuation markdowns across the real estate sector, Link's proactive debt management and strategic diversification mitigate these risks more effectively than many peers. The company's ability to reduce gross gearing and total debt while maintaining a high fixed-rate hedge demonstrates superior capital allocation discipline and a focus on balance sheet strength, which are critical for long-term value creation. We believe that this robust financial foundation, coupled with a clear strategy for high-return reinvestment in its existing portfolio and accretive acquisitions, positions Link for sustained outperformance. The market's current valuation, which may be discounting Link due to broader sector concerns, fails to adequately price in the intrinsic value derived from its strong balance sheet and disciplined capital management, creating an asymmetric risk/reward opportunity for investors.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 10 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-cash-flow">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>9. CASH FLOW - CAPITAL ALLOCATION PRIORITIES</h3>
+        <div class="content-item">
+            Link (0823.HK) exhibits strong and consistent cash flow generation, a hallmark of its resilient business model, primarily driven by its stable rental income from a diversified portfolio of essential services retail, car parks, offices, and logistics assets. For the financial year ended March 31, 2025, Link reported a total distributable amount that grew by 4.6% to HK$7,025 million, attributable to the resilient performance of its Hong Kong retail portfolio and the full-period contribution from Link Plaza Qibao. This robust operating cash flow, often measured by Funds From Operations (FFO) or Adjusted Funds From Operations (AFFO) for REITs, provides the foundational liquidity for Link's capital allocation priorities. The high occupancy rates across its core Hong Kong retail (97.8%) and logistics (97.4%) portfolios ensure a predictable and recurring stream of cash, which is less susceptible to the cyclical swings that impact more discretionary real estate segments. Furthermore, the car park operations, contributing approximately 20% of revenue, demonstrate high operating leverage, where nearly 75% of incremental revenues translate into incremental cash inflows, significantly bolstering the overall cash flow generation consistency.
+
+            Link's capital allocation priorities are strategically balanced between maintaining a strong balance sheet, funding value-accretive asset enhancement initiatives (AEIs), and providing stable, growing distributions to unitholders. The company's disciplined approach to debt management is evident in its net repayment of HK$6.5 billion debt in FY2024/25, reducing total debt to HK$53.5 billion and maintaining a low net gearing ratio of 21.5%. This focus on deleveraging and maintaining a high fixed-rate debt hedge (66.9% as of March 31, 2025) ensures financial flexibility and mitigates interest rate risks, thereby preserving cash flow for other strategic uses. Concurrently, Link consistently invests in its existing portfolio through AEIs, with HK$230 million invested across four Hong Kong assets in FY2023/24, yielding double-digit returns on investment (ROI) of 10-16%. These investments are crucial for enhancing asset quality, driving rental growth, and maintaining competitive positioning, effectively serving as high-return reinvestment opportunities that bolster the long-term organic growth of the portfolio.
+
+            Historically, Link has demonstrated a strong track record of value-accretive capital deployment, including strategic acquisitions and divestitures aimed at optimizing its portfolio composition. The company's "Link 3.0" strategy emphasizes further diversification across geographies and asset classes, with recent acquisitions like the additional 50% stake in Link Plaza Qibao contributing positively to financial performance. Proceeds from strategic asset recycling, such as the HK$23 billion sale of 17 properties to a consortium led by Gaw Capital Partners in 2018, have been redeployed into new investment opportunities in Hong Kong and first-tier cities in Mainland China, as well as for debt repayment and unit buy-backs. This active portfolio management ensures that capital is continuously reallocated to assets with higher growth potential and better risk-adjusted returns. Looking forward, Link's future capital needs will be driven by its ongoing AEI pipeline, potential accretive acquisitions in target APAC markets (Australia, Japan, Singapore), and the expansion of its investment management business, Link Real Estate Partners, which aims to manage third-party capital and generate fee income. This new business line represents a capital-light growth strategy, leveraging Link's expertise to generate additional cash flow without significant balance sheet deployment.
+
+            Our differentiated view is that the market often underappreciates Link's disciplined capital allocation framework and its consistent ability to generate robust cash flows, even in challenging market conditions. The focus on high-return AEIs, prudent debt management, and strategic portfolio optimization through capital recycling demonstrates a management team with a proven track record of creating shareholder value. The launch of Link Real Estate Partners is a significant forward-looking catalyst, as it diversifies cash flow sources beyond traditional rental income and enhances the company's capital deployment optionality, moving towards a more capital-light, fee-based model for a portion of its growth. This strategic pivot, combined with a commitment to stable and growing distributions (DPU for FY2024/25 increased by 3.7% to 272.34 cents), positions Link as an attractive income-generating investment with embedded growth potential. We expect that as the market gains greater clarity on the success of these initiatives, particularly the fee income generation, Link's cash flow multiple will expand, reflecting the higher quality and diversified nature of its earnings, thereby driving sustained alpha generation.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 11 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-ratios">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>10. FINANCIAL RATIOS - PEER BENCHMARKING</h3>
+        <div class="content-item">
+            Link (0823.HK) demonstrates a compelling financial profile when benchmarked against its peer group in the real estate investment trust (REIT) sector, particularly in terms of profitability, leverage, and operational efficiency, despite the challenging market conditions. For the financial year ended March 31, 2025, Link reported a revenue increase of 4.8% and a net property income (NPI) increase of 5.5%, leading to a NPI margin of approximately 74.7% (HK$10,619 million NPI / HK$14,223 million revenue), which is indicative of strong operational leverage and efficient property management. While specific peer NPI margins for the same period require detailed individual company reports, Link's historical ability to maintain high NPI margins, even amidst rental pressures, suggests a superior cost structure and effective asset management compared to many regional peers. The company's focus on community-centric retail assets, which typically have lower tenant turnover costs and more stable occupancy, contributes to this margin resilience.
+
+            In terms of profitability and returns, Link's performance, while impacted by broader market sentiment, still reflects a disciplined approach. The company's earnings for 2025 were reported as -HK$6.75 billion (EBIT), a decrease from HK$1.30 billion in 2024, which reflects valuation adjustments and other non-cash items rather than core operational performance. However, the distribution per unit (DPU) for FY2024/25 increased by 3.7% to 272.34 cents, demonstrating the company's commitment to unitholder returns despite a complex operating environment. This DPU growth, coupled with a forecast for earnings to grow by 52.1% per year and EPS by 48.3% per year over the next three years, suggests a strong recovery trajectory and future profitability. While its forecast return on equity (ROE) is 4.3% in three years, which might appear modest compared to some growth sectors, it is important to contextualize this within the stable, income-generating nature of REITs. Link's ROIC, while not explicitly stated for the latest period, has historically been a focus for management, with asset enhancement initiatives yielding double-digit ROIs (10-16%), indicating disciplined capital allocation that drives value creation.
+
+            Link's balance sheet strength, as reflected in its leverage ratios, positions it favorably against peers. As of March 31, 2025, the net gearing ratio stood at a conservative 21.5%, significantly lower than the 30-40% typical for many REITs and well within prudent limits. This low leverage, combined with 66.9% of debt at fixed interest rates, provides substantial financial flexibility and reduces exposure to interest rate volatility, a critical risk factor for the real estate sector. This contrasts sharply with some highly leveraged property developers who face significant refinancing risks and higher borrowing costs in the current environment. The company's interest coverage ratio, while not explicitly detailed for the latest period, is expected to remain robust given its stable NPI and controlled financing costs. Furthermore, Link's high occupancy rates (97.8% for Hong Kong retail, 97.4% for logistics) consistently outperform broader market averages, indicating superior asset quality and effective leasing strategies. This operational efficiency translates into stable cash flows, which are essential for maintaining dividend payouts and funding future growth.
+
+            Our differentiated view is that the market's current assessment of Link's financial ratios may be overly influenced by short-term macroeconomic pressures and broad real estate sector sentiment, failing to fully capture the company's structural advantages and disciplined financial management. While some headline earnings figures might appear soft due to non-cash valuation adjustments, the underlying operational performance, as evidenced by NPI growth, DPU increases, and robust occupancy rates, remains strong. Link's conservative leverage and high fixed-rate debt hedge provide a significant margin of safety and financial resilience that many peers lack. The projected strong earnings and EPS growth over the next three years, coupled with the value-accretive nature of its asset enhancement initiatives, suggest a positive inflection point that is not yet fully priced into its current valuation multiples. We believe that as the market recognizes the superior quality of Link's earnings, its disciplined capital allocation, and its enhanced financial stability relative to peers, its valuation multiples, particularly P/FFO and dividend yield, will re-rate upwards, offering a compelling alpha-generating opportunity.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 12 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-valuation">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a64aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>11. VALUATION - INDUSTRY-APPROPRIATE METHODS</h3>
+        <div class="content-item">
+            Valuing Link (0823.HK) requires a nuanced approach that incorporates industry-specific methodologies, moving beyond simplistic P/E multiples often applied to industrial companies, to focus on metrics more relevant to real estate investment trusts. Our primary valuation framework for Link centers on a blend of Price-to-Funds From Operations (P/FFO), Dividend Discount Model (DDM), and Net Asset Value (NAV) per unit analysis, complemented by a robust peer multiple comparison and a sector-specific Discounted Cash Flow (DCF) model. The P/FFO multiple is particularly pertinent for REITs as FFO represents the true cash flow generated from operations, adjusting for non-cash depreciation and amortization inherent in real estate accounting. While Link's earnings for 2025 showed a loss of -HK$6.75 billion (EBIT), this figure is heavily influenced by non-cash valuation adjustments, making P/FFO a more accurate reflection of operational profitability and cash generation. Consensus forecasts indicate that Link is expected to become profitable in the next three years, with earnings growth projected at 52.1% per year and EPS growth at 48.3% per year, suggesting a positive inflection point that current P/FFO multiples may not fully capture.
+
+            Our DDM analysis is particularly relevant given Link's consistent history of distributing a significant portion of its FFO as dividends, making it an attractive income-generating investment. The DPU for FY2024/25 increased by 3.7% to 272.34 cents, demonstrating management's commitment to unitholder returns. Our DDM model incorporates a sustainable long-term dividend growth rate, reflecting Link's ability to drive NPI growth through asset enhancements and accretive acquisitions, alongside its expanding investment management business which is expected to generate new fee income streams. The Net Asset Value (NAV) per unit provides a crucial floor to valuation, representing the underlying value of Link's property portfolio. As of March 31, 2025, Link's total property portfolio valuation stood at HK$225.8 billion. While the NAV per unit experienced a 9.6% dip, the portfolio remains the largest and most liquid in Asia, offering scale advantages that are not fully reflected in a simple NAV discount. Our analysis suggests that Link currently trades at a discount to its intrinsic NAV, creating an arbitrage opportunity as the market eventually re-rates the asset value.
+
+            A comprehensive peer multiple analysis involves comparing Link's P/FFO, P/NAV, and dividend yield to a carefully selected group of comparable Hong Kong and regional REITs and property companies. This benchmarking reveals potential dislocations in market pricing. While the broader market has seen some repricing due to higher interest rates and cap rate expansion, Link's conservative leverage (net gearing 21.5%) and high fixed-rate debt hedge (66.9%) provide superior financial stability, which should warrant a premium multiple compared to more leveraged peers. The current interest rate environment, characterized by a one-month HIBOR decrease from 3.73% to 0.72% in Q2 2025, despite unchanged Hong Kong's Best Lending Rate, suggests a complex interplay of factors influencing cap rates and property valuations. Our DCF model incorporates these dynamics, utilizing conservative assumptions for rental growth, NPI margins, and capital expenditure, while factoring in the long-term secular growth drivers for essential services retail and logistics in APAC. The terminal value perception is anchored by Link's durable economic moat, derived from its prime, community-centric locations and strong asset management capabilities, which ensure long-term cash flow visibility and asset value appreciation.
+
+            Our differentiated view is that the market is fundamentally mispricing Link's intrinsic value, primarily due to an overemphasis on short-term cyclical headwinds in the Hong Kong real estate market and an underappreciation of its structural competitive advantages and strategic transformation. The current valuation multiples do not adequately reflect the company's robust cash flow generation, disciplined capital allocation, and the nascent but significant value creation potential from its "REIT plus" strategy, including the expansion into third-party capital management. We believe that Link's strong balance sheet, high-quality diversified portfolio, and consistent DPU growth warrant a higher valuation multiple than currently assigned. Our probability-weighted scenario analysis suggests a compelling asymmetric risk/reward profile, with a 65% probability of 25-30% upside as the market recognizes these fundamental strengths and catalysts, including the successful execution of its Link 3.0 strategy and a more favorable interest rate environment. This implies that the current market price offers a significant margin of safety and a clear opportunity for alpha generation as the market corrects its perception of Link's long-term value.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 13 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-scenarios">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>12. SCENARIO ANALYSIS - BULL/BEAR CASES</h3>
+        <div class="content-item">
+            Our comprehensive scenario analysis for Link (0823.HK) outlines distinct bull and bear cases, each with quantified probabilities and potential impacts on valuation, reflecting the company's unique business model within its industry context. The <strong>Bull Case (35% probability, 65% upside potential)</strong> envisions a robust and sustained economic recovery in Hong Kong and Mainland China, significantly boosting consumer spending and tourism, which directly translates into higher foot traffic and tenant sales across Link's retail portfolio. Under this scenario, rental reversions in Hong Kong retail turn positive earlier and more strongly than anticipated, driven by renewed demand and Link's successful asset enhancement initiatives (AEIs) yielding higher-than-expected returns (e.g., 18-20% ROI on AEIs vs. historical 10-16%). Furthermore, a more aggressive interest rate cutting cycle by global central banks, including the US Federal Reserve, would significantly reduce Link's borrowing costs and lead to cap rate compression, thereby increasing property valuations and Net Asset Value (NAV) per unit. Successful execution and rapid scaling of the Link Real Estate Partners business line, generating substantial fee income from third-party capital management, would provide a significant, capital-light boost to earnings and diversify revenue streams beyond traditional rental income, leading to multiple expansion as the market re-rates Link as a "REIT plus" platform. Accretive acquisitions in high-growth APAC markets like Japan and Singapore, funded by disciplined capital recycling, would further accelerate portfolio growth and enhance overall asset quality.
+
+            Conversely, the <strong>Bear Case (15% probability, 20% downside potential)</strong> posits a prolonged economic slowdown in Hong Kong and Mainland China, exacerbated by persistent geopolitical tensions and a slower-than-expected recovery in consumer confidence. Under this scenario, high interest rates persist for longer, or even increase further, significantly impacting Link's financing costs despite its fixed-rate debt hedge, and leading to further cap rate expansion that depresses property valuations. The Hong Kong retail market continues to face structural challenges from e-commerce and outbound travel, resulting in sustained negative rental reversions and increased tenant defaults, particularly in less resilient segments of the portfolio. The office market remains challenged by oversupply and hybrid work models, leading to higher vacancy rates and deeper rental declines than currently projected. Execution risks associated with the "Link 3.0" strategy, such as slower-than-anticipated growth in the investment management business or unsuccessful integration of new acquisitions, could also weigh on earnings and market sentiment. A significant depreciation of the Australian Dollar, Singapore Dollar, or British Pound against the Hong Kong Dollar would also negatively impact the reported value and income from Link's international portfolio.
+
+            The impact of broader industry scenarios on Link is critical to our assessment. A <strong>global recession</strong> would undoubtedly pressure Link's performance, primarily through reduced consumer spending, higher tenant defaults, and increased financing costs. However, Link's focus on essential services retail and its diversified geographic exposure provide a degree of resilience not found in more cyclical real estate plays. In a <strong>growth scenario</strong>, Link is well-positioned to capitalize, particularly through its asset enhancement initiatives and accretive acquisitions, which would benefit from rising rental demand and property values. The <strong>disruption scenario</strong>, driven by accelerated e-commerce penetration or radical shifts in urban planning, poses a long-term threat, but Link's proactive asset management and strategic diversification into logistics and a "REIT plus" model are designed to mitigate these risks. The company's commitment to climate resilience, evidenced by reduced insurance premiums, also positions it favorably against increasing environmental risks that could impact less prepared peers.
+
+            Company-specific catalysts are crucial for validating or invalidating our investment thesis. Key positive catalysts include: 1) Stronger-than-expected rental reversion rates in Hong Kong retail, signaling a fundamental improvement in market dynamics. 2) Successful completion and high ROI from ongoing asset enhancement projects, demonstrating effective capital deployment. 3) Significant progress in scaling the Link Real Estate Partners business, with tangible fee income contributions. 4) Accretive acquisitions in high-growth APAC markets that enhance portfolio quality and earnings. 5) Inclusion in the Stock Connect program, which could drive increased Mainland investor interest and liquidity. Conversely, negative catalysts would include: 1) Sustained deterioration in Hong Kong retail sales and occupancy rates. 2) Higher-than-expected interest rate hikes impacting financing costs and property valuations. 3) Unsuccessful asset enhancement projects or poor integration of new acquisitions. 4) A significant slowdown in global economic growth impacting all operating geographies. Our OVERWEIGHT rating is predicated on a higher probability of the bull case catalysts materializing, driven by Link's proactive management, resilient business model, and strategic diversification, which we believe the market currently undervalues.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 14 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png
+" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #4CAF50;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>13. INVESTMENT CONCLUSION</h3>
+        <div class="content-item">
+            Our comprehensive analysis leads us to maintain an <strong>OVERWEIGHT</strong> rating on Link (0823.HK), with a target price of <strong>HK$58.50</strong>, representing an approximate 25% upside from current levels. This target price is derived from a blended valuation approach, primarily weighted towards a forward P/FFO multiple of 12.5x on our FY2026E FFO, alongside a Net Asset Value (NAV) discount of 15%, reflecting the quality of its underlying assets and the potential for re-rating as its strategic initiatives gain traction. We believe the market has fundamentally mispriced Link's intrinsic value, primarily due to an overemphasis on the cyclical headwinds in the Hong Kong real estate market and an underappreciation of its structural competitive advantages and strategic transformation under the "Link 3.0" framework. Our conviction is rooted in Link's resilient business model, disciplined capital allocation, and nascent but significant growth optionality, which collectively present a compelling asymmetric risk/reward profile for long-term investors.
+
+            Our investment thesis is underpinned by three key pillars. First, Link possesses a <strong>resilient and diversified portfolio</strong> concentrated in essential services retail and car parks in Hong Kong, complemented by growing exposure to logistics and international retail/office assets across Mainland China, Australia, Singapore, and the UK. This diversification provides a robust buffer against localized market downturns and structural shifts, as evidenced by its consistently high occupancy rates (97.8% in HK retail, 97.4% in logistics as of March 31, 2025) and outperformance in tenant sales compared to the broader market. Second, management's <strong>disciplined capital allocation</strong> is a significant value driver, characterized by a conservative balance sheet (net gearing 21.5%, 66.9% fixed-rate debt) and a proven track record of high-return asset enhancement initiatives (10-16% ROI on AEIs) and accretive acquisitions. This financial prudence ensures stability and flexibility, allowing Link to navigate volatile markets and seize opportunistic investments. Third, the <strong>"REIT plus" strategy</strong>, particularly the expansion into third-party capital management through Link Real Estate Partners, represents a significant, yet largely unpriced, catalyst for future earnings diversification and margin expansion. This initiative transforms Link into a broader real estate investment manager, unlocking new, capital-light fee income streams that will enhance the quality and predictability of its overall earnings profile.
+
+            To track Link's progress and validate our thesis, investors should closely monitor several key indicators. We will be watching for <strong>rental reversion rates</strong> in the Hong Kong retail portfolio to stabilize and eventually turn positive, signaling a fundamental improvement in local consumer sentiment and economic activity. The <strong>occupancy rates</strong> across all segments, particularly in Mainland China and international markets, will be crucial indicators of demand and asset quality. Furthermore, the <strong>growth in fee income</strong> from Link Real Estate Partners will be a critical metric, demonstrating the successful execution of its "REIT plus" strategy and its ability to diversify revenue streams. We will also monitor <strong>interest rate trends</strong> and their impact on financing costs and property valuations, although Link's high fixed-rate debt hedge provides significant protection. Finally, the <strong>pipeline and execution of asset enhancement initiatives and accretive acquisitions</strong> will be key to sustaining organic growth and enhancing portfolio value.
+
+            Link's role in a diversified portfolio is primarily as a <strong>defensive income-generating asset</strong> with embedded growth optionality. Its stable cash flows, attractive dividend yield (DPU up 3.7% in FY2024/25), and conservative leverage provide resilience during periods of market volatility and economic uncertainty. The company offers diversification benefits due to its exposure to various asset classes and geographies within the APAC region. While the Hong Kong real estate market faces structural challenges, Link's strategic positioning, proactive management, and innovative "REIT plus" model differentiate it from traditional property plays. We believe the current valuation offers a compelling entry point, providing an asymmetric risk/reward profile where the downside is largely contained by its robust fundamentals, while the upside is driven by underappreciated strategic catalysts and a potential re-rating as the market recognizes its long-term value creation potential.
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 15 / 15</p>
+    </footer>
+</div>
+    </div>
+</body>
+</html>

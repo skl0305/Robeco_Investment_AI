@@ -1,0 +1,100 @@
+<!-- SIMPLE STATIC CHART TEMPLATE -->
+<!-- Replace the chart container in your HTML with this simple version -->
+
+<div class="stock-chart-container" id="stock-price-line-chart" style="
+    flex: 1;
+    height: 400px;
+    background-color: #ffffff;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+">
+    
+    <!-- Chart Title -->
+    <h3 style="
+        color: #005F90;
+        font-size: 18px;
+        font-weight: bold;
+        margin: 0 0 15px 0;
+        text-align: center;
+    ">📈 Stock Price Summary</h3>
+    
+    <!-- Current Price (Large) -->
+    <div style="
+        font-size: 32px;
+        font-weight: bold;
+        color: #005F90;
+        margin-bottom: 10px;
+        text-align: center;
+    ">HKD $41.76</div>
+    
+    <!-- Price Change -->
+    <div style="
+        font-size: 16px;
+        font-weight: bold;
+        color: #C62828;
+        margin-bottom: 15px;
+        text-align: center;
+    ">-HKD $1.36 (-3.2%)</div>
+    
+    <!-- Price Range -->
+    <div style="
+        font-size: 14px;
+        color: #666666;
+        margin-bottom: 20px;
+        text-align: center;
+    ">Range: $27.06 - $56.43</div>
+    
+    <!-- Recent Performance -->
+    <div style="
+        width: 100%;
+        max-width: 300px;
+        text-align: left;
+    ">
+        <div style="
+            font-size: 14px;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 8px;
+        ">Recent 6 Months:</div>
+        
+        <div style="font-size: 12px; color: #666666; line-height: 1.4;">
+            • 2025-04-01: $35.17<br>
+            • 2025-05-01: $40.29<br>
+            • 2025-06-01: $40.54<br>
+            • 2025-07-01: $43.90<br>
+            • 2025-08-01: $41.44<br>
+            • 2025-09-01: $41.76
+        </div>
+    </div>
+    
+    <!-- Optional: Simple visual bar chart using CSS -->
+    <div style="
+        width: 100%;
+        max-width: 300px;
+        margin-top: 15px;
+        text-align: center;
+    ">
+        <div style="
+            display: flex;
+            align-items: end;
+            height: 60px;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 5px;
+        ">
+            <div style="height: 45%; background: #005F90; width: 12px; border-radius: 2px 2px 0 0;"></div>
+            <div style="height: 65%; background: #005F90; width: 12px; border-radius: 2px 2px 0 0;"></div>
+            <div style="height: 67%; background: #005F90; width: 12px; border-radius: 2px 2px 0 0;"></div>
+            <div style="height: 72%; background: #FF8C00; width: 12px; border-radius: 2px 2px 0 0;"></div>
+            <div style="height: 68%; background: #005F90; width: 12px; border-radius: 2px 2px 0 0;"></div>
+            <div style="height: 70%; background: #C62828; width: 12px; border-radius: 2px 2px 0 0;"></div>
+        </div>
+        <div style="font-size: 10px; color: #999999;">Past 6 months trend</div>
+    </div>
+</div>

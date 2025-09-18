@@ -26,6 +26,11 @@ python-dateutil>=2.8.0
 pytz>=2023.3
 json-repair>=0.25.0
 
+# Document Processing
+python-docx>=0.8.11
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
 # FastAPI Dependencies
 pydantic>=2.0.0
 

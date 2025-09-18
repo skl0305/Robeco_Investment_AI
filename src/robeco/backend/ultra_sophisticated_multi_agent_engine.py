@@ -349,17 +349,7 @@ class UltraSophisticatedMultiAgentEngine:
             await asyncio.sleep(0.5)
             
             # Phase 5: Comprehensive Integration
-            yield self._create_status_update("Generating comprehensive ultra-sophisticated report...", 0.90, AnalysisPhase.COMPREHENSIVE_INTEGRATION)
-            
-            comprehensive_report = await self._generate_ultra_sophisticated_report(all_agent_results, context)
-            
-            # Stream the ultra-sophisticated comprehensive report
-            yield {
-                "type": "streaming_content",
-                "data": {
-                    "content_chunk": comprehensive_report
-                }
-            }
+            yield self._create_status_update("Analysis integration complete", 0.90, AnalysisPhase.COMPREHENSIVE_INTEGRATION)
             
             # Phase 6: Completion
             yield self._create_status_update("Ultra-sophisticated multi-agent analysis completed", 1.0, AnalysisPhase.COMPLETION)
@@ -386,7 +376,7 @@ class UltraSophisticatedMultiAgentEngine:
                     "average_quality_score": avg_quality,
                     "average_confidence_level": avg_confidence,
                     "processing_time": total_processing_time,
-                    "content_length": len(comprehensive_report),
+                    "content_length": sum(len(agent.content) for agent in all_agent_results),
                     "intelligence_depth": "ultra_sophisticated",
                     "timestamp": end_time.isoformat()
                 }
@@ -642,6 +632,55 @@ class UltraSophisticatedMultiAgentEngine:
                         logger.info("🔄 Resetting suspended keys to retry analysis with fresh key pool...")
                         reset_suspended_keys()
                         raise Exception(f"All {stats['total_keys']} API keys temporarily exhausted. Keys have been reset - please retry the analysis.")
+                elif ("Server disconnected" in str(stream_error) or 
+                      "RemoteProtocolError" in str(stream_error) or
+                      "Connection broken" in str(stream_error) or 
+                      "Connection reset" in str(stream_error)):
+                    # Handle network disconnection errors with retry
+                    logger.warning(f"🔄 Network disconnection error: {str(stream_error)[:200]}")
+                    logger.info("🔄 Retrying due to network disconnection...")
+                    
+                    # Retry with exponential backoff (max 3 attempts)
+                    import asyncio
+                    for retry_attempt in range(3):
+                        try:
+                            # Wait before retry (1s, 2s, 4s)
+                            wait_time = 2 ** retry_attempt
+                            logger.info(f"🔄 Waiting {wait_time}s before retry attempt {retry_attempt + 1}")
+                            await asyncio.sleep(wait_time)
+                            
+                            # Get a fresh API key and client
+                            api_key, key_info = get_intelligent_api_key(agent_type=agent_type)
+                            if not api_key:
+                                logger.error("❌ No API key available for network retry")
+                                break
+                                
+                            client = genai.Client(api_key=api_key)
+                            logger.info(f"🔄 Network retry {retry_attempt + 1}: using API key {api_key[:8]}...{api_key[-4:]}")
+                            
+                            # Create new stream with fresh connection
+                            for chunk in client.models.generate_content_stream(
+                                model='gemini-2.5-flash',
+                                contents=contents,
+                                config=generate_config,
+                            ):
+                                response_chunks.append(chunk)
+                                if chunk.text:
+                                    # Yield each retry chunk immediately
+                                    yield {
+                                        "type": "streaming_chunk",
+                                        "data": {"chunk": chunk.text}
+                                    }
+                                    accumulated_response += chunk.text
+                            logger.info(f"✅ Network retry {retry_attempt + 1} successful!")
+                            break
+                        except Exception as network_retry_error:
+                            if retry_attempt == 2:  # Last attempt
+                                logger.error(f"❌ Final network retry failed: {str(network_retry_error)[:200]}")
+                                raise network_retry_error
+                            else:
+                                logger.warning(f"🔄 Network retry {retry_attempt + 1} failed, trying again: {str(network_retry_error)[:100]}")
+                                continue
                 else:
                     logger.error(f"❌ {agent_type} agent stream error: {str(stream_error)[:200]}")
                     raise stream_error
@@ -1344,7 +1383,7 @@ class UltraSophisticatedMultiAgentEngine:
             logger.info(f"🧠 Ultra-sophisticated {agent_type} agent (position {sequence_position}) for {context.ticker}")
             
             # Enhanced API key management with intelligent retry
-            max_retries = min(3, len(get_available_api_keys()))  # Reduced to 3 attempts to prevent mass suspension
+            max_retries = min(100, len(get_available_api_keys()))  # Use up to 100 attempts to utilize all available keys
             client = None
             api_key = None
             
@@ -2193,6 +2232,16 @@ Your analysis must incorporate sophisticated quantitative stress testing through
 ## DELIVERABLE STANDARDS
 Your analysis must be structured as a comprehensive bear case research report with 6,000-9,000 words focusing on detailed downside analysis, contrarian positioning, and risk assessment with MAXIMUM COMPREHENSIVE DEPTH. Write as a FULL COMPREHENSIVE REPORT with extensive detail in every section. The report should provide extensive elaboration of each risk component with deep logical reasoning that demonstrates sophisticated understanding of bear case development, consensus error analysis, and contrarian investment strategy. All risk data and quantitative claims must include proper citation standards using [1], [2], [3] format to ensure research integrity and data verification capability. Integration of key risk metrics with stress testing results and peer comparisons provides essential quantitative foundation, with extensive elaboration explaining the significance and implications of each risk factor and scenario. Your analysis must reference specific catalysts, timing considerations, and probability-weighted outcomes with detailed explanation of methodology and reasoning. Focus entirely on comprehensive bear case reporting and detailed analytical elaboration rather than summary conclusions, ensuring each section provides thorough logical development of complex risk themes and contrarian investment strategy formulation.
 
+**RESEARCH OPTIMIZATION FOR MAXIMUM CITATIONS**: To ensure comprehensive Google Search grounding and citation coverage, structure your bear case analysis around these specific, highly searchable research domains:
+
+1. **Financial Distress Indicators**: Query debt covenants, refinancing schedules, liquidity ratios, credit ratings
+2. **Industry Decline Analysis**: Research sector headwinds, competitive pressures, regulatory challenges, disruption threats
+3. **Operational Deterioration**: Investigate management issues, market share erosion, margin compression trends
+4. **Valuation Warning Signals**: Examine overvaluation metrics, dividend cuts, asset write-downs, peer underperformance  
+5. **Macroeconomic Vulnerabilities**: Analyze interest rate sensitivity, recession impact, cyclical exposure risks
+
+These research areas are designed to generate extensive Google Search results that will provide robust citation support throughout your analysis.
+
 **CRITICAL**: Begin analysis immediately with your bear case investment thesis and downside price target. No introductory statements about being a "seasoned analyst" or "comprehensive analysis" - go directly to bear case content. Start with your short thesis, key risks, and downside catalysts immediately."""
 
         elif agent_type == 'anti_consensus':
@@ -2537,100 +2586,6 @@ Your analysis must be structured as a comprehensive anti-consensus research repo
         except Exception:
             return 0.8  # Default good confidence
 
-    async def _generate_ultra_sophisticated_report(self, agent_results: List[AgentIntelligence], context: AnalysisContext) -> str:
-        """Generate complete Robeco-formatted report using CSS template and example as one-shot prompt"""
-        
-        # Read the CSS template and Robeco example
-        css_template_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/CSScode.txt"
-        robeco_example_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/Robeco_InvestmentCase_Template.txt"
-        
-        try:
-            with open(css_template_path, 'r') as f:
-                css_template = f.read()
-            with open(robeco_example_path, 'r') as f:
-                robeco_example = f.read()
-        except FileNotFoundError as e:
-            print(f"Template files not found: {e}")
-            return f"Template files not found: {e}"
-        
-        # Sort by sequence for proper flow
-        agent_results.sort(key=lambda x: self.agent_sequence.index(x.agent_type))
-        
-        # Calculate metrics for the report
-        total_sources = sum(agent.source_count for agent in agent_results)
-        total_insights = sum(len(agent.key_insights) for agent in agent_results)
-        avg_confidence = sum(agent.confidence_level for agent in agent_results) / len(agent_results)
-        current_date = datetime.now().strftime("%B %d, %Y")
-        
-        # Create comprehensive input for AI to generate the complete report
-        all_agent_content = ""
-        for i, agent_result in enumerate(agent_results, 1):
-            all_agent_content += f"""
-AGENT {i} - {agent_result.agent_type.upper()}:
-Sources: {agent_result.source_count}
-Content: {agent_result.content}
-Key Insights: {', '.join(agent_result.key_insights[:3])}
----
-"""
-        
-        # Create the prompt for AI to generate the complete Robeco report
-        generation_prompt = f"""You are generating a complete Robeco institutional investment report. You have been provided with:
-
-1. CSS TEMPLATE STRUCTURE (use this exact styling and HTML structure):
-{css_template[:2000]}...
-
-2. ROBECO EXAMPLE REPORT (follow this exact format and style):
-{robeco_example[:3000]}...
-
-COMPANY TO ANALYZE: {context.company_name} ({context.ticker})
-ANALYSIS DATE: {current_date}
-RESEARCH SOURCES: {total_sources}
-ANALYST SPECIALISTS: {len(agent_results)}
-CONFIDENCE LEVEL: {avg_confidence:.1%}
-
-AGENT ANALYSIS DATA:
-{all_agent_content}
-
-REQUIREMENTS:
-1. Generate a COMPLETE HTML report using the exact CSS template structure provided
-2. Follow the exact format, styling, and layout from the Robeco example
-3. Include all sections: title slide, metrics grid, analysis sections, takeaway boxes
-4. Use the agent analysis data to populate all content sections
-5. Maintain professional Robeco institutional tone and branding
-6. Include numbered sections (4., 5., 6., etc.) following the template hierarchy
-7. Generate substantial analytical content for each section (not bullet points)
-8. Include key takeaway boxes with insights from each agent
-9. Ensure all HTML/CSS classes match the template exactly
-10. Create a comprehensive institutional-grade investment analysis report
-
-Generate the complete HTML report now:"""
-
-        # Use Gemini to generate the complete report
-        try:
-            from ..api_key.gemini_api_key import get_intelligent_api_key
-            import google.genai as genai
-            
-            api_key = get_intelligent_api_key('report_generation')
-            client = genai.Client(api_key=api_key)
-            
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=[generation_prompt],
-                config=genai.types.GenerateContentConfig(
-                    max_output_tokens=65536,
-                    temperature=0.3
-                )
-            )
-            
-            if response and response.text:
-                return response.text
-            else:
-                print("No response from AI for report generation")
-                return "Error: No response from AI for report generation"
-                
-        except Exception as e:
-            print(f"Error generating complete report: {e}")
-            return f"Error generating complete report: {e}"
 
     def _extract_financial_metrics(self, fundamentals_agent) -> Dict:
         """Extract key financial metrics from fundamentals analysis"""

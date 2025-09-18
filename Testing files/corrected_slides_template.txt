@@ -1,0 +1,347 @@
+<!-- SLIDE 3: Investment Highlights (New Page) -->
+<div class="slide report-prose" id="investment-highlights-pitchbook-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="analysis-sections" style="flex-grow: 1;">
+            <h3>1. INVESTMENT HIGHLIGHTS</h3>
+            <p>[Comprehensive paragraph 1 - 150-200 words of detailed investment analysis]</p>
+            <p>[Comprehensive paragraph 2 - 150-200 words continuing analysis]</p>
+            <p>[Comprehensive paragraph 3 - 150-200 words with conclusions]</p>
+        </section>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 3 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 4: Catalysts (New Page) -->
+<div class="slide report-prose" id="catalyst-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="analysis-sections" style="flex-grow: 1;">
+            <h3>2. CATALYSTS AND RECENT DEVELOPMENTS</h3>
+            <p>[Comprehensive paragraph 1 - 150-200 words analyzing key catalysts]</p>
+            <p>[Comprehensive paragraph 2 - 150-200 words on recent developments]</p>
+            <p>[Comprehensive paragraph 3 - 150-200 words on performance triggers]</p>
+        </section>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 4 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 5: Company Analysis WITH EMBEDDED SUBSECTIONS -->
+<div class="slide report-prose" id="company-analysis-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="analysis-sections" style="flex-grow: 1;">
+            <h3>3. COMPANY ANALYSIS: [COMPANY SPECIFIC TITLE]</h3>
+            <p>[Company overview paragraph - 150-200 words on company background and positioning]</p>
+            
+            <div class="content-block" style="margin-bottom: 15px;">
+                <h3 class="section-title">4. GLOBAL [INDUSTRY] LANDSCAPE: [INDUSTRY SPECIFIC TITLE]</h3>
+                <p>[Industry overview paragraph - 100-150 words on industry dynamics]</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <ul>
+                        <li><strong>[Key Trend 1]:</strong> [Detailed analysis with specific metrics and impact]</li>
+                        <li><strong>[Key Trend 2]:</strong> [Detailed analysis with specific metrics and impact]</li>
+                        <li><strong>[Key Trend 3]:</strong> [Detailed analysis with specific metrics and impact]</li>
+                        <li><strong>[Key Trend 4]:</strong> [Detailed analysis with specific metrics and impact]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="content-block" style="margin-top: 15px;">
+                <h3 class="section-title prose-subsection-margin">4.1. COMPETITIVE DYNAMICS & MARKET POSITIONING: [SPECIFIC POSITIONING]</h3>
+                <p>[Competitive analysis paragraph - 100-150 words on competitive landscape and company positioning]</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <ul>
+                        <li><strong>[Competitive Factor 1]:</strong> [Analysis of competitive advantage/disadvantage]</li>
+                        <li><strong>[Competitive Factor 2]:</strong> [Analysis of competitive advantage/disadvantage]</li>
+                        <li><strong>[Competitive Factor 3]:</strong> [Analysis of competitive advantage/disadvantage]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="content-block unboxed-analysis" style="margin-bottom: 15px;">
+                <h3 class="section-title">4.2. GLOBAL [INDUSTRY] MARKET SIZE ([CURRENCY] [UNITS]): [MARKET OUTLOOK]</h3>
+                <p style="margin-top: 7.5px;">[Market size analysis paragraph - 100-150 words with specific figures and growth projections]</p>
+            </div>
+
+            <div class="content-block unboxed-analysis" style="margin-top: 15px;">
+                <h3 class="section-title prose-subsection-margin">4.3. [SECTOR] SECTOR: [SECTOR OUTLOOK]</h3>
+                <p>[Sector-specific analysis paragraph - 100-150 words on sector trends and outlook]</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <ul>
+                        <li><strong>[Sector Trend 1]:</strong> [Impact analysis with metrics]</li>
+                        <li><strong>[Sector Trend 2]:</strong> [Impact analysis with metrics]</li>
+                        <li><strong>[Sector Trend 3]:</strong> [Impact analysis with metrics]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="content-block unboxed-analysis">
+                <h3 class="section-title prose-subsection-margin">4.4. [BUSINESS SEGMENT] SEGMENT: [SEGMENT OUTLOOK]</h3>
+                <p>[Business segment analysis paragraph - 100-150 words on segment performance and outlook]</p>
+                <div class="bullet-list-square" style="margin-top: 10px;">
+                    <ul>
+                        <li><strong>[Segment Factor 1]:</strong> [Performance analysis with specific metrics]</li>
+                        <li><strong>[Segment Factor 2]:</strong> [Growth prospects and challenges]</li>
+                        <li><strong>[Segment Factor 3]:</strong> [Strategic positioning and outlook]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="content-block">
+                <h3 class="section-title prose-subsection-margin">4.5. [KEY SEGMENT] REVENUE GROWTH ([CURRENCY] [UNITS]): [PERFORMANCE ASSESSMENT]</h3>
+                <p style="margin-top: 7.5px;">[Revenue growth analysis paragraph - 100-150 words with specific revenue figures, growth rates, and performance assessment]</p>
+            </div>
+        </section>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 5 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 6: Financial Performance Highlights TABLE -->
+<div class="slide" id="financial-highlights-table-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <h3 class="section-title">5. FINANCIAL PERFORMANCE HIGHLIGHTS: [PERFORMANCE ASSESSMENT]</h3>
+        <table class="pitchbook-table">
+            <thead>
+                <tr>
+                    <th style="text-align: left; font-family: Calibri, sans-serif;">METRIC</th>
+                    <th style="text-align: right; font-family: Calibri, sans-serif;">FY22</th>
+                    <th style="text-align: right; font-family: Calibri, sans-serif;">FY23</th>
+                    <th style="text-align: right; font-family: Calibri, sans-serif;">FY24</th>
+                    <th style="text-align: right; font-family: Calibri, sans-serif;">FY25E</th>
+                    <th style="text-align: right; font-family: Calibri, sans-serif;">FY26E</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="group-header"><th colspan="6">Financial Performance</th></tr>
+                <tr><td>Revenue ([Currency] [Units])</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>Revenue Growth</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>EBITDA ([Currency] [Units])</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>EBITDA Margin</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>Net Income</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>Net Debt</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>Net Debt / EBITDA</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>ROE</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr class="group-header"><th colspan="6">Valuation</th></tr>
+                <tr><td>EPS</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>P/E</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>EV/EBITDA</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>Dividend Yield</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+                <tr><td>FCF Yield</td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td><td><strong>[CALCULATE]</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Financial analysis paragraph 1 - 150-200 words analyzing financial performance trends and key metrics]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Financial analysis paragraph 2 - 150-200 words on valuation, margins, and investment implications]</p>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 6 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 7: Income Statement Analysis -->
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <h3 class="section-title">5.1. DETAILED FINANCIAL STATEMENTS: INCOME STATEMENT ([CURRENCY] [UNITS]) - [PERFORMANCE ASSESSMENT]</h3>
+        
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th style="font-family: Calibri, sans-serif;">METRIC</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY22</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY23</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY24</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">YoY Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="font-family: Calibri, sans-serif;">Revenue</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Gross Profit</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Gross Margin</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Operating Income</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Operating Margin</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">EBITDA</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">EBITDA Margin</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Net Income</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Net Margin</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">EPS</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">[Comprehensive income statement analysis paragraph 1 - 150-200 words analyzing revenue trends, growth drivers, and sustainability with specific metrics]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive income statement analysis paragraph 2 - 150-200 words on profitability metrics, margin analysis, and operational leverage with detailed calculations]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive income statement analysis paragraph 3 - 150-200 words on cost structure, efficiency, and competitive positioning with industry comparisons]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive income statement analysis paragraph 4 - 150-200 words on outlook, risks, and earnings quality assessment with forward-looking projections]</p>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 7 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 8: Balance Sheet Analysis -->
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <h3 class="section-title">5.2. DETAILED FINANCIAL STATEMENTS: BALANCE SHEET ([CURRENCY] [UNITS]) - [CAPITAL STRUCTURE ASSESSMENT]</h3>
+        
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th style="font-family: Calibri, sans-serif;">METRIC</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY22</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY23</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY24</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">YoY Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="font-family: Calibri, sans-serif;">Total Assets</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Current Assets</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Cash & Equivalents</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Total Debt</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Net Debt</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Shareholders' Equity</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Book Value per Share</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Debt-to-Equity</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Current Ratio</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Return on Equity</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">[Comprehensive balance sheet analysis paragraph 1 - 150-200 words analyzing asset composition, quality, and efficiency with specific metrics]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive balance sheet analysis paragraph 2 - 150-200 words on capital structure, leverage analysis, and debt sustainability with detailed calculations]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive balance sheet analysis paragraph 3 - 150-200 words on liquidity position, working capital management, and financial flexibility]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive balance sheet analysis paragraph 4 - 150-200 words on equity valuation, book value trends, and capital efficiency metrics]</p>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 8 / 9</p>
+    </footer>
+</div>
+
+<!-- SLIDE 9: Cash Flow Analysis -->
+<div class="slide report-prose" id="cash-flow-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://www.theia.org/sites/default/files/2019-04/Robeco-UK.png" onerror="this.onerror=null;this.src='https://placehold.co/250x50/003366/ffffff?text=ROBECO';" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+                <h1 class="name">[COMPANY_NAME]</h1>
+                <div class="rating" style="color: #C62828;">[INVESTMENT_RATING]</div>
+            </div>
+        </div>
+    </header>
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <h3 class="section-title">5.3. DETAILED FINANCIAL STATEMENTS: CASH FLOW ([CURRENCY] [UNITS]) - [CAPITAL ALLOCATION ASSESSMENT]</h3>
+        
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th style="font-family: Calibri, sans-serif;">METRIC</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY22</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY23</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">FY24</th>
+                    <th style="text-align:right; font-family: Calibri, sans-serif;">YoY Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="font-family: Calibri, sans-serif;">Operating Cash Flow</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Capital Expenditures</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Free Cash Flow</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">FCF Conversion Rate</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Dividends Paid</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Share Repurchases</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Net Debt Issuance</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #DC143C; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Working Capital Change</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">FCF Yield</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+                <tr><td style="font-family: Calibri, sans-serif;">Cash Conversion Cycle</td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td><td style="color: #228B22; font-family: Calibri, sans-serif;"><strong>[CALCULATE]</strong></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 4.5px; font-family: Calibri, sans-serif;">[Comprehensive cash flow analysis paragraph 1 - 150-200 words analyzing operating cash flow generation, quality, and sustainability with specific metrics]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive cash flow analysis paragraph 2 - 150-200 words on capital allocation strategy, investment returns, and capex efficiency]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive cash flow analysis paragraph 3 - 150-200 words on shareholder returns, dividend policy, and free cash flow utilization]</p>
+        <p style="margin-top: 15px; font-family: Calibri, sans-serif;">[Comprehensive cash flow analysis paragraph 4 - 150-200 words on working capital management, cash conversion efficiency, and liquidity outlook]</p>
+    </main>
+    <footer class="report-footer">
+        <p>Source: Robeco Internal Analysis, Bloomberg</p>
+        <p>Page 9 / 9</p>
+    </footer>
+</div>

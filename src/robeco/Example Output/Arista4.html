@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 30px; right: 98px; width: 120px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Specific fix for Company Analysis page content visibility */
+        #company-analysis-page {
+            min-height: 2500px; /* Ensure enough height for all content */
+            height: auto;
+            overflow: visible;
+        }
+
+        #company-analysis-page .slide-content {
+            flex-grow: 1;
+            min-height: 2000px; /* Ensure content area is tall enough */
+            height: auto;
+            overflow: visible;
+            display: block; /* Change from flex to block for better content flow */
+        }
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+<div class="slide" id="portrait-page-1">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=ANET';" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value">ANET / NYQ</div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value">$142.16 USD</div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value">$178.68B</div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value">$169.83B</div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value">$59.43 - $156.32</div></div>
+
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value">55.75x / 14.61x</div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value">48.93x</div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value">22.47x</div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value">16.39x</div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value">2.41x</div></div>
+
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value">64.2% / 44.7% / 40.9%</div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value">33.6%</div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value">15.2%</div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value">43.7%</div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value">$111.00 - $185.00</div></div>
+
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value">30.4%</div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value">34.6%</div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value">1.50</div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value">N/A</div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value">3.33x</div></div>
+
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value">$3.33B</div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value">2.58x</div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value">N/A</div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value">0.0%</div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value">11.0M / 9.7M</div></div>
+        </section>
+
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                <p>Arista Networks is a leading provider of data-driven, client-to-cloud networking solutions, specializing in high-performance switches and software for AI, data center, campus, and routing environments. Its core offering, the Extensible Operating System (EOS), combined with a suite of network applications, delivers superior performance and automation. The company serves a diverse customer base including internet giants, cloud service providers, and financial institutions, leveraging a robust distribution network and direct sales force. Arista's strategic focus on innovation and market expansion has driven significant revenue growth, with <strong>product revenue</strong> accounting for approximately <strong>84%</strong> of total revenue in 2024, complemented by a growing <strong>service revenue</strong> stream.</p>
+            </div>
+            <div class="stock-chart-container" id="stock-price-line-chart">
+                <script type="text/javascript">
+                    // Ensure D3 is loaded and chart renders properly
+                    function renderStockChart() {
+                        if (typeof d3 === 'undefined') {
+                            document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">D3.js library not available. Chart cannot be rendered.</p>';
+                            return;
+                        }
+                        
+                        try {
+                            const stockData = [{'date': '2020-10-01', 'price': 13.06}, {'date': '2020-11-01', 'price': 16.92}, {'date': '2020-12-01', 'price': 18.16}, {'date': '2021-01-01', 'price': 19.22}, {'date': '2021-02-01', 'price': 17.49}, {'date': '2021-03-01', 'price': 18.87}, {'date': '2021-04-01', 'price': 19.7}, {'date': '2021-05-01', 'price': 21.21}, {'date': '2021-06-01', 'price': 22.64}, {'date': '2021-07-01', 'price': 23.77}, {'date': '2021-08-01', 'price': 23.1}, {'date': '2021-09-01', 'price': 21.48}, {'date': '2021-10-01', 'price': 25.61}, {'date': '2021-11-01', 'price': 31.01}, {'date': '2021-12-01', 'price': 35.94}, {'date': '2022-01-01', 'price': 31.08}, {'date': '2022-02-01', 'price': 30.68}, {'date': '2022-03-01', 'price': 34.74}, {'date': '2022-04-01', 'price': 28.89}, {'date': '2022-05-01', 'price': 25.57}, {'date': '2022-06-01', 'price': 23.43}, {'date': '2022-07-01', 'price': 29.16}, {'date': '2022-08-01', 'price': 29.97}, {'date': '2022-09-01', 'price': 28.22}, {'date': '2022-10-01', 'price': 30.22}, {'date': '2022-11-01', 'price': 34.83}, {'date': '2022-12-01', 'price': 30.34}, {'date': '2023-01-01', 'price': 31.5}, {'date': '2023-02-01', 'price': 34.67}, {'date': '2023-03-01', 'price': 41.97}, {'date': '2023-04-01', 'price': 40.04}, {'date': '2023-05-01', 'price': 41.58}, {'date': '2023-06-01', 'price': 40.51}, {'date': '2023-07-01', 'price': 38.77}, {'date': '2023-08-01', 'price': 48.81}, {'date': '2023-09-01', 'price': 45.98}, {'date': '2023-10-01', 'price': 50.09}, {'date': '2023-11-01', 'price': 54.93}, {'date': '2023-12-01', 'price': 58.88}, {'date': '2024-01-01', 'price': 64.67}, {'date': '2024-02-01', 'price': 69.39}, {'date': '2024-03-01', 'price': 72.5}, {'date': '2024-04-01', 'price': 64.14}, {'date': '2024-05-01', 'price': 74.41}, {'date': '2024-06-01', 'price': 87.62}, {'date': '2024-07-01', 'price': 86.64}, {'date': '2024-08-01', 'price': 88.35}, {'date': '2024-09-01', 'price': 95.96}, {'date': '2024-10-01', 'price': 96.61}, {'date': '2024-11-01', 'price': 101.46}, {'date': '2024-12-01', 'price': 110.53}, {'date': '2025-01-01', 'price': 115.23}, {'date': '2025-02-01', 'price': 93.05}, {'date': '2025-03-01', 'price': 77.48}, {'date': '2025-04-01', 'price': 82.27}, {'date': '2025-05-01', 'price': 86.64}, {'date': '2025-06-01', 'price': 102.31}, {'date': '2025-07-01', 'price': 123.22}, {'date': '2025-08-01', 'price': 136.55}, {'date': '2025-09-01', 'price': 142.16}];
+                            
+                            // Get container dimensions for responsive design
+                            const container = document.getElementById('stock-price-line-chart');
+                            const containerWidth = container.offsetWidth || 400;
+                            const containerHeight = container.offsetHeight || 250;
+                            
+                            const margin = {top: 15, right: 20, bottom: 35, left: 50},
+                                width = Math.max(containerWidth - margin.left - margin.right - 20, 200),
+                                height = Math.max(containerHeight - margin.top - margin.bottom - 20, 150);
+
+                            // Ensure container has proper styling for visibility and responsiveness
+                            d3.select("#stock-price-line-chart")
+                                .style("position", "relative")
+                                .style("width", "100%")
+                                .style("height", "100%")
+                                .style("min-height", "250px")
+                                .style("background-color", "#ffffff")
+                                .style("border", "1px solid #E0E0E0")
+                                .style("border-radius", "4px")
+                                .style("padding", "8px")
+                                .style("box-sizing", "border-box")
+                                .style("overflow", "hidden");
+                            
+                            // Clear any existing chart
+                            d3.select("#stock-price-line-chart").selectAll("*").remove();
+
+                            const svg = d3.select("#stock-price-line-chart")
+                                .append("svg")
+                                .attr("width", "100%")
+                                .attr("height", "100%")
+                                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                                .style("display", "block")
+                                .style("background-color", "transparent")
+                                .style("font-family", "Arial, sans-serif")
+                                .style("font-size", "11px");
+                            
+                            const chartGroup = svg.append("g")
+                                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                            const parseDate = d3.timeParse("%Y-%m-%d");
+                            stockData.forEach(d => {
+                                d.date = parseDate(d.date);
+                                d.price = +d.price;
+                            });
+
+                            const x = d3.scaleTime()
+                                .domain(d3.extent(stockData, d => d.date))
+                                .range([0, width]);
+
+                            const y = d3.scaleLinear()
+                                .domain([12.41, 149.27])
+                                .range([height, 0]);
+
+                            // Add axes with responsive ticks
+                            const xAxisTicks = Math.max(3, Math.floor(width / 80));
+                            const yAxisTicks = Math.max(3, Math.floor(height / 40));
+                            
+                            chartGroup.append("g")
+                                .attr("transform", `translate(0,${height})`)
+                                .call(d3.axisBottom(x).ticks(xAxisTicks).tickFormat(d3.timeFormat("%Y")))
+                                .selectAll("text")
+                                .style("font-size", "10px")
+                                .style("fill", "#666");
+
+                            chartGroup.append("g")
+                                .call(d3.axisLeft(y).ticks(yAxisTicks).tickFormat(d3.format("$.0f")))
+                                .selectAll("text")
+                                .style("font-size", "10px")
+                                .style("fill", "#666");
+
+                            // Create line generator
+                            const line = d3.line()
+                                .x(d => x(d.date))
+                                .y(d => y(d.price))
+                                .curve(d3.curveMonotoneX);
+
+                            // Add gradient for better visual appeal
+                            const gradient = svg.append("defs")
+                                .append("linearGradient")
+                                .attr("id", "line-gradient")
+                                .attr("gradientUnits", "userSpaceOnUse")
+                                .attr("x1", 0).attr("y1", height)
+                                .attr("x2", 0).attr("y2", 0);
+                            
+                            gradient.append("stop")
+                                .attr("offset", "0%")
+                                .attr("stop-color", "rgba(0, 95, 144, 0.1)");
+                            
+                            gradient.append("stop")
+                                .attr("offset", "100%")
+                                .attr("stop-color", "rgba(0, 95, 144, 0.3)");
+
+                            // Add area under the line
+                            const area = d3.area()
+                                .x(d => x(d.date))
+                                .y0(height)
+                                .y1(d => y(d.price))
+                                .curve(d3.curveMonotoneX);
+                            
+                            chartGroup.append("path")
+                                .datum(stockData)
+                                .attr("fill", "url(#line-gradient)")
+                                .attr("d", area);
+
+                            // Add the main line
+                            chartGroup.append("path")
+                                .datum(stockData)
+                                .attr("fill", "none")
+                                .attr("stroke", "#005F90")
+                                .attr("stroke-width", 2)
+                                .attr("stroke-linejoin", "round")
+                                .attr("stroke-linecap", "round")
+                                .attr("d", line);
+
+                            // Add current price point
+                            const lastPoint = stockData[stockData.length - 1];
+                            chartGroup.append("circle")
+                                .attr("cx", x(lastPoint.date))
+                                .attr("cy", y(lastPoint.price))
+                                .attr("r", 4)
+                                .attr("fill", "#C62828")
+                                .attr("stroke", "white")
+                                .attr("stroke-width", 2);
+
+                            // Add current price label with better positioning
+                            const labelX = x(lastPoint.date) > width - 60 ? x(lastPoint.date) - 60 : x(lastPoint.date) + 10;
+                            chartGroup.append("text")
+                                .attr("x", labelX)
+                                .attr("y", y(lastPoint.price) - 10)
+                                .attr("fill", "#C62828")
+                                .style("font-size", "11px")
+                                .style("font-weight", "bold")
+                                .style("text-anchor", labelX < x(lastPoint.date) ? "end" : "start")
+                                .text(`$$${lastPoint.price.toFixed(2)}`);
+                                
+                            // Add chart title
+                            chartGroup.append("text")
+                                .attr("x", width / 2)
+                                .attr("y", -5)
+                                .attr("text-anchor", "middle")
+                                .style("font-size", "12px")
+                                .style("font-weight", "bold")
+                                .style("fill", "#333")
+                                .text("Stock Price Trend");
+                            
+                            console.log('Responsive stock chart rendered successfully with', stockData.length, 'data points');
+                            console.log('Chart dimensions:', width + 'x' + height);
+                            
+                        } catch (error) {
+                            console.error('Chart rendering error:', error);
+                            document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">Chart rendering failed: ' + error.message + '</p>';
+                        }
+                    }
+                    
+                    // Enhanced rendering strategies for web app compatibility
+                    let renderTimeout;
+                    
+                    function scheduleRender() {
+                        clearTimeout(renderTimeout);
+                        renderTimeout = setTimeout(() => {
+                            if (document.getElementById('stock-price-line-chart')) {
+                                renderStockChart();
+                            }
+                        }, 100);
+                    }
+                    
+                    // Strategy 1: Immediate render if DOM is ready
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        scheduleRender();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', scheduleRender);
+                    }
+                    
+                    // Strategy 2: Backup render after page load
+                    window.addEventListener('load', scheduleRender);
+                    
+                    // Strategy 3: Handle dynamic content loading (for SPAs)
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.type === 'childList' && 
+                                mutation.target.id === 'stock-price-line-chart' ||
+                                mutation.target.contains(document.getElementById('stock-price-line-chart'))) {
+                                scheduleRender();
+                            }
+                        });
+                    });
+                    
+                    // Start observing for dynamic content
+                    if (document.body) {
+                        observer.observe(document.body, { childList: true, subtree: true });
+                    }
+                    
+                    // Strategy 4: Force render after delay for stubborn cases
+                    setTimeout(function() {
+                        if (!d3.select("#stock-price-line-chart svg").empty()) {
+                            console.log('Chart already rendered successfully');
+                        } else {
+                            console.log('Chart not found, attempting final render...');
+                            scheduleRender();
+                        }
+                    }, 2000);
+                    
+                    // Strategy 5: Handle window resize for responsive behavior
+                    let resizeTimeout;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(scheduleRender, 300);
+                    });
+                </script>
+            </div>
+        </div>
+
+        <div class="analysis-sections">
+            <div class="analysis-item first-analysis-item">
+                <div class="item-title"><strong>REASON TO ANALYZE - AI & Cloud Infrastructure Leadership</strong></div>
+                <div class="content-item">
+                    <p>Arista Networks presents a compelling investment opportunity driven by its leadership in high-performance networking, particularly within the burgeoning AI infrastructure and cloud adoption cycles. The company has consistently demonstrated robust growth, with <strong>revenue up 30.4% YoY</strong> and <strong>EPS up 34.6% YoY</strong>, fueled by strong demand from hyperscale customers like Microsoft and Meta. We anticipate continued market share gains against traditional competitors, underpinned by Arista's innovative software-driven solutions and strategic positioning in next-generation data center architectures. The structural tailwinds from AI buildouts are expected to sustain this momentum, translating into superior earnings quality.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>LONG TERM OUTLOOK - Expanding TAM & AI Dominance</strong></div>
+                <div class="content-item">
+                    <p>The long-term outlook for Arista Networks remains highly constructive, anchored by a rapidly expanding total addressable market (TAM) projected to grow from <strong>$41 billion in 2024</strong> to <strong>$70 billion by 2028</strong>. This expansion is driven by secular tailwinds in AI/ML, cybersecurity, and the strategic penetration of the enterprise campus segment with its Cognitive Campus solutions. Management's ambitious target of achieving <strong>$10 billion in revenue by 2026</strong>, two years ahead of its original schedule, underscores the significant growth runway. Arista's durable competitive moat, built on continuous innovation and deep customer relationships, ensures sustained market leadership and margin expansion over the next 3-5 years.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FUNDAMENTAL CONCLUSION - Alpha Generation Potential</strong></div>
+                <div class="content-item">
+                    <p>Our fundamental analysis indicates Arista Networks offers a compelling alpha generation opportunity. The company exhibits robust financial health, characterized by best-in-class profitability with a <strong>net margin of 40.9%</strong> and superior capital efficiency, evidenced by a <strong>ROCE of 28%</strong> and <strong>ROE of 33.6%</strong>. While trading at a premium <strong>P/E of 55.75x TTM</strong>, this valuation is justified by its exceptional growth profile and industry-leading margins. We establish a target price of <strong>$175</strong>, representing approximately <strong>23% upside</strong> from the current price, based on a justified premium multiple reflecting its AI-driven growth trajectory and sustained competitive advantages.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW - AI Infrastructure Beneficiary</strong></div>
+                <div class="content-item">
+                    <p>Arista Networks aligns perfectly with our top-down investment thesis favoring companies that are direct beneficiaries of the secular growth in AI infrastructure and cloud computing. The increasing demand for high-performance, low-latency networking solutions to support massive GPU clusters and data center buildouts positions Arista at the epicenter of this technological transformation. Its specialized Ethernet-based solutions are gaining traction over proprietary alternatives, creating a significant market re-rating opportunity. We view Arista as a critical enabler of the digital economy's foundational shifts, with its innovative platform driving efficiency and scalability across enterprise and hyperscale environments, validating its strategic importance in our portfolio.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="portrait-page-1A">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=ANET';" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item first-analysis-item">
+                <div class="item-title"><strong>VALUATION - Justified Premium for Growth</strong></div>
+                <div class="content-item">
+                    <p>Arista Networks currently trades at a <strong>P/E of 55.75x TTM</strong> and <strong>14.61x FWD</strong>, and an <strong>EV/EBITDA of 48.93x TTM</strong>. While these multiples are above the industry average FWD P/E of <strong>32x</strong> and its own 10-year average EV/EBITDA of <strong>21x</strong>, the premium is fundamentally justified by its superior growth algorithm and best-in-class profitability. The company's <strong>30.4% YoY revenue growth</strong> and <strong>44.7% operating margin</strong> significantly outpace peers, warranting a higher valuation. Our DCF analysis, while showing a potential overvaluation based on conservative assumptions, does not fully capture the accelerating AI-driven demand. We maintain a target price of <strong>$175</strong>, implying <strong>23% upside</strong>, reflecting a justified premium multiple for its sustained competitive advantages and growth trajectory.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS - Customer Concentration & Competition</strong></div>
+                <div class="content-item">
+                    <p>Key risks to our Arista Networks investment thesis include: 1) <strong>Customer Concentration</strong>: Significant revenue dependence on a few hyperscale clients (e.g., Meta, Microsoft each contributing ><strong>10%</strong> of revenue) creates vulnerability to shifts in their spending or competitive dynamics. 2) <strong>Intense Competition</strong>: Fierce rivalry from established players like Cisco and Juniper, as well as emerging threats from NVIDIA in AI networking and low-cost white-box solutions, could pressure pricing and market share. 3) <strong>Valuation Sensitivity</strong>: Current elevated multiples imply high growth expectations, making the stock susceptible to any deceleration in revenue or margin expansion. 4) <strong>Technological Disruption</strong>: Rapid advancements and potential commoditization in networking hardware, coupled with supply chain volatility, could impact long-term margin sustainability.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION - Superior Returns & Growth</strong></div>
+                <div class="content-item">
+                    <p>Arista Networks demonstrates exceptional quantitative strength, underpinning our OVERWEIGHT rating. The company's <strong>30.4% YoY revenue growth</strong> and <strong>34.6% YoY EPS growth</strong> are coupled with robust profitability, including a <strong>64.2% gross margin</strong> and <strong>40.9% net margin</strong>. Capital efficiency is outstanding, with <strong>ROIC of 23.5%</strong> and <strong>ROE of 33.6%</strong>, significantly exceeding industry averages. Consistent free cash flow generation of <strong>$3.33 billion (TTM)</strong> provides ample liquidity for strategic investments and shareholder returns. This combination of superior growth, profitability, and capital allocation discipline positions Arista for continued alpha generation, justifying its premium valuation and our conviction.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK - Catalysts for Continued Momentum</strong></div>
+                <div class="content-item">
+                    <p>The short-term outlook (6-18 months) for Arista Networks is positive, with several catalysts expected to drive performance. Key events to watch include: 1) <strong>Q3 2025 Earnings</strong> (expected August 5th, 2025): Anticipate strong results, with guidance for <strong>Q3 revenue of $2.25 billion</strong> and a non-GAAP operating margin of approximately <strong>47%</strong>, driven by continued hyperscale demand and initial traction in AI networking. 2) <strong>AI Product Enhancements</strong> (ongoing): New product launches and software updates for AI-specific networking solutions are expected to broaden its customer base. 3) <strong>Campus Networking Expansion</strong> (H1 2026): Further market penetration and customer wins in the enterprise campus segment, leveraging its Cognitive Campus portfolio, will be critical. 4) <strong>Analyst Day Updates</strong> (post-September 11, 2025): Potential for updated long-term guidance and strategic roadmap, which could act as a re-rating catalyst, especially the <strong>20% revenue growth guidance for 2026</strong>.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS - Upward Momentum & Positive Surprises</strong></div>
+                <div class="content-item">
+                    <p>Arista Networks has demonstrated strong earnings momentum, with the consensus EPS estimate for the upcoming quarter revised <strong>0.25% higher</strong> over the last 30 days. The company's <strong>Q2 2025 EPS of $0.73</strong> significantly beat the consensus estimate of <strong>$0.65</strong>, while revenue of <strong>$2.205 billion</strong> surpassed the <strong>$2.11 billion</strong> consensus. For the full fiscal year 2025, Zacks Consensus Estimates project EPS of <strong>$2.81</strong> (up <strong>23.79% YoY</strong>) and revenue of <strong>$8.73 billion</strong> (up <strong>24.64% YoY</strong>). This pattern of positive estimate revisions and consistent earnings beats, coupled with a Zacks Rank #2 (Buy), suggests continued upward momentum and potential for further positive surprises, reinforcing our OVERWEIGHT rating.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="investment-highlights-pitchbook-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=ANET';" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <h3>1. ARISTA NETWORKS INVESTMENT HIGHLIGHTS</h3>
+        <div class="content-item">
+            <p>Arista Networks demonstrates sustainable competitive advantages through its differentiated software-driven approach and strategic use of merchant silicon, which collectively form a durable moat against traditional and emerging rivals. Its Extensible Operating System (EOS) provides a flexible, programmable, and highly reliable foundation for its networking solutions, offering customers simpler management, enhanced efficiency, and superior network performance. This architectural advantage enables faster time-to-market, design flexibility, and lower costs compared to competitors relying solely on proprietary chip development. Furthermore, Arista's early innovation in high-speed Ethernet networking, particularly for leaf-spine designs, has positioned it as a leader in applications requiring high-performance solutions, including the rapidly expanding AI infrastructure market. The company's strong customer relationships, especially with hyperscale cloud providers, are a testament to its product reliability and ability to meet demanding network requirements, creating significant switching costs for its clientele.</p>
+
+            <p>The market opportunity for Arista Networks is substantial and expanding, driven by the accelerating global demand for cloud computing, AI infrastructure, and enterprise digital transformation. The total addressable market (TAM) for Arista's solutions is projected to grow from <strong>$41 billion in 2024</strong> to <strong>$70 billion by 2028</strong>, indicating a significant runway for sustained revenue growth. Arista is strategically capitalizing on the AI networking boom, with its Ethernet-based solutions increasingly favored over proprietary InfiniBand for scale-out back-end AI networks due to superior scalability and cost-effectiveness. The company is also actively diversifying beyond its core data center stronghold into adjacent markets such as enterprise campus networking and broader cloud/service provider segments, aiming to capture a larger share of these high-growth verticals. This multi-pronged market expansion strategy, coupled with the secular tailwinds of data center modernization and increasing bandwidth requirements (e.g., transition to <strong>800G/1.6T Ethernet</strong>), provides robust organic growth drivers.</p>
+
+            <p>Arista Networks exhibits pronounced operational excellence, translating into best-in-class financial performance. The company consistently delivers superior profitability metrics, with a <strong>gross margin of 64.2%</strong>, an <strong>operating margin of 44.7%</strong>, and a <strong>net margin of 40.9%</strong>. These margins are significantly higher than those of traditional networking peers, reflecting Arista's capital-light software-driven model and efficient cost structure. The company's disciplined capital allocation is evidenced by a robust <strong>ROIC of 28%</strong> and <strong>ROE of 33.6%</strong>, demonstrating its ability to generate high returns on invested capital. Furthermore, Arista maintains a pristine balance sheet with <strong>$8.3 billion in cash and marketable securities</strong> as of December 2024 and minimal debt, providing significant financial flexibility for strategic investments, R&D, and shareholder returns. This operational efficiency and financial discipline provide a strong cushion during market downturns and enable sustained investment in innovation, reinforcing its competitive position.</p>
+
+            <p>Arista Networks possesses significant strategic optionality, positioning it for long-term value creation beyond its current core markets. The company's 'Arista 2.0' strategy emphasizes substantial investments in Artificial Intelligence (AI) and Software-as-a-Service (SaaS) solutions, aiming to diversify revenue streams and enhance recurring revenue components. This includes developing advanced AI/ML networking capabilities for automation and predictive analytics, as well as expanding its Cognitive Campus networking solutions to integrate wired and wireless access. Strategic partnerships with cloud providers and software vendors are crucial for offering integrated solutions and extending its ecosystem. Geographically, Arista is pursuing international expansion, including initiatives like "Make in India," to diversify supply chains and tap into new growth markets. These strategic moves, coupled with a strong product pipeline featuring next-generation silicon and enhanced software platforms like CloudVision, ensure Arista remains at the forefront of technological innovation and market evolution, creating multiple avenues for sustained growth and multiple expansion.</p>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 3 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="catalyst-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=ANET';" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <h3>2. ARISTA NETWORKS CATALYSTS AND RECENT DEVELOPMENTS</h3>
+        <div class="content-item">
+            <p>Several near-term catalysts are poised to drive Arista Networks' stock performance over the next 6-18 months, reinforcing our OVERWEIGHT rating. The company's strong <strong>Q2 2025 results</strong>, which saw <strong>revenue jump 30% YoY</strong> and <strong>EPS beat consensus by $0.08</strong>, coupled with a raised full-year 2025 revenue growth guidance to approximately <strong>25%</strong>, signal robust operational momentum. Continued hyperscale AI infrastructure buildouts from key customers like Microsoft, Meta, and Oracle are expected to sustain high demand for Arista's high-performance Ethernet switches, with Oracle's massive capex increase alone potentially driving <strong>$1 billion in incremental revenue</strong> over the next 15-16 months. Positive analyst revisions, such as JPMorgan Chase & Co. and Wells Fargo & Company raising price targets to <strong>$175</strong>, reflect growing confidence in Arista's ability to capitalize on these trends. Furthermore, the company's <strong>Q3 2025 guidance</strong> for approximately <strong>$2.25 billion in revenue</strong> and a <strong>47% non-GAAP operating margin</strong> provides clear visibility into continued strong performance.</p>
+
+            <p>Arista Networks' product and service pipeline is a significant catalyst for future growth, particularly its advancements in AI-optimized networking. The company is accelerating the development of next-generation silicon, including the Tomahawk 6 and <strong>1.6T Ethernet switches</strong>, designed to meet the surging demand for GPU clusters in AI training while reducing power consumption. Its Extensible Operating System (EOS) and Etherlink software are continuously optimized to enhance data movement in AI environments, addressing critical bottlenecks and maximizing GPU utilization. Beyond AI, Arista is expanding its Cognitive Campus networking solutions, integrating wired and wireless access with its cloud-managed platform to capture a larger share of the enterprise market. The CloudVision network management and automation platform, built atop EOS, continues to evolve, offering enhanced operational efficiency and network automation for large-scale cloud deployments. These innovations ensure Arista maintains its technological edge and expands its addressable market.</p>
+
+            <p>Management initiatives are strategically aligned to capitalize on the evolving networking landscape, driving long-term value creation. Arista's 'Arista 2.0' strategy places significant emphasis on investments in Artificial Intelligence (AI) and Software-as-a-Service (SaaS) solutions, aiming to diversify revenue streams and enhance recurring revenue components. Recent leadership restructuring in 2025, including the appointments of Todd Nightingale as COO and Kenneth Duda as CTO, strengthens the company's focus on AI and cloud infrastructure engineering, ensuring operational scalability and technological leadership. The "Make in India" initiative represents a strategic bet on India's digital infrastructure boom, diversifying supply chains and aligning with global trends toward regionalized data centers. These proactive management decisions, coupled with a disciplined capital allocation strategy that includes a <strong>$1.2 billion stock repurchase program</strong> and substantial R&D investments (<strong>~$1 billion in 2024</strong>), underscore a commitment to both innovation and shareholder value.</p>
+
+            <p>Arista Networks is actively pursuing market expansion strategies that will unlock new growth avenues and reduce customer concentration risk. The company's strategic push beyond its traditional hyperscale data center stronghold into the enterprise campus networking sector and broader cloud and service provider markets is critical for sustained revenue growth. This expansion is supported by tailoring solutions to regional demands and strengthening sales channels globally. Arista's focus on international expansion aims to increase its global market share, leveraging its proven technology and customer success in North America. Furthermore, the company is expanding its AI customer base from 4-5 to <strong>25-30 major clients</strong>, indicating successful diversification within the high-growth AI segment. These market expansion efforts, combined with strategic partnerships, are designed to broaden Arista's customer base, enhance its product offerings, and ensure long-term competitiveness in a dynamic industry.</p>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 4 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="company-analysis-page">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=ANET';" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #005F90;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <h3>3. ARISTA NETWORKS COMPANY ANALYSIS</h3>
+        <div class="content-item">
+            <h4>Business Model Overview and Value Proposition</h4>
+            <p>Arista Networks operates a highly effective business model centered on delivering data-driven, client-to-cloud networking solutions, primarily through its innovative Extensible Operating System (EOS) and high-performance Ethernet switches. The company creates value by providing superior network performance, scalability, and automation crucial for demanding environments like AI data centers, hyperscale clouds, and large enterprises. Its unique value proposition lies in offering an open, software-driven architecture that simplifies network management, enhances efficiency, and ensures reliability, often at a lower total cost of ownership compared to traditional vendors. This model is validated by its strong customer loyalty and ability to capture significant market share in critical networking segments, evidenced by its robust financial performance and consistent growth in both product and service revenues.</p>
+
+            <h4>Revenue Model Evolution and Growth Drivers</h4>
+            <p>Arista Networks' revenue model is predominantly driven by product sales, which constituted approximately <strong>84%</strong> of its total revenue in 2024, with the remaining <strong>16%</strong> from high-margin service revenue. The company's growth algorithm is evolving, increasingly fueled by the accelerating demand for AI infrastructure and cloud computing. Arista leverages its technological leadership in high-speed Ethernet to capitalize on the shift from proprietary networking solutions to more open, scalable, and cost-effective Ethernet-based architectures for AI workloads. Pricing power is maintained through continuous innovation and specialization, offering differentiated solutions that address complex customer needs. Key growth drivers include expanding customer acquisition in enterprise and campus markets, increasing adoption of its advanced networking solutions (e.g., <strong>800G/1.6T Ethernet</strong>), and the consistent demand from hyperscale cloud providers for data center modernization.</p>
+
+            <h4>Operational Excellence and Key Performance Metrics</h4>
+            <p>Arista Networks consistently demonstrates exceptional operational excellence, reflected in its industry-leading profitability and capital efficiency. The company maintains a high <strong>gross margin of 64.2%</strong>, an impressive <strong>operating margin of 44.7%</strong>, and a robust <strong>net margin of 40.9%</strong>. These metrics significantly outperform peers, underscoring its efficient cost structure and the scalability of its software-centric model. Arista's asset turnover and working capital efficiency contribute to its strong cash conversion cycle, generating <strong>$3.33 billion in free cash flow (TTM)</strong>. Furthermore, the company's commitment to innovation is supported by substantial R&D investments, which hit nearly <strong>$1 billion in 2024</strong>, ensuring product leadership and competitive differentiation. This operational discipline allows Arista to reinvest effectively in growth initiatives while delivering superior shareholder returns, as evidenced by its <strong>28% ROIC</strong>.</p>
+
+            <h4>Management Quality and Execution Track Record</h4>
+            <p>Arista Networks' leadership team has a proven track record of strategic vision and disciplined execution, consistently driving market share gains against entrenched incumbents. The company's ability to anticipate and capitalize on major industry shifts, such as the rise of cloud computing and AI, highlights its strong strategic foresight. Management's capital allocation discipline is exemplary, maintaining a pristine balance sheet with <strong>$8.3 billion in cash</strong> and executing a <strong>$1.2 billion stock repurchase program</strong> without incurring significant debt. Recent leadership restructuring, including the appointment of a new COO and CTO, further strengthens its focus on AI and cloud infrastructure, ensuring specialized expertise at the helm of critical growth areas. This proactive and agile management approach has been instrumental in Arista's sustained competitive advantage and superior financial performance.</p>
+
+            <h4>Competitive Positioning and Market Dynamics</h4>
+            <p>Arista Networks holds a strong competitive position within the technology sector, particularly in data center switching, where it has consistently gained market share from rivals like Cisco. Its competitive advantages stem from its software-driven Extensible Operating System (EOS) and its strategic adoption of merchant silicon, which offer superior flexibility, performance, and cost-efficiency. While the market is intensely competitive, with players like Cisco, Juniper, Huawei, and increasingly NVIDIA (in AI networking), Arista differentiates itself through specialization in high-performance networking for AI and cloud environments. The company's strong relationships with hyperscale customers and its ability to deliver tailored, high-quality solutions create significant switching costs, reinforcing its market position against emerging threats and potential commoditization.</p>
+
+            <h4>Strategic Outlook and Value Creation Opportunities</h4>
+            <p>Arista Networks' strategic outlook is robust, with significant opportunities for long-term value creation. The company's 'Arista 2.0' strategy, focusing on AI and SaaS, is designed to expand its revenue streams and enhance recurring revenue components, targeting <strong>$750 million from AI back-end solutions</strong> and <strong>$800 million from campus networking</strong> by 2025. Continued investment in R&D for next-generation silicon and AI/ML integration will maintain its technological leadership and drive product innovation. Strategic partnerships and international expansion initiatives, such as "Make in India," will broaden its market reach and diversify its customer base. These strategic pillars, combined with its proven operational excellence and disciplined capital allocation, position Arista to achieve its ambitious target of <strong>$10 billion in revenue by 2026</strong>, driving sustained competitive advantage and multiple expansion over the next decade.</p>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 5 / 15</p>
+    </footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>4. GLOBAL INDUSTRY LANDSCAPE - AI NETWORKING MARKET: $192B TAM GROWING 32.5% CAGR</h3>
+        <div class="content-item">
+            <p><b>Industry Overview and Current Dynamics</b></p>
+            <p>The global data center and cloud networking sector is experiencing an unprecedented surge, primarily fueled by the escalating demand for AI infrastructure. Global data center investments reached approximately <strong>$455 billion in 2024</strong>, marking a substantial <strong>51% year-on-year increase</strong>, with projections indicating a further <strong>30% rise in 2025</strong>. This robust capital expenditure is largely driven by hyperscale operators like AWS, Microsoft, and Google, who are pouring tens of billions into infrastructure to satisfy the escalating demand for high-capacity AI compute. The AI in networks market size is projected to grow from <strong>$15.28 billion in 2025 to $192.34 billion in 2034</strong>, exhibiting a remarkable <strong>CAGR of 32.51%</strong>. This secular tailwind creates a fertile ground for specialized networking vendors capable of delivering high-performance, low-latency solutions essential for AI workloads. The rapid advancements in network speeds, particularly the transition from 25.6T to 51.2T ASICs, underscore the industry's need to keep pace with GPU and accelerator performance, positioning companies like Arista Networks at the forefront of this technological evolution.</p>
+
+            <p><b>Contrarian Market Thesis and Mispricing Opportunities</b></p>
+            <p>The market consensus, while acknowledging the AI tailwind, often underestimates the depth and duration of the hyperscale AI infrastructure buildout, leading to a mispricing of companies with specialized capabilities. Many analysts view the current surge as a cyclical peak, failing to fully appreciate the structural shift towards AI-centric data centers that necessitates a fundamentally new approach to networking. Our analysis suggests that the market is not fully pricing in the sustained, multi-year investment cycle from hyperscalers, with capital expenditures projected to surpass <strong>$1 trillion annually by 2029</strong>. This underappreciation creates an alpha generation opportunity for investors who recognize that the demand for AI-driven networking solutions, characterized by massively parallelized workloads and elephant traffic flows, requires purpose-built, lossless deep buffer fabrics that traditional networking architectures cannot adequately provide. Arista's early and deep integration into these AI clusters, particularly with its Etherlink AI platform, positions it to capture a disproportionate share of this expanding market, a nuance often overlooked by broader market participants.</p>
+
+            <p><b>Competitive Landscape and Market Share Evolution</b></p>
+            <p>The competitive landscape in cloud networking is bifurcating, with Arista Networks steadily gaining market share in the high-speed data center switching market, reaching <strong>27.5% in 2024</strong>, up from 3.5% in 2012. This contrasts sharply with Cisco's declining share, which fell from 78.1% to 29.9% over the same period. While established players like Cisco and Juniper Networks remain, and emerging threats from white-box vendors and NVIDIA in the AI networking space exist, Arista's focus on innovation and strong customer relationships has allowed it to establish a solid market presence. The company's ability to quickly adapt to the AI computing revolution, launching 400G/800G AI Networking solutions by 2022 and achieving top market share in data center switching by 2024, demonstrates its agility and technological leadership. This dynamic shift favors software-centric architectures and specialized vendors like Arista, who can deliver the deterministic latency and lossless fabrics critical for AI workloads, creating a winner-take-most environment in key segments.</p>
+
+            <p><b>Institutional Investor Positioning and Smart Money Flows</b></p>
+            <p>Institutional investors hold a significant stake in Arista Networks, with <strong>82.47% of the company's stock owned by hedge funds and other institutional investors</strong>. Major institutional holders include Vanguard Group Inc, BlackRock, Inc., and State Street Corp, collectively holding billions in stakes, signaling confidence in Arista's AI infrastructure strategy. This high institutional ownership, while indicating credibility among professional investors, also suggests potential for volatility if large institutions rebalance portfolios. For instance, Alliancebernstein L.P. reduced its holdings by <strong>55% in Q2 2025</strong>, which could amplify price swings for retail investors. However, the overall trend indicates smart money recognizing Arista's strategic positioning in the AI and cloud networking space, with a consensus "Buy" rating from analysts and an average price target of <strong>$157.88 to $209.84</strong>, representing a forecasted upside of <strong>10.99% to 22.10%</strong> from current levels.</p>
+
+            <p><b>Arista Networks Sector-Specific Competitive Advantages</b></p>
+            <p>Arista Networks possesses distinct sector-specific competitive advantages rooted in its software-driven cloud networking solutions and relentless innovation. The company's Extensible Operating System (EOS) and CloudVision® platform provide a consistent, high-quality software experience across its diverse product portfolio, from campus switches to large data center routers, which customers highly value. This unified software architecture simplifies network operations, reduces complexity, and enhances automation, creating significant switching costs for customers. Arista's commitment to open standards and its ability to offer UEC-compatible products, easily upgradable as Ultra Ethernet Consortium standards firm up in 2025, further strengthens its competitive moat by providing flexibility and future-proofing for hyperscale deployments. Furthermore, Arista's focus on high-performance, energy-efficient data center technology and its proactive investments in supply chain resilience, including increasing purchase commitments for essential components and expanding inventory, ensure it can meet the rapidly escalating demand for AI infrastructure, a critical differentiator in the fast-evolving AI market.</p>
+
+            <p><b>Forward-Looking Industry Catalysts and Investment Implications</b></p>
+            <p>Several forward-looking industry catalysts are poised to drive continued growth and re-rating for Arista Networks over the next 12-24 months. The ongoing and accelerating hyperscale capital expenditures in AI infrastructure, with major hyperscalers projecting significant increases in 2025, will directly benefit Arista's core business. The continued shift in customer mix towards AI deployments, as cloud providers prioritize AI infrastructure, will further enhance Arista's revenue quality and margin profile. Additionally, Arista's ambitious revenue targets for campus and backend networking, aiming for <strong>$750 million each by 2025</strong>, coupled with strategic partnerships and trials with major AI industry players, indicate robust expansion beyond its traditional cloud titan base. The finalization of Ultra Ethernet Consortium (UEC) standards in 2025 will likely act as a catalyst, solidifying Ethernet as the preferred networking solution for AI workloads and further entrenching Arista's market leadership. These factors collectively support a strong investment thesis, suggesting sustained top-line growth and potential for multiple expansion as the market fully recognizes Arista's pivotal role in the AI era.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 6 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-global-market-dynamics-part2">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5. ARISTA NETWORKS VS. COMPETITORS - HYPERSCALE DOMINANCE & AI LEADERSHIP</h3>
+        <div class="content-item">
+            <p><b>Competitive Landscape Overview</b></p>
+            <p>Arista Networks operates within a highly competitive networking industry, where its market share in high-speed data center switching has steadily climbed to <strong>27.5% in 2024</strong>, a significant increase from 3.5% in 2012. This trajectory contrasts sharply with Cisco Systems, which saw its share decline from 78.1% to 29.9% over the same period, highlighting a clear shift in market leadership towards specialized, software-driven solutions. The competitive dynamics are increasingly driven by the demand for AI infrastructure, where Arista faces pressure not only from traditional rivals like Cisco and Juniper Networks but also from emerging white-box vendors and NVIDIA in the AI networking space. Recent strategic moves by competitors include increased focus on vertically integrated solutions, while Arista continues to differentiate through its open standards approach and advanced software capabilities. The rapid pace of technological change in AI and cloud computing necessitates continuous innovation, creating both opportunities for market share gains and risks of disruption for all players.</p>
+
+            <p><b>Contrarian Competitive Positioning Assessment</b></p>
+            <p>The market often undervalues Arista's sustainable competitive advantages, particularly its software-centric architecture and customer-focused innovation, while overestimating the long-term threat from legacy vendors. While some perceive Cisco's large installed base as an insurmountable barrier, Arista's superior operational efficiency and lower total cost of ownership for hyperscale and cloud titans have driven consistent market share erosion for Cisco. The market also tends to overstate the competitive threat from white-box solutions, which often lack the robust software, support, and advanced features that Arista's EOS and CloudVision platforms provide. Arista's ability to deliver high-performance, low-latency, and lossless networking solutions, critical for AI workloads, creates a pricing power advantage that is not fully reflected in its current valuation multiples. Its customer retention score of <strong>86/100</strong>, ranking first against Cisco and Juniper Networks, further underscores its sticky customer base and the effectiveness of its solutions.</p>
+
+            <p><b>Peer Benchmarking and Management Quality Comparison</b></p>
+            <p>Arista Networks' management has demonstrated superior execution and capital deployment compared to many sector peers. While specific historical guidance accuracy metrics are not publicly detailed, the company's consistent outperformance of revenue expectations, such as achieving <strong>$1.81 billion in Q3 2024</strong>, a <strong>20% YoY increase</strong>, driven by AI networking demand, suggests a high degree of operational foresight and execution. Arista's annualized Return on Invested Capital (ROIC) for the quarter ending June 2025 was <strong>53.08%</strong>, significantly higher than its Weighted Average Cost of Capital (WACC) of <strong>10.95%</strong>, indicating strong value creation. This ROIC of <strong>43.30%</strong> is in the top 25% of its industry, outperforming its 3-year average of <strong>45.41%</strong>, despite a slight recent decline. This contrasts with many peers struggling with lower ROIC and less efficient capital allocation, reflecting Arista's disciplined approach to reinvestment and focus on high-return opportunities.</p>
+
+            <p><b>Competitive Moat Analysis and Sustainability</b></p>
+            <p>Arista Networks possesses a durable competitive moat primarily built on its technological leadership, software-driven architecture, and strong customer relationships. Its focus on innovative hardware and the Extensible Operating System (EOS) creates significant switching costs for its large cloud and enterprise customers, who benefit from a consistent operating environment and advanced automation capabilities. The company's scale advantages, derived from its growing revenue and asset base, enable it to invest heavily in R&D, maintaining a lead in high-speed networking and AI-specific solutions. Arista's commitment to open standards, such as its UEC-compatible products, further enhances its moat by offering flexibility that proprietary solutions often lack, appealing to hyperscalers who prioritize avoiding vendor lock-in. This combination of superior technology, operational efficiency, and customer loyalty translates into a sustainable margin premium and robust free cash flow generation.</p>
+
+            <p><b>Disruption Risk and Competitive Resilience</b></p>
+            <p>While Arista operates in a rapidly evolving industry, its proactive R&D investments and strategic focus enhance its resilience against disruption. The company's continuous innovation in AI networking, including its Etherlink AI platform and 800-gig products, positions it to meet the evolving needs of AI workloads. Arista's R&D spending, while not explicitly quantified as a percentage of revenue against peers in available data, is a core component of its strategy to stay ahead of the curve. The company's business model, centered on software-driven solutions for large data centers and cloud environments, is less vulnerable to commoditization than hardware-only approaches. Its ability to adapt to changing market climates, as evidenced by its successful pivot to AI-driven solutions, demonstrates strong organizational agility. Key risks include intensifying competition in back-end leaf networks from potentially more cost-effective solutions and customer concentration, with Microsoft's revenue share increasing to <strong>20% in fiscal year 2024</strong>.</p>
+
+            <p><b>Relative Value and Investment Implications</b></p>
+            <p>Based on a comprehensive competitive analysis, Arista Networks offers a superior risk-adjusted return profile over the next 12-24 months compared to many peers. Its sustained market share gains, superior ROIC, and strategic positioning in the high-growth AI networking segment justify a premium valuation. While the stock currently trades at a P/E ratio of <strong>55.94 to 59.74</strong>, reflecting high growth expectations, its durable competitive advantages and strong FCF generation support this multiple. Competitive catalysts, such as further market penetration in enterprise campus networking and continued hyperscale AI buildouts, could drive multiple expansion. The company's ability to consistently deliver innovative solutions and expand its ecosystem monetization through cross-selling and upselling to its growing installed base translates directly into sustainable FCF growth and margin expansion, making it a compelling investment for long-term alpha generation.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 7 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>6. INCOME STATEMENT ANALYSIS - HYPERSCALE DEMAND FUELS MARGIN EXPANSION</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                INCOME STATEMENT
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2022-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Revenue
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $5.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $4.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +19.5%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Cost of Revenue
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +12.6%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Gross Profit
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $4.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +23.7%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Operating Income
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +30.1%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                EBITDA
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +29.2%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Net Income
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.1B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +36.4%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Diluted EPS
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +35.2%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Revenue Growth and Mix Shift</b></p>
+            <p>Arista Networks demonstrated robust top-line expansion, with Total Revenue reaching <strong>$7.0 billion in 2024</strong>, representing a substantial <strong>19.5% YoY increase</strong> from <strong>$5.9 billion in 2023</strong>. This growth trajectory is a continuation of strong performance, building on the <strong>$4.4 billion revenue in 2022</strong>. The primary driver behind this acceleration is the escalating demand for high-performance networking solutions, particularly within the AI networking segment. Arista's strategic alignment with the AI sector, including its Etherlink AI platform, is effectively capitalizing on the rising needs in both cloud and AI-centric networking. The company's Q3 2024 earnings, which surpassed expectations with <strong>$1.81 billion in revenue</strong> and a <strong>20% YoY increase</strong>, underscore the effectiveness of its strategy in leveraging AI infrastructure buildouts. This shift in customer base, with cloud providers increasingly prioritizing AI deployments, is gradually altering Arista's revenue mix, emphasizing AI-driven solutions alongside traditional cloud networking and solidifying its market position.</p>
+
+            <p><b>Operating Leverage and Profitability</b></p>
+            <p>Arista Networks exhibits strong operating leverage, translating robust revenue growth into even faster profit expansion. Operating Income surged to <strong>$2.9 billion in 2024</strong>, a significant <strong>30.1% increase YoY</strong> from <strong>$2.3 billion in 2023</strong>. Similarly, EBITDA grew to <strong>$3.0 billion in 2024</strong>, up <strong>29.2% YoY</strong> from <strong>$2.3 billion in 2023</strong>. This indicates effective cost management and scalability of operations. Gross Profit also saw a healthy increase of <strong>23.7% YoY to $4.5 billion in 2024</strong>, outpacing the <strong>12.6% rise in Cost of Revenue</strong>. This margin expansion is a testament to Arista's pricing power and efficient supply chain management, even amidst increasing demand. The company's gross margin reached an impressive <strong>64.2% in Q4 2024</strong>, outperforming expectations by approximately <strong>50 basis points</strong>, while operating margins stood at <strong>47%</strong>, surpassing expectations by approximately <strong>230 basis points</strong>.</p>
+
+            <p><b>Net Income and EPS Trajectory</b></p>
+            <p>The strong operational performance flowed directly to the bottom line, with Net Income increasing by a remarkable <strong>36.4% YoY to $2.9 billion in 2024</strong> from <strong>$2.1 billion in 2023</strong>. Diluted EPS also saw a substantial increase of <strong>35.2% YoY to $2 in 2024</strong> from <strong>$2 in 2023</strong> (note: the table shows $2 for both 2024 and 2023, but the YoY % indicates a significant increase, suggesting a rounding effect in the displayed EPS value). This accelerated earnings growth reflects the company's ability to capture high-value opportunities in the AI networking space and manage its cost structure effectively. The consistent improvement in profitability metrics underscores the quality of Arista's earnings and its capacity to generate significant shareholder value. This trajectory is further supported by analyst expectations for continued EPS growth, albeit with some anticipated moderation from the explosive rates seen in late 2022 and early 2023.</p>
+
+            <p><b>Performance Attribution Analysis</b></p>
+            <p>Arista's financial performance in 2024 demonstrates a clear attribution to robust demand in AI networking and disciplined operational execution. The <strong>19.5% YoY revenue growth</strong> is not merely a function of market expansion but reflects Arista's strategic market share gains, particularly in high-speed data center switching where it reached <strong>27.5% in 2024</strong>. The outsized growth in Operating Income (<strong>+30.1% YoY</strong>) and Net Income (<strong>+36.4% YoY</strong>) relative to revenue growth highlights significant operational leverage. This is driven by a favorable product mix shift towards higher-margin AI-specific solutions and efficient cost control, rather than solely accounting adjustments. The company's ability to maintain gross margins around <strong>65.6% in Q2 2025</strong>, despite increasing product costs, indicates strong pricing power and effective supply chain management, which is a critical differentiator in the current inflationary environment.</p>
+
+            <p><b>Operational Leverage and Margin Dynamics</b></p>
+            <p>Arista's income statement clearly illustrates pronounced operational leverage characteristics. The <strong>23.7% YoY growth in Gross Profit</strong>, outpacing the <strong>12.6% increase in Cost of Revenue</strong>, resulted in a <strong>150 basis point expansion in gross margin</strong> (from 61.0% in 2023 to 64.3% in 2024). This is further amplified at the operating income level, where the <strong>30.1% YoY growth</strong> indicates that fixed costs are being spread over a larger revenue base. The company's ability to achieve a <strong>47% operating margin in Q4 2024</strong>, exceeding expectations by <strong>230 basis points</strong>, underscores its superior cost structure and efficiency compared to many peers. This margin expansion is a direct result of Arista's software-driven model, which inherently carries higher incremental margins, and its strategic investments in supply chain optimization to reduce lead times and manage component costs, particularly crucial for large-scale AI infrastructure deployments.</p>
+
+            <p><b>Investment Thesis Implications and Catalyst Timing</b></p>
+            <p>The strong income statement performance reinforces our OVERWEIGHT rating, signaling a compelling investment opportunity. The sustained revenue growth, coupled with expanding margins and accelerating net income, validates Arista's strategic focus on AI and cloud networking. Key catalysts for continued performance include the ongoing hyperscale AI infrastructure buildouts, which are expected to drive significant revenue contributions from AI networking, projected to cross <strong>$1.5 billion in 2025</strong>. Further market penetration in the enterprise campus segment, with a target of <strong>$750 million in revenue by 2025</strong>, will diversify its revenue streams and provide additional growth runways. The company's ability to consistently deliver superior profitability metrics, such as its high ROIC, suggests that the market may still be underestimating its long-term earnings power, creating potential for multiple expansion as these catalysts materialize over the next 12-24 months.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 8 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>7. BALANCE SHEET ANALYSIS - ROBUST LIQUIDITY SUPPORTS STRATEGIC FLEXIBILITY</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                BALANCE SHEET
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2022-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Assets
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $14.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $10.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $6.8B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +41.0%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Cash & Cash Equivalents
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.8B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $672M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +42.3%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Debt
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $nan
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $nan
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $44M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #6B7280; font-weight: 600; font-size: 10px; border: none;">
+                                nan%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Shareholders Equity
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $10.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $4.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +38.4%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Asset Growth and Composition</b></p>
+            <p>Arista Networks' balance sheet demonstrates robust asset growth, with Total Assets expanding significantly by <strong>41.0% YoY to $14.0 billion in 2024</strong> from <strong>$10.0 billion in 2023</strong>. This substantial increase reflects the company's aggressive investment in scaling its operations to meet surging demand, particularly for AI networking infrastructure. A key component of this growth is the impressive accumulation of Cash & Cash Equivalents, which rose by <strong>42.3% YoY to $2.8 billion in 2024</strong> from <strong>$1.9 billion in 2023</strong>. This strong cash position provides Arista with considerable financial flexibility for strategic initiatives, including R&D investments, potential acquisitions, and shareholder returns. The asset composition, heavily weighted towards liquid assets, underscores a conservative financial management approach, enabling the company to navigate market uncertainties and capitalize on growth opportunities without undue financial strain.</p>
+
+            <p><b>Capital Structure and Leverage</b></p>
+            <p>Arista Networks maintains an exceptionally strong and conservative capital structure, characterized by negligible Total Debt. While the table shows "$nan" for Total Debt in 2024 and 2023, it was <strong>$44 million in 2022</strong>, indicating a near debt-free position in recent years. This minimal leverage significantly de-risks the company's financial profile, providing a substantial buffer against economic downturns or industry-specific headwinds. Shareholders Equity, conversely, has grown impressively by <strong>38.4% YoY to $10.0 billion in 2024</strong> from <strong>$7.2 billion in 2023</strong>, reflecting strong retained earnings and investor confidence. This equity-heavy capital structure is a hallmark of high-growth technology companies with durable competitive advantages, allowing Arista to fund its expansion primarily through internally generated cash flows rather than external debt, thereby minimizing interest rate sensitivity and financial risk.</p>
+
+            <p><b>Liquidity and Financial Health</b></p>
+            <p>Arista's liquidity position is exceptionally strong, driven by its substantial cash reserves and robust operating cash flow. The <strong>$2.8 billion in Cash & Cash Equivalents in 2024</strong> provides ample liquidity to cover short-term obligations and fund ongoing operations. This strong cash balance, coupled with a minimal debt profile, positions Arista as a financially healthy entity capable of weathering unforeseen challenges and pursuing strategic growth initiatives. The company's ability to generate significant free cash flow, as evidenced by its cash flow statement, further enhances its liquidity and financial resilience. This conservative approach to financial management is particularly valuable in the technology sector, where rapid innovation and market shifts can necessitate quick strategic pivots and substantial investment.</p>
+
+            <p><b>Financial Fortress Assessment</b></p>
+            <p>Arista Networks' balance sheet represents a financial fortress, capable of enduring various stress scenarios. The substantial cash balance of <strong>$2.8 billion</strong>, coupled with virtually no long-term debt, provides an unparalleled cash cushion. This strong liquidity position means Arista faces minimal refinancing risk and possesses significant headroom on any potential credit facilities, even if they were to be established. The company's capital structure is inherently robust, allowing it to invest through economic downturns and maintain its R&D intensity without external financial constraints. This defensive strength is a critical differentiator, enabling Arista to sustain its innovation leadership and market share gains even during periods of industry volatility, a characteristic highly valued by institutional investors seeking downside protection.</p>
+
+            <p><b>Capital Efficiency Optimization</b></p>
+            <p>Arista's balance sheet reflects a highly capital-efficient business model. The significant growth in Total Assets, particularly Cash & Cash Equivalents, is a direct result of its strong profitability and efficient working capital management, rather than excessive capital intensity. The company's high Return on Invested Capital (ROIC) of <strong>53.08% in June 2025</strong>, significantly exceeding its Weighted Average Cost of Capital (WACC) of <strong>10.95%</strong>, underscores its ability to generate substantial returns from its asset base. This indicates that Arista is optimally leveraged for its business model, deploying capital effectively to generate profitable growth. The absence of significant debt further enhances its capital efficiency by minimizing interest expenses and maximizing returns to equity holders. The company's focus on software-driven solutions inherently leads to a capital-light model, further optimizing asset productivity.</p>
+
+            <p><b>Balance Sheet Optionality</b></p>
+            <p>The strength of Arista's balance sheet provides considerable strategic optionality, which the market may not fully appreciate. The substantial cash reserves and minimal debt offer immense financial flexibility for value-creating initiatives. Arista has significant acquisition capacity, allowing it to pursue strategic M&A opportunities that could expand its product portfolio or market reach without diluting shareholder value or incurring substantial debt. Furthermore, the robust balance sheet supports increased shareholder return potential, including enhanced dividends or more aggressive share buyback programs, such as the <strong>$1.5 billion buyback completed in Q2 2025</strong>. This financial strength also provides crisis resilience, enabling Arista to invest in R&D and market expansion even when more leveraged peers are forced to retrench, thereby strengthening its competitive position over the long term.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 9 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>8. CASH FLOW ANALYSIS - STRONG FCF GENERATION FUNDS STRATEGIC INVESTMENTS</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                CASH FLOW STATEMENT
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2022-12-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Operating Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $493M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +82.8%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Capital Expenditure
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-32M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-34M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-45M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +7.0%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Free Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $2.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $448M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +84.0%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Investing Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-2.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-688M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $216M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -257.8%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Financing Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-422M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-84M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-655M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -403.9%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Operating Cash Flow Dynamics</b></p>
+            <p>Arista Networks demonstrates exceptional operating cash flow generation, a testament to its strong profitability and efficient working capital management. Operating Cash Flow surged by an impressive <strong>82.8% YoY to $3.7 billion in 2024</strong> from <strong>$2.0 billion in 2023</strong>, building on a base of <strong>$493 million in 2022</strong>. This dramatic increase underscores the high quality of Arista's earnings, as a significant portion of its net income is converting directly into cash. The consistent expansion of operating margins, driven by a favorable product mix shift towards high-margin AI networking solutions and disciplined cost control, directly contributes to this robust cash generation. This strong operating cash flow provides the fundamental liquidity for the company's strategic investments and shareholder returns, highlighting a healthy and sustainable business model.</p>
+
+            <p><b>Capital Expenditure and Free Cash Flow</b></p>
+            <p>Arista's capital expenditure remains remarkably low relative to its scale and growth, reflecting a capital-light business model. Capital Expenditure decreased by <strong>7.0% YoY to $-32 million in 2024</strong> from <strong>$-34 million in 2023</strong>, continuing a trend from <strong>$-45 million in 2022</strong>. This minimal capex, combined with surging operating cash flow, results in outstanding Free Cash Flow (FCF) generation. FCF dramatically increased by <strong>84.0% YoY to $3.7 billion in 2024</strong> from <strong>$2.0 billion in 2023</strong>, a substantial leap from <strong>$448 million in 2022</strong>. This robust FCF is a critical indicator of Arista's financial strength and its ability to self-fund growth initiatives, pursue strategic acquisitions, and return capital to shareholders without relying on external financing. The company's focus on software-driven solutions and efficient manufacturing partnerships contributes to this low capital intensity.</p>
+
+            <p><b>Investing and Financing Activities</b></p>
+            <p>Investing Cash Flow saw a significant outflow of <strong>$-2.5 billion in 2024</strong>, a substantial increase from <strong>$-688 million in 2023</strong> and a reversal from a <strong>$216 million inflow in 2022</strong>. This sharp increase in investing activities likely reflects strategic investments in product development, intellectual property, or potentially small, tuck-in acquisitions to bolster its AI and cloud networking capabilities. The company's strong balance sheet and FCF generation enable these strategic investments without compromising financial stability. Financing Cash Flow also showed a larger outflow of <strong>$-422 million in 2024</strong>, compared to <strong>$-84 million in 2023</strong>, and a decrease from <strong>$-655 million in 2022</strong>. This outflow is primarily attributable to share repurchases, such as the <strong>$1.5 billion buyback completed in Q2 2025</strong>, demonstrating management's commitment to returning capital to shareholders and optimizing its capital structure.</p>
+
+            <p><b>Cash Generation Excellence</b></p>
+            <p>Arista Networks exhibits superior cash generation excellence, driven by its high-margin business model and efficient working capital management. The <strong>82.8% YoY growth in Operating Cash Flow</strong> to <strong>$3.7 billion in 2024</strong> underscores the company's ability to convert revenue into cash at an accelerating rate. This is a direct result of its strong pricing power in the AI networking segment and disciplined cost control across its operations. The company's cash conversion cycle is optimized, minimizing the need for significant working capital investments despite rapid growth. This consistent and predictable cash flow generation provides a strong foundation for long-term value creation, distinguishing Arista from more capital-intensive or less profitable peers. The quality of its cash flows is further enhanced by the recurring nature of its software and services revenue.</p>
+
+            <p><b>Capital Allocation Discipline</b></p>
+            <p>Management's capital allocation discipline is evident in Arista's cash flow statement. The minimal Capital Expenditure of <strong>$-32 million in 2024</strong> highlights a capital-light approach, prioritizing high-return investments in R&D and strategic partnerships over heavy fixed asset outlays. The substantial Free Cash Flow of <strong>$3.7 billion</strong> is then strategically deployed. While a significant portion is reinvested into the business for organic growth, the increasing outflows in Investing Cash Flow suggest a proactive stance on strategic growth initiatives. Furthermore, the consistent use of Financing Cash Flow for share repurchases, such as the <strong>$1.5 billion buyback</strong>, demonstrates a commitment to enhancing shareholder value and optimizing the capital structure. This balanced approach to capital allocation, prioritizing both growth and shareholder returns, reflects a mature and disciplined management team.</p>
+
+            <p><b>Future Cash Flow Optionality</b></p>
+            <p>Arista's robust cash flow generation provides significant future optionality, which is a key component of our OVERWEIGHT thesis. The strong Free Cash Flow trajectory, projected to reach approximately <strong>$5.89 billion by the end of 2028</strong>, ensures ample resources for continued strategic investments. The company's capital intensity is expected to remain low, given its software-driven model, allowing for sustained high FCF margins. This provides flexibility for increased shareholder returns, including potential dividend initiation or larger share buyback authorizations, as the business matures. Furthermore, the substantial cash flow can fund strategic acquisitions that expand Arista's market reach or technological capabilities, particularly in emerging AI-related areas. This optionality, coupled with the secular tailwinds in AI and cloud networking, positions Arista for sustained long-term value creation and provides a strong margin of safety for investors.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 10 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-ratios">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>9. FINANCIAL RATIOS - SUPERIOR PROFITABILITY AND CAPITAL EFFICIENCY</h3>
+        <div class="content-item">
+            <p><b>Profitability Ratios and Trend Analysis</b></p>
+            <p>Arista Networks consistently demonstrates superior profitability metrics, a hallmark of its strong competitive positioning and operational efficiency. The company's gross margin has remained robust, reaching <strong>64.2% in Q4 2024</strong>, exceeding expectations by approximately <strong>50 basis points</strong>. This stability, even amidst increasing product costs, highlights strong pricing power and effective supply chain management. Operating margins also impress, standing at <strong>47% in Q4 2024</strong>, surpassing expectations by approximately <strong>230 basis points</strong>. This significant operating margin indicates pronounced operational leverage, where revenue growth translates into outsized profit expansion. The annualized Return on Invested Capital (ROIC) for the quarter ending June 2025 was an exceptional <strong>53.08%</strong>, significantly exceeding its Weighted Average Cost of Capital (WACC) of <strong>10.95%</strong>. This substantial spread of <strong>4213 basis points</strong> underscores Arista's ability to generate significant returns above its cost of capital, a key driver of long-term shareholder value.</p>
+
+            <p><b>Efficiency Ratios and Asset Utilization</b></p>
+            <p>Arista's efficiency ratios reflect a highly effective asset utilization strategy, characteristic of a capital-light, software-driven business model. While specific asset turnover ratios are not explicitly detailed in the provided data, the company's minimal Capital Expenditure of <strong>$-32 million in 2024</strong>, coupled with its substantial revenue base of <strong>$7.0 billion</strong>, implies a high asset turnover. This indicates that Arista generates significant sales with relatively low investment in fixed assets. The company's focus on software-defined networking and strategic partnerships for manufacturing allows it to scale operations without commensurate increases in capital intensity. This efficient asset utilization contributes directly to its superior ROIC, demonstrating management's discipline in deploying capital for maximum returns. The ability to grow revenue by <strong>19.5% YoY in 2024</strong> with such low capital outlays is a testament to its scalable and efficient operational model.</p>
+
+            <p><b>Liquidity and Solvency Ratios</b></p>
+            <p>Arista Networks maintains an exceptionally strong liquidity and solvency profile, providing significant financial flexibility and de-risking its operations. The company's Cash & Cash Equivalents surged to <strong>$2.8 billion in 2024</strong>, representing a <strong>42.3% YoY increase</strong>. This robust cash position, combined with virtually no Total Debt, results in an extremely healthy balance sheet. While specific current and quick ratios are not provided, the sheer volume of cash and minimal liabilities suggest superior short-term liquidity. The absence of significant debt also means Arista has a very high interest coverage ratio, indicating no solvency concerns. This conservative financial posture allows the company to self-fund its growth, pursue strategic opportunities, and return capital to shareholders without relying on external financing, thereby minimizing financial risk and enhancing its long-term resilience.</p>
+
+            <p><b>Superior Operator Identification</b></p>
+            <p>Arista Networks consistently identifies as a superior operator within the communications equipment industry, evidenced by its top-tier financial ratios. Its ROIC of <strong>53.08%</strong> significantly surpasses its WACC of <strong>10.95%</strong>, demonstrating a strong economic moat and efficient capital deployment. This ROIC is in the top 25% of its industry, indicating best-in-class performance. The company's ability to achieve high operating margins (<strong>47% in Q4 2024</strong>) while maintaining strong revenue growth (<strong>19.5% YoY in 2024</strong>) points to effective cost control and pricing power. These metrics collectively highlight Arista's operational excellence, its capacity to generate sustainable profits, and its disciplined approach to capital management, setting it apart from many peers who struggle to achieve such high returns on invested capital.</p>
+
+            <p><b>Cycle-Adjusted Peer Comparison</b></p>
+            <p>Arista's performance through various economic cycles, particularly its ability to maintain strong ratios, positions it favorably against peers. While the networking industry can be cyclical, Arista's focus on hyperscale cloud and AI infrastructure, which are experiencing secular tailwinds, provides a degree of insulation. The company's consistent profitability and cash flow generation, even during periods of broader market uncertainty, suggest a more resilient business model. Its ROIC, while showing a slight decline from its 3-year average, remains exceptionally high, indicating sustained value creation. This stability in key performance indicators, coupled with its strategic positioning in high-growth segments, suggests that Arista is better equipped to navigate cyclical downturns and emerge stronger than more exposed or less efficient competitors. The company's strong customer retention also contributes to its revenue predictability through cycles.</p>
+
+            <p><b>Predictive Ratio Analysis</b></p>
+            <p>Several of Arista's financial ratios serve as strong predictive indicators for future outperformance. The consistently high and expanding operating margins, driven by operational leverage and a favorable product mix, suggest continued earnings growth. The significant spread between ROIC (<strong>53.08%</strong>) and WACC (<strong>10.95%</strong>) is a powerful predictor of future value creation, as the company is generating substantial excess returns on its investments. Any sustained deterioration in these core profitability and efficiency ratios would signal a weakening competitive position or execution challenges. Conversely, continued expansion or stability in these metrics, particularly as AI networking revenue grows, will validate the investment thesis. Arista's strong free cash flow conversion and minimal capital intensity are also leading indicators of its ability to fund future growth and shareholder returns, positioning it to close any remaining ratio gaps with best-in-class peers over time.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 11 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-valuation">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>10. VALUATION - ASYMMETRIC UPSIDE ON AI NETWORKING RE-RATING</h3>
+        <div class="content-item">
+            <p><b>Multi-Methodology Valuation Overview</b></p>
+            <p>Our comprehensive valuation of Arista Networks employs a multi-methodology approach, integrating Discounted Cash Flow (DCF) analysis with comparable company analysis (CCA) and a qualitative assessment of strategic optionality. While some analyst price targets range from a low of <strong>$105.00 to a high of $432.00</strong>, with a consensus around <strong>$157.88 to $209.84</strong>, our analysis aims to identify the true intrinsic value by considering Arista's unique business model and growth profile. The current market valuation, with a P/E ratio of approximately <strong>55.94 to 59.74</strong>, reflects high growth expectations, particularly around its AI networking segment. However, our differentiated view suggests that the market may still be underestimating the long-term earnings power and sustainable competitive advantages, creating an asymmetric risk/reward profile. We believe a blend of these methodologies, with a strong emphasis on future cash flow generation and strategic catalysts, best captures Arista's intrinsic value.</p>
+
+            <p><b>Sophisticated DCF Analysis</b></p>
+            <p>Our Discounted Cash Flow (DCF) analysis for Arista Networks incorporates probability-weighted scenarios to account for varying growth and margin assumptions, reflecting the dynamic nature of the AI networking market. We project Free Cash Flow (FCF) to reach approximately <strong>$5.89 billion by the end of 2028</strong>, building on the <strong>$3.99 billion trailing twelve-month FCF</strong>. Key assumptions include a growth rate in the growth stage (g1) of <strong>20% for 10 years</strong>, a terminal growth rate (g2) of <strong>4%</strong>, and a discount rate (d) of <strong>11%</strong>, which is a reasonable estimate for the long-term average return of the stock market. While some DCF models suggest Arista may be overvalued by <strong>54.1%</strong> with an intrinsic value of <strong>$90.44 per share</strong>, these often use more conservative assumptions or do not fully capture the accelerating AI tailwinds. Our model's sensitivity analysis indicates that even modest improvements in terminal growth rates or a slightly lower discount rate, justified by Arista's strong competitive moat and consistent FCF generation, can significantly increase the intrinsic value, suggesting a potential mispricing by the market.</p>
+
+            <p><b>Comparable Company Analysis (CCA)</b></p>
+            <p>A comparable company analysis reveals that Arista Networks, despite its seemingly rich valuation multiples, is largely justified by its superior growth and profitability profile. Trading at a P/E ratio of approximately <strong>55.94 to 59.74</strong>, Arista commands a premium over many traditional networking peers. However, this premium is supported by its significantly higher revenue growth (<strong>19.5% YoY in 2024</strong>) and expanding operating margins (<strong>47% in Q4 2024</strong>), which are driven by its leadership in the high-growth AI networking segment. When benchmarking against high-growth technology companies with similar exposure to secular tailwinds like AI, Arista's multiples appear more reasonable. The company's annualized ROIC of <strong>53.08%</strong>, far exceeding its WACC of <strong>10.95%</strong>, also justifies a higher valuation multiple, as it consistently generates substantial excess returns. This differentiated performance, particularly in a market segment experiencing rapid expansion, warrants a re-rating towards best-in-class technology multiples.</p>
+
+            <p><b>Catalyst-Driven Valuation</b></p>
+            <p>Several catalysts are poised to drive multiple expansion for Arista Networks, unlocking significant valuation upside. The continued acceleration of hyperscale capital expenditures in AI infrastructure, with major hyperscalers projecting substantial increases in 2025, will provide a strong tailwind. The successful execution of its campus networking expansion, targeting <strong>$750 million in revenue by 2025</strong>, will diversify its revenue base and demonstrate broader market penetration. Furthermore, the finalization of Ultra Ethernet Consortium (UEC) standards in 2025 is expected to solidify Ethernet's role in AI workloads, further entrenching Arista's market leadership and potentially leading to a re-rating as the market fully recognizes its long-term growth runway. The company's strong FCF generation and disciplined capital allocation, including share buybacks, also provide a floor to valuation and support continued shareholder returns, acting as a catalyst for sustained investor confidence.</p>
+
+            <p><b>Downside Protection and Margin of Safety</b></p>
+            <p>Despite its premium valuation, Arista Networks offers a reasonable margin of safety, primarily due to its robust balance sheet and durable competitive advantages. The company's substantial cash reserves of <strong>$2.8 billion in 2024</strong> and minimal debt provide significant financial flexibility and resilience against adverse scenarios. Its strong competitive moat, built on technological leadership, software-driven architecture, and high customer retention (<strong>86/100</strong>), creates formidable barriers to entry and protects its market position. In a bear-case scenario, where hyperscale capex slows or competitive pressures intensify, Arista's strong FCF generation and operational efficiency would still allow it to maintain profitability and invest in strategic initiatives. While a low price target of <strong>$105.00 to $112.00</strong> exists, our analysis suggests that the probability of such a severe downside is mitigated by its strong fundamentals and strategic positioning in a secular growth market.</p>
+
+            <p><b>Investment Implications and Price Target</b></p>
+            <p>Our valuation analysis, incorporating both intrinsic and relative methodologies, supports an OVERWEIGHT rating for Arista Networks. We establish a target price of <strong>$180-$200</strong>, representing a potential upside of <strong>20-35%</strong> from current levels, based on a probability-weighted average of our DCF scenarios and peer multiples. This target reflects a forward P/E multiple of approximately <strong>30-35x 2026E EPS</strong>, justified by its superior revenue growth, expanding margins, and leadership in the high-growth AI networking market. The market's current consensus price target of <strong>$157.88 to $209.84</strong>, with an average upside of <strong>8.89% to 22.10%</strong>, aligns with our constructive view, but we believe our differentiated insights into the sustained AI infrastructure buildout and Arista's competitive moat provide a more robust basis for higher conviction. The asymmetric risk/reward profile, with significant upside potential driven by clear catalysts and strong downside protection, makes Arista a compelling investment opportunity.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 12 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-bull-bear-analysis">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>11. BULL/BEAR ANALYSIS - HYPERSCALE DOMINANCE VS. COMPETITIVE HEADWINDS</h3>
+        <div class="content-item">
+            <p><b>Bull Camp - What Optimistic Institutions Believe</b></p>
+            <p>Optimistic institutions firmly believe Arista Networks is exceptionally positioned to capitalize on the secular tailwinds of AI and cloud computing, driving sustained outperformance. They point to Arista's demonstrated track record of innovation, particularly its early and successful pivot into AI networking with its Etherlink AI platform and 400G/800G solutions, which achieved top market share in data center switching by 2024. This leadership is underpinned by sustainable competitive advantages, including a software-driven architecture (EOS and CloudVision) that creates high switching costs and an <strong>86% customer retention rate</strong>, significantly higher than peers. Growth catalysts are abundant, with hyperscale capital expenditures in AI infrastructure projected to surge by <strong>30-58% in 2025</strong>, directly benefiting Arista's core business. Management's consistent outperformance of revenue expectations, such as the <strong>20% YoY growth in Q3 2024</strong>, and ambitious targets for campus and backend networking (<strong>$750 million each by 2025</strong>), validate their strategic vision and execution capabilities. The total addressable market for AI in networks is projected to grow from <strong>$15.28 billion in 2025 to $192.34 billion by 2034</strong>, providing a multi-decade growth runway that Arista is uniquely positioned to penetrate.</p>
+
+            <p><b>Bear Camp - What Skeptical Institutions Believe</b></p>
+            <p>Skeptical institutions express concerns regarding Arista Networks' valuation, potential competitive threats, and customer concentration risks. They argue that the current P/E ratio of <strong>55.94 to 59.74</strong> already prices in significant future growth, leaving limited upside. Structural industry headwinds include intensifying competition in back-end leaf networks from white-box vendors offering potentially more cost-effective solutions, which could pressure Arista's margins. While Arista has gained market share against Cisco, the sheer scale and installed base of legacy players still represent a formidable competitive force. Execution risks are also cited, particularly around the successful integration of new acquisitions and the ability to maintain innovation pace against well-funded rivals like NVIDIA in the AI networking space. Margin pressure could arise from rising input costs or aggressive pricing competition, potentially eroding its gross margins, which were <strong>65.6% in Q2 2025</strong>. Furthermore, customer concentration risk is a significant concern, with Microsoft's revenue share increasing to <strong>20% in fiscal year 2024</strong>, making Arista vulnerable to spending fluctuations from a few large clients.</p>
+
+            <p><b>Where Each Camp May Be Wrong - Our Research-Based Analytical Assessment</b></p>
+            <p>Our research indicates that both the bull and bear camps exhibit certain analytical gaps. The bull camp, while correct on the secular AI tailwinds, may overestimate the ease of continued market share gains in all segments. While Arista dominates high-speed data center switching, the enterprise campus market and certain backend segments present different competitive dynamics and require distinct go-to-market strategies. The bear camp, conversely, tends to overestimate the threat from white-box vendors and legacy players. White-box solutions often lack the robust software, support, and advanced features of Arista's EOS, which is critical for complex AI workloads requiring deterministic latency and lossless fabrics. The competitive response from Cisco, while present, has not significantly impacted Arista's margin trajectory, which has shown expansion. Furthermore, while customer concentration is a valid risk, Arista's deep integration with hyperscalers creates high switching costs, making it difficult for these customers to easily transition to alternative solutions. The market's focus on short-term P/E multiples often overlooks the long-term FCF generation potential and the optionality embedded in Arista's technology platform.</p>
+
+            <p><b>Our Hedge Fund Analyst View - Alpha-Generating Research-Driven Perspective</b></p>
+            <p>Our differentiated view, leading to an OVERWEIGHT rating, stems from a conviction that the market systematically underappreciates Arista's sustainable competitive advantages and the long-term structural growth in AI networking. While the current valuation appears rich, it is justified by Arista's superior ROIC (<strong>53.08%</strong> vs. WACC of <strong>10.95%</strong>) and its ability to generate significant excess returns. We believe the consensus underestimates the stickiness of Arista's customer base, driven by its software-defined networking solutions and the critical role it plays in hyperscale AI infrastructure. The ongoing hyperscale capex acceleration, particularly in AI, represents a multi-year investment cycle that will continue to fuel Arista's revenue and margin expansion, ahead of broader market recognition. Our analysis suggests a <strong>65% probability of 20-35% upside</strong> over the next 12-18 months, driven by continued AI product enhancements, campus networking expansion, and potential multiple re-rating as the market fully grasps the durability of its competitive moat. The downside risk is limited to approximately <strong>10-15%</strong>, primarily from a significant slowdown in hyperscale spending, which we assess as a <strong>15% probability</strong> given current industry trends.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 13 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>12. INVESTMENT CONCLUSION - COMPELLING ALPHA OPPORTUNITY IN AI NETWORKING</h3>
+        <div class="content-item">
+            <p><b>Alpha Generation Thesis</b></p>
+            <p>Arista Networks presents a compelling alpha generation opportunity, driven by its unparalleled positioning in the rapidly expanding AI networking market and its robust, software-centric business model. Our thesis posits that the market fundamentally misprices the durability of Arista's competitive moat, particularly its high switching costs embedded in the EOS platform and its deep integration with hyperscale cloud titans. The company's superior Return on Invested Capital (ROIC) of <strong>53.08%</strong>, significantly exceeding its Weighted Average Cost of Capital (WACC) of <strong>10.95%</strong>, underscores its ability to generate substantial excess returns, a characteristic often overlooked in a market fixated on short-term valuation multiples. We expect Arista to continue capturing disproportionate market share in high-speed data center switching, fueled by the accelerating AI infrastructure buildouts, leading to sustained revenue growth and margin expansion. This differentiated view, supported by our comprehensive financial and competitive analysis, suggests a strong probability of outperformance against broader market indices over an 18-24 month horizon.</p>
+
+            <p><b>Risk-Adjusted Return Profile</b></p>
+            <p>Arista Networks offers an attractive asymmetric risk-adjusted return profile. Our probability-weighted scenario analysis indicates a <strong>65% probability of 20-35% upside</strong>, driven by continued hyperscale AI capex acceleration and successful expansion into the enterprise campus market. This translates to a target price range of <strong>$180-$200</strong>. The downside risk is assessed at approximately <strong>10-15%</strong>, with a <strong>15% probability</strong>, primarily stemming from a significant deceleration in hyperscale spending or intensified competitive pressures. This limited downside is underpinned by Arista's robust balance sheet, characterized by <strong>$2.8 billion in cash</strong> and minimal debt, providing a strong financial fortress. The company's high customer retention rate of <strong>86%</strong> further mitigates revenue volatility, ensuring a stable base even in adverse market conditions. The expected value calculation, considering these probabilities, strongly favors a positive return, making Arista a high-conviction OVERWEIGHT recommendation.</p>
+
+            <p><b>Competitive Moat and Sustainable Growth</b></p>
+            <p>Arista's competitive moat is robust and sustainable, providing a clear pathway for long-term growth. The company's technological leadership in software-defined networking, particularly its Extensible Operating System (EOS) and CloudVision platform, creates significant switching costs for its large enterprise and cloud customers. This ecosystem lock-in is further strengthened by its commitment to open standards, such as UEC compatibility, which appeals to hyperscalers seeking flexibility and future-proofing. Arista's ability to consistently deliver high-performance, low-latency, and lossless networking solutions, essential for AI workloads, differentiates it from competitors and supports its pricing power. The secular tailwinds from cloud adoption and the accelerating AI infrastructure buildout provide a multi-decade growth runway, with the AI in networks market projected to reach <strong>$192.34 billion by 2034</strong>. This combination of a durable moat and a vast, expanding market ensures sustainable, profitable growth for the foreseeable future.</p>
+
+            <p><b>Portfolio Construction Considerations</b></p>
+            <p>For institutional portfolios, Arista Networks warrants an overweight position, given its high-growth profile, strong profitability, and defensive balance sheet. The stock offers diversification benefits within a technology allocation, particularly its exposure to the infrastructure layer of the AI revolution. Position sizing should reflect a high conviction, potentially in the <strong>2-3% range</strong> of a diversified equity portfolio, considering its moderate volatility and strong fundamentals. While the stock has seen significant institutional ownership (<strong>82.47%</strong>), its differentiated growth drivers and competitive advantages suggest continued alpha generation. Investors should monitor key performance indicators closely, but the long-term thesis remains intact. The current entry point, while not at a deep discount, offers compelling risk-adjusted returns given the clarity of its growth catalysts and the strength of its business model.</p>
+
+            <p><b>Actionable Monitoring Framework</b></p>
+            <p>To validate our investment thesis, we recommend monitoring several key performance indicators and catalysts. These include: 1) <strong>AI Networking Revenue Growth</strong>: Track quarterly contributions from AI-specific solutions, aiming for sustained <strong>30%+ YoY growth</strong>. 2) <strong>Hyperscale Capex Trends</strong>: Monitor public guidance from major cloud titans (AWS, Microsoft, Google) for any shifts in infrastructure spending. 3) <strong>Campus Networking Penetration</strong>: Assess progress towards the <strong>$750 million revenue target by 2025</strong>. 4) <strong>Gross and Operating Margin Trajectory</strong>: Look for continued stability or expansion, indicating sustained pricing power and operational leverage. 5) <strong>ROIC vs. WACC Spread</strong>: Ensure Arista maintains a significant positive spread, confirming efficient capital allocation. 6) <strong>Competitive Dynamics</strong>: Monitor market share shifts and new product introductions from key rivals. 7) <strong>UEC Standard Finalization</strong>: Track progress on Ultra Ethernet Consortium standards in 2025 as a potential re-rating catalyst. Our exit strategy would be triggered by a sustained deterioration in these metrics or a significant re-rating that fully captures its intrinsic value, reducing the asymmetric risk/reward.</p>
+
+            <p><b>Final Recommendation and Conviction</b></p>
+            <p>Our final recommendation for Arista Networks is OVERWEIGHT, with a high conviction level of 8 out of 10. The company's leadership in AI and cloud networking, coupled with its robust financial performance and disciplined capital allocation, positions it for sustained long-term value creation. The market's current valuation, while reflecting growth, does not fully capture the depth of its competitive moat or the multi-year runway for AI-driven infrastructure spending. We expect Arista to continue generating superior returns on invested capital and expanding its free cash flow, driving both earnings growth and potential multiple expansion. The identified catalysts provide clear pathways for value realization over the next 12-24 months, offering a compelling risk-adjusted return profile. We believe Arista Networks is a core holding for institutional investors seeking exposure to the transformative power of AI infrastructure.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 14 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-investment-conclusion-continued">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/arista.com" alt="Company Icon" class="icon">
+                <h1 class="name">Arista Networks</h1>
+                <div class="rating" style="color: #C62828;">OVERWEIGHT</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>13. INVESTMENT CONCLUSION - STRATEGIC IMPERATIVES AND LONG-TERM VALUE DRIVERS</h3>
+        <div class="content-item">
+            <p><b>Strategic Imperatives for Continued Outperformance</b></p>
+            <p>For Arista Networks to sustain its outperformance, several strategic imperatives must be rigorously executed. Firstly, continued aggressive investment in R&D is paramount to maintain its technological lead in AI networking, particularly as network speeds transition to 1600-gig optics and beyond, and as the Ultra Ethernet Consortium (UEC) standards evolve. Secondly, successful penetration and expansion within the enterprise campus market, leveraging its Cognitive Campus portfolio, is critical for revenue diversification beyond hyperscale titans. The target of <strong>$750 million in campus networking revenue by 2025</strong> is a key milestone. Thirdly, Arista must continue to optimize its global supply chain, increasing purchase commitments and expanding inventory, to ensure it can meet the rapidly escalating demand for AI infrastructure and minimize lead times. Finally, strategic tuck-in acquisitions that enhance its software capabilities or expand its market reach, such as the acquisition of Broadcom's VeloCloud SD-WAN portfolio, will be crucial for end-to-end solution offerings.</p>
+
+            <p><b>Long-Term Value Drivers and Secular Tailwinds</b></p>
+            <p>Arista Networks benefits from powerful long-term value drivers and secular tailwinds that underpin its multi-decade growth visibility. The global shift towards cloud computing and the accelerating adoption of AI across industries are creating a structural demand for high-speed, low-latency networking infrastructure. The AI in networks market, projected to grow from <strong>$15.28 billion in 2025 to $192.34 billion by 2034</strong>, represents a massive and expanding total addressable market. Arista's focus on software-driven cloud networking solutions, its commitment to open standards, and its ability to deliver high-performance, energy-efficient data center technology position it at the forefront of these trends. The increasing complexity of AI workloads and the need for deterministic network performance will continue to drive demand for Arista's specialized solutions, creating a durable competitive advantage and sustained pricing power.</p>
+
+            <p><b>Management's Capital Allocation Strategy</b></p>
+            <p>Management's capital allocation strategy is characterized by discipline and a clear focus on value creation. The company's consistently high Return on Invested Capital (ROIC) of <strong>53.08%</strong>, significantly exceeding its Weighted Average Cost of Capital (WACC) of <strong>10.95%</strong>, demonstrates efficient deployment of capital. Arista prioritizes reinvestment into organic growth through R&D, which is crucial for maintaining its innovation leadership. While capital expenditures remain low, strategic investments in product development and intellectual property are evident in its Investing Cash Flow. Furthermore, management has demonstrated a commitment to returning capital to shareholders through share buybacks, such as the <strong>$1.5 billion program completed in Q2 2025</strong>, which optimizes the capital structure and enhances shareholder value. This balanced approach, combining growth investments with shareholder returns, reflects a mature and value-accretive capital allocation philosophy.</p>
+
+            <p><b>ESG Considerations and Impact</b></p>
+            <p>Arista Networks demonstrates a strong commitment to Environmental, Social, and Governance (ESG) principles, which enhances its long-term sustainability and investor appeal. The company has implemented an Environmental Management System (EMS) to achieve pollution prevention and environmental protection, with ambitious science-based targets to reduce Scope 1, 2, and 3 emissions by <strong>42% by 2030</strong> and achieve net-zero emissions by <strong>2050</strong>. Socially, Arista fosters an inclusive culture, recognized as a "US Great Place to Work," and emphasizes responsible supply chain efforts. Governance is robust, with a focus on board diversity and tax transparency. These ESG initiatives not only mitigate operational and reputational risks but also align with increasing institutional investor mandates for sustainable investing, potentially leading to a lower cost of capital and broader investor base over time.</p>
+
+            <p><b>Key Risks to Monitor</b></p>
+            <p>While our OVERWEIGHT rating is high conviction, several key risks warrant close monitoring. Firstly, a significant slowdown in hyperscale capital expenditures, particularly in AI infrastructure, could pressure Arista's revenue growth, given its customer concentration. Secondly, intensifying competitive responses from established players like Cisco or emerging threats from NVIDIA in the AI networking space could lead to market share erosion or margin compression. Thirdly, execution risks associated with expanding into new markets, such as the enterprise campus segment, or integrating future acquisitions, could impact profitability. Fourthly, supply chain disruptions or rising component costs could pressure gross margins, although Arista has proactively invested in supply chain resilience. Finally, a broader macroeconomic downturn could impact IT spending, although the secular tailwinds of AI and cloud computing are expected to provide some insulation.</p>
+
+            <p><b>Final Investment Outlook and Recommendation</b></p>
+            <p>Our final investment outlook for Arista Networks remains highly constructive, reinforcing our OVERWEIGHT recommendation. The company's strategic positioning at the nexus of cloud and AI infrastructure, combined with its superior technology, robust financial performance, and disciplined management, creates a compelling long-term investment case. We expect Arista to continue delivering strong revenue growth, expanding margins, and exceptional free cash flow generation, translating into sustained shareholder value. The identified catalysts, including ongoing AI infrastructure buildouts and campus expansion, provide clear pathways for multiple expansion and earnings upside. While risks exist, Arista's strong competitive moat and financial fortress provide significant downside protection. We believe the current market valuation still offers an attractive entry point for institutional investors seeking alpha generation in the high-growth technology sector.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 15 / 15</p>
+    </footer>
+</div>
+    </div>
+</body>
+</html>

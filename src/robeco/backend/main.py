@@ -8,8 +8,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .professional_api import setup_professional_routes
-from ..core.config import settings
+try:
+    from .professional_api import setup_professional_routes
+    from ..core.config import settings
+except ImportError:
+    # For direct execution
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+    from src.robeco.backend.professional_api import setup_professional_routes
+    from src.robeco.core.config import settings
 
 # Configure logging
 logging.basicConfig(

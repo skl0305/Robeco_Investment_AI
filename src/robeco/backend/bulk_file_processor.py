@@ -89,7 +89,7 @@ class BulkFileProcessor:
         if self.gemini_api_key and genai:
             try:
                 genai.configure(api_key=self.gemini_api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-pro')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
                 logger.info(f"✅ Gemini model initialized for bulk processing")
             except Exception as e:
                 logger.warning(f"Failed to initialize Gemini model: {e}")
@@ -165,30 +165,27 @@ class BulkFileProcessor:
         return saved_paths
     
     async def upload_files_to_gemini(self, file_paths: List[str]) -> List[str]:
-        """Upload files to Gemini API and return file IDs"""
+        """Upload files to Gemini API using the same retry pattern as other services"""
         gemini_file_ids = []
+        from .api_key.gemini_api_key import get_intelligent_api_key
         
         for file_path in file_paths:
-            max_retries = 3
+            max_retries = 20  # Use more retries to match other services
+            logger.info(f"📁 Uploading file: {Path(file_path).name}")
+            
             for attempt in range(max_retries):
                 try:
-                    # Refresh API key if we have intelligent key management and this is a retry
-                    if attempt > 0 and self.get_api_key:
-                        api_key_result = self.get_api_key(agent_type='bulk_processor_retry')
-                        if api_key_result:
-                            # Safely extract API key from result
-                            if isinstance(api_key_result, tuple) and len(api_key_result) > 0:
-                                self.gemini_api_key = api_key_result[0]  # Extract API key from tuple
-                            elif isinstance(api_key_result, str):
-                                self.gemini_api_key = api_key_result  # Direct string (compatibility)
-                            else:
-                                logger.error("❌ Invalid API key format for retry")
-                                break
-                        else:
-                            logger.error("❌ No API key available for retry")
-                            break  # Exit retry loop if no keys available
-                        genai.configure(api_key=self.gemini_api_key)
-                        logger.info(f"🔄 Retrying upload with new API key (attempt {attempt + 1})")
+                    # Get API key using SAME pattern as template_report_generator
+                    key_result = get_intelligent_api_key(agent_type="bulk_upload", attempt=attempt, force_attempt=True)
+                    if not key_result:
+                        logger.error("❌ No API key available for file upload")
+                        break
+                    
+                    api_key, key_info = key_result  # EXACT same unpacking
+                    logger.info(f"📁 Upload attempt {attempt+1} using API key: {api_key[:8]}...{api_key[-4:]}")
+                    
+                    # Configure API key for upload (required for genai.upload_file)
+                    genai.configure(api_key=api_key)
                     
                     # Upload file to Gemini
                     uploaded_file = genai.upload_file(path=file_path, display_name=Path(file_path).name)
@@ -219,23 +216,24 @@ class BulkFileProcessor:
                                 logger.error(f"❌ Failed to suspend API key: {suspend_error}")
                     
                     if attempt == max_retries - 1:
-                        logger.error(f"❌ Failed to upload {file_path} after {max_retries} attempts")
+                        error_detail = f"Failed to upload {Path(file_path).name} after {max_retries} attempts: {error_message}"
+                        logger.error(f"❌ {error_detail}")
                         # Reset suspended keys as a last resort and try once more with fresh API key pool
                         if self.get_api_key:
                             try:
                                 from .api_key.gemini_api_key import reset_suspended_keys
                                 reset_suspended_keys()
                                 logger.info("🔄 Reset suspended keys for bulk upload - will try again shortly")
-                                raise Exception("All keys temporarily exhausted - keys reset, please retry")
+                                raise Exception(f"Upload failed after retries: {error_detail}")
                             except Exception:
                                 pass
-                        raise
+                        raise Exception(f"File upload failed: {error_detail}")
                     await asyncio.sleep(2)  # Longer pause before retry for suspended keys
         
         return gemini_file_ids
     
     async def analyze_files_with_gemini_streaming(self, gemini_file_ids: List[str], company_ticker: str, websocket=None) -> Dict[str, Any]:
-        """Analyze uploaded files using Gemini API with streaming support"""
+        """Analyze uploaded files using Gemini API following the same pattern as template_report_generator"""
         
         # Default error response to ensure we never return None
         default_error_response = {
@@ -245,68 +243,69 @@ class BulkFileProcessor:
             "processed_files": 0
         }
         
-        # Enhanced analysis prompt with streaming format
+        # OBJECTIVE FACT EXTRACTION - No analysis, just truth delivery
         analysis_prompt = f"""
-# CRITICAL WRITING INSTRUCTION
-DO NOT start your analysis with roleplay preambles like "As a senior investment analyst..." or "I am an experienced analyst...". Begin DIRECTLY with the document analysis content.
+Extract facts from documents for {company_ticker}. Be objective and unbiased. Report what the documents actually say, not your analysis.
 
-# Document Analysis Task for {company_ticker}
+For each document:
 
-Analyze the uploaded documents and provide detailed insights for portfolio management decisions. 
+## Document: [filename]
 
-**Output Structure for EACH Document:**
+**Executive Summary**
+[2-3 sentences summarizing what this document is about and its main content]
 
-## Document [X]: [Filename] 
-**Type:** [Report type - earnings, analyst research, SEC filing, etc.]
-**Key Focus:** [1-2 sentence summary]
+**Key Takeaways** 
+• [What the document states as main points]
+• [Management statements or analyst conclusions as written]
+• [Key findings or recommendations mentioned]
+• [Important developments or changes reported]
+• [Strategic initiatives or plans outlined]
+• [Risks or challenges identified in the document]
+• [Opportunities or catalysts mentioned]
 
-### 📊 **Financial Highlights**
-- Revenue/earnings trends and projections
-- Key financial ratios and metrics  
-- Valuation indicators mentioned
-- Growth rates and forecasts
+**Data Points**
+• [All financial numbers, percentages, dates mentioned]
+• [Revenue figures, growth rates, margins as stated]
+• [Earnings, guidance, forecasts, targets provided]
+• [Valuation metrics, ratios, price targets given]
+• [Market share, competitive data, industry metrics]
+• [Operational metrics, user numbers, efficiency ratios]
+• [Balance sheet items, debt levels, cash positions]
 
-### 💼 **Investment Thesis**
-**Bullish Factors:**
-- [List specific positive catalysts]
-**Bearish Factors:**  
-- [List specific risks and concerns]
-**Price Targets/Recommendations:** [Any mentioned]
-
-### ⚠️ **Risk Assessment**
-- Business model risks
-- Market/economic risks  
-- Regulatory/compliance issues
-- Competitive threats
-
-### 🎯 **Portfolio Implications**
-- Position sizing considerations
-- Sector allocation impact
-- Timeline for investment decisions
-- Key monitoring points
-
-### 🔍 **Confidence Score:** [1-10]/10
-**Rationale:** [Brief explanation of reliability]
+**Investment Implications**
+• [What the document says about investment outlook]
+• [Recommendations or ratings if provided]
+• [Risk factors mentioned in the document]
+• [Catalysts or events highlighted]
+• [Timeline or milestones identified]
 
 ---
 
-**After all individual documents, provide:**
+After all documents:
 
-## 🎯 **CONSOLIDATED INVESTMENT SUMMARY**
+## Overall Summary
 
-### **Overall Investment Thesis**
-[Synthesized view across all documents]
+**Executive Summary**
+[Factual overview of what all documents covered]
 
-### **Key Catalysts & Timeline**  
-[Most important upcoming events/milestones]
+**Key Takeaways**
+• [Main themes across all documents]
+• [Consistent messages or findings]
+• [Conflicting views if any exist]
+• [Important developments revealed]
 
-### **Portfolio Recommendation**
-[Clear action items for portfolio managers]
+**Combined Data Points**  
+• [All key numbers and metrics from documents]
+• [Financial trends shown across sources]
+• [Valuation ranges or targets mentioned]
 
-### **Risk-Adjusted Assessment**
-[Overall risk/reward profile based on all documents]
+**Investment Implications**
+• [Investment outlook based on document content]
+• [Risk factors identified across sources]
+• [Opportunities or catalysts highlighted]
+• [Recommendations or ratings provided]
 
-**Focus:** Provide actionable intelligence for institutional portfolio management decisions.
+Focus: Report facts objectively. Extract everything. Use bullet points extensively. No personal analysis - just deliver what the documents actually say.
         """
         
         try:
@@ -337,7 +336,9 @@ Analyze the uploaded documents and provide detailed insights for portfolio manag
                     continue
             
             if not files:
-                error_msg = "No valid file objects retrieved for analysis"
+                error_msg = f"No valid file objects retrieved for analysis. Attempted to retrieve {len(gemini_file_ids)} file IDs"
+                logger.error(f"❌ {error_msg}")
+                logger.error(f"❌ File IDs were: {gemini_file_ids}")
                 if websocket:
                     await websocket.send_text(json.dumps({
                         "type": "bulk_analysis_error",
@@ -354,42 +355,111 @@ Analyze the uploaded documents and provide detailed insights for portfolio manag
                     "data": {"message": f"Starting AI analysis of {len(files)} documents...", "progress": 40}
                 }))
             
-            # Generate analysis with streaming if possible
-            try:
-                # For streaming, we need to use the google.genai client
-                from .api_key.gemini_api_key import get_intelligent_api_key
-                
-                api_key_result = get_intelligent_api_key(agent_type="bulk_analysis")
-                logger.info(f"🔍 API key result type: {type(api_key_result)}, value: {api_key_result}")
-                if not api_key_result:
-                    error_msg = "No API key available for bulk analysis"
+            # Use the SAME retry pattern as template_report_generator.py
+            from .api_key.gemini_api_key import get_intelligent_api_key
+            
+            max_retries = 100  # Try many keys until we find a working one
+            for attempt in range(max_retries):
+                try:
+                    # Get API key with force_attempt to start with primary key (SAME as template_report_generator)
+                    key_result = get_intelligent_api_key(agent_type="bulk_analysis", attempt=attempt, force_attempt=True)
+                    if not key_result:
+                        raise Exception("No API key available for bulk analysis")
+                    
+                    api_key, key_info = key_result  # EXACT same unpacking as template_report_generator
+                    logger.info(f"📊 Bulk analysis attempt {attempt+1} using API key: {api_key[:8]}...{api_key[-4:]}")
+                    
+                    # Configure API key and use the model that works (like in __init__)
+                    try:
+                        genai.configure(api_key=api_key)
+                        # Use the same pattern as in __init__ that works
+                        model = genai.GenerativeModel('gemini-2.5-flash')
+                        logger.info(f"✅ Configured Gemini model for bulk analysis")
+                    except Exception as config_error:
+                        logger.error(f"⚠️ Model configuration failed on attempt {attempt+1}: {config_error}")
+                        continue  # Try next API key
+                    
+                    # Send analysis started message
                     if websocket:
                         await websocket.send_text(json.dumps({
-                            "type": "bulk_analysis_error",
-                            "data": {"error": error_msg}
+                            "type": "bulk_analysis_started", 
+                            "data": {
+                                "message": "🤖 AI is analyzing your documents...",
+                                "company_ticker": company_ticker,
+                                "file_count": len(files)
+                            }
                         }))
-                    return {
-                        **default_error_response,
-                        "error": error_msg
-                    }
                     
-                # Safely unpack the tuple - handle None case
-                try:
-                    if isinstance(api_key_result, tuple) and len(api_key_result) >= 2:
-                        api_key, metadata = api_key_result
-                        logger.info(f"✅ Extracted API key from tuple: {api_key[:8] if api_key else 'None'}...{api_key[-4:] if api_key else 'None'}")
-                    elif isinstance(api_key_result, tuple) and len(api_key_result) == 1:
-                        api_key = api_key_result[0]
-                        metadata = {}
-                        logger.info(f"✅ Extracted API key from single-tuple: {api_key[:8] if api_key else 'None'}...{api_key[-4:] if api_key else 'None'}")
+                    # Generate analysis using standard model (proven to work)
+                    logger.info(f"📊 Starting Gemini analysis with {len(files)} files")
+                    
+                    try:
+                        # Use the same generation pattern as the working __init__ method
+                        response = model.generate_content(
+                            [analysis_prompt] + files,
+                            generation_config=genai.types.GenerationConfig(
+                                temperature=0.05,  # Lower for more focused analysis
+                                top_p=0.9,         # Higher for more comprehensive coverage
+                                max_output_tokens=200000  # 4x increase for ultra-comprehensive analysis
+                            )
+                        )
+                        
+                        if not response:
+                            raise Exception("Gemini returned empty response")
+                        
+                        # Extract response text with fallback methods
+                        response_text = None
+                        if hasattr(response, 'text') and response.text:
+                            response_text = response.text
+                        elif hasattr(response, 'candidates') and response.candidates:
+                            try:
+                                response_text = response.candidates[0].content.parts[0].text
+                            except (AttributeError, IndexError):
+                                pass
+                        
+                        if not response_text:
+                            raise Exception("No text content found in Gemini response")
+                        
+                        logger.info(f"✅ Gemini analysis completed: {len(response_text)} characters")
+                        
+                        # Send streaming simulation for better UX
+                        if websocket:
+                            chunk_size = max(100, len(response_text) // 10)  # 10 chunks minimum
+                            for i in range(0, len(response_text), chunk_size):
+                                chunk = response_text[i:i+chunk_size]
+                                await websocket.send_text(json.dumps({
+                                    "type": "bulk_analysis_chunk",
+                                    "data": {
+                                        "content_chunk": chunk,
+                                        "chunk_id": (i // chunk_size) + 1,
+                                        "progress": min(50 + (i / len(response_text)) * 45, 95)
+                                    }
+                                }))
+                                await asyncio.sleep(0.1)  # Small delay for streaming effect
+                        
+                        # Analysis successful - return immediately
+                        return {
+                            "analysis": response_text,
+                            "success": True,
+                            "processed_files": len(files),
+                            "streaming": False
+                        }
+                        
+                    except Exception as generation_error:
+                        error_msg = f"Gemini generation failed: {generation_error}"
+                        logger.warning(f"⚠️ Generation error on attempt {attempt+1}: {error_msg}")
+                        continue  # Try next API key
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Bulk analysis attempt {attempt+1} failed: {e}")
+                    
+                    # Check if we should continue retrying
+                    if attempt < max_retries - 1:
+                        continue  # Try next API key
                     else:
-                        # Handle case where result is just a string (old format compatibility)
-                        api_key = api_key_result if isinstance(api_key_result, str) else None
-                        metadata = {}
-                        logger.info(f"✅ Used API key directly: {api_key[:8] if api_key else 'None'}...{api_key[-4:] if api_key else 'None'}")
-                    
-                    if not api_key:
-                        error_msg = "Invalid API key returned from intelligent system"
+                        # All retries exhausted
+                        error_msg = f"Bulk analysis failed after {max_retries} attempts: {e}"
+                        logger.error(f"❌ {error_msg}")
                         if websocket:
                             await websocket.send_text(json.dumps({
                                 "type": "bulk_analysis_error",
@@ -399,164 +469,31 @@ Analyze the uploaded documents and provide detailed insights for portfolio manag
                             **default_error_response,
                             "error": error_msg
                         }
-                        
-                except Exception as unpack_error:
-                    logger.error(f"❌ Error unpacking API key result: {unpack_error}")
-                    logger.error(f"❌ API key result was: {api_key_result}")
-                    error_msg = f"Failed to unpack API key: {unpack_error}"
-                    if websocket:
-                        await websocket.send_text(json.dumps({
-                            "type": "bulk_analysis_error",
-                            "data": {"error": error_msg}
-                        }))
-                    return {
-                        **default_error_response,
-                        "error": error_msg
-                    }
-                    
-                # Import Google Gemini streaming client
-                try:
-                    # Try newer google-genai package first
-                    from google import genai as streaming_genai
-                    from google.genai import types
-                    
-                    client = streaming_genai.Client(api_key=api_key)
-                except ImportError:
-                    # Fallback to older google-generativeai package
-                    logger.warning("google-genai not available, falling back to regular generation")
-                    raise ImportError("Streaming not available")
-                    
-                    # Generate with streaming config
-                    generate_config = types.GenerateContentConfig(
-                        temperature=0.1,
-                        top_p=0.8,
-                        max_output_tokens=65536,  # Maximum tokens for complete analysis without truncation
-                        response_mime_type="text/plain"
-                    )
-                    
-                    # Create contents with prompt and files
-                    # Note: files are already uploaded Gemini file objects, not raw data
-                    file_parts = []
-                    for file in files:
-                        # Use from_uri for uploaded Gemini files
-                        file_parts.append(types.Part.from_uri(file_uri=file.uri, mime_type=file.mime_type))
-                    
-                    contents = [
-                        types.Content(
-                            role="user",  
-                            parts=[types.Part.from_text(text=analysis_prompt)] + file_parts
-                        )
-                    ]
-                    
-                    full_analysis = ""
-                    chunk_count = 0
-                    
-                    if websocket:
-                        await websocket.send_text(json.dumps({
-                            "type": "bulk_analysis_started",
-                            "data": {
-                                "message": "🤖 AI is now analyzing your documents...",
-                                "company_ticker": company_ticker,
-                                "file_count": len(files)
-                            }
-                        }))
-                    
-                    # Generate with streaming
-                    response_stream = client.models.generate_content_stream(
-                        model='gemini-1.5-pro',
-                        contents=contents,
-                        config=generate_config
-                    )
-                    
-                    for chunk in response_stream:
-                        if chunk.text:
-                            chunk_count += 1
-                            full_analysis += chunk.text
-                            
-                            # Send streaming chunks to frontend
-                            if websocket:
-                                await websocket.send_text(json.dumps({
-                                    "type": "bulk_analysis_chunk",
-                                    "data": {
-                                        "content_chunk": chunk.text,
-                                        "chunk_id": chunk_count,
-                                        "progress": min(40 + (chunk_count * 2), 95)
-                                    }
-                                }))
-                                
-                            # Small delay for better streaming experience
-                            await asyncio.sleep(0.05)
-                    
-                    return {
-                        "analysis": full_analysis,
-                        "success": True,
-                        "processed_files": len(files),
-                        "streaming": True
-                    }
-                    
-                except ImportError:
-                    # Fallback to regular generation
-                    logger.warning("Streaming client not available, using regular generation")
-                    response = self.model.generate_content([analysis_prompt] + files)
-                    
-                    if not response:
-                        raise Exception("No response from Gemini model")
-                    
-                    response_text = getattr(response, 'text', None)
-                    if not response_text:
-                        raise Exception("No text content in Gemini response")
-                    
-                    if websocket:
-                        await websocket.send_text(json.dumps({
-                            "type": "bulk_analysis_chunk",
-                            "data": {
-                                "content_chunk": response_text,
-                                "chunk_id": 1,
-                                "progress": 90
-                            }
-                        }))
-                    
-                    return {
-                        "analysis": response_text,
-                        "success": True,
-                        "processed_files": len(files),
-                        "streaming": False
-                    }
-                    
-            except Exception as streaming_error:
-                logger.error(f"Streaming analysis failed: {streaming_error}")
-                # Fallback to regular analysis
-                try:
-                    response = self.model.generate_content([analysis_prompt] + files)
-                    if not response:
-                        raise Exception("No response from Gemini model in fallback")
-                    
-                    response_text = getattr(response, 'text', None)
-                    if not response_text:
-                        raise Exception("No text content in fallback Gemini response")
-                        
-                    return {
-                        "analysis": response_text,
-                        "success": True,
-                        "processed_files": len(files),
-                        "streaming": False
-                    }
-                except Exception as fallback_error:
-                    logger.error(f"Fallback analysis also failed: {fallback_error}")
-                    raise Exception(f"Both streaming and fallback analysis failed: {fallback_error}")
+            
+            # This should never be reached due to max_retries, but just in case
+            error_msg = "Unable to complete bulk analysis with any available API key"
+            logger.error(f"❌ {error_msg}")
+            if websocket:
+                await websocket.send_text(json.dumps({
+                    "type": "bulk_analysis_error", 
+                    "data": {"error": error_msg}
+                }))
+            return {
+                **default_error_response,
+                "error": error_msg
+            }
             
         except Exception as e:
-            logger.error(f"❌ Gemini analysis failed: {e}")
+            error_msg = f"Gemini analysis system error: {e}"
+            logger.error(f"❌ {error_msg}")
             if websocket:
                 await websocket.send_text(json.dumps({
                     "type": "bulk_analysis_error",
-                    "data": {"error": str(e)}
+                    "data": {"error": error_msg}
                 }))
             return {
-                "analysis": "",
-                "success": False,
-                "error": str(e),
-                "processed_files": 0
+                **default_error_response,
+                "error": error_msg
             }
     
     async def process_analysis_results(self, analysis_text: str, files: List[UploadFile]) -> List[FileAnalysisResult]:

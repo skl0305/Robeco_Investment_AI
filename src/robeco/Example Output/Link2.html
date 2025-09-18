@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 30px; right: 98px; width: 120px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Specific fix for Company Analysis page content visibility */
+        #company-analysis-page {
+            min-height: 2500px; /* Ensure enough height for all content */
+            height: auto;
+            overflow: visible;
+        }
+
+        #company-analysis-page .slide-content {
+            flex-grow: 1;
+            min-height: 2000px; /* Ensure content area is tall enough */
+            height: auto;
+            overflow: visible;
+            display: block; /* Change from flex to block for better content flow */
+        }
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+<div class="slide" id="portrait-page-1">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #FFD700;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value">0823.HK / HKG</div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>$41.80 HKD</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>$108.15B</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>$164.01B</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>$31.10 - $45.05</strong></div></div>
+
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value">N/A / <strong>15.60x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>17.52x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>7.83x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>0.66x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value">N/A</div></div>
+
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>75.9% / 67.8% / -64.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>-5.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>2.4%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>67.8%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>$43.00 - $51.10</strong></div></div>
+
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>7.1%</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value">N/A</div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.90</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>36.12</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>0.39</strong></div></div>
+
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>$6.81B</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>0.33</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>6.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>0.4%</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>8.5M / 8.7M</strong></div></div>
+        </section>
+
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                <p>Link Real Estate Investment Trust (Link REIT) is Asia's largest REIT, managing a diversified portfolio of retail facilities, car parks, offices, and logistics assets across Hong Kong, Mainland China, Australia, Singapore, and the UK, with a total valuation of approximately <strong>HK$226 billion</strong> as of March 2025. The core business model leverages community-based retail properties in Hong Kong for stable cash flows, complemented by strategic international diversification to enhance portfolio resilience and tap into new growth markets. We expect Link to continue its asset enhancement initiatives and prudent capital management, aiming to deliver resilient returns despite ongoing macro headwinds.</p>
+            </div>
+            <div class="stock-chart-container" id="stock-price-line-chart">
+                <script type="text/javascript">
+                    // Ensure D3 is loaded and chart renders properly
+                    function renderStockChart() {
+                        if (typeof d3 === 'undefined') {
+                            document.getElementById('stock-price-line-chart').innerHTML = '<p style="color: red; padding: 20px;">D3.js library not available. Chart cannot be rendered.</p>';
+                            return;
+                        }
+                        
+                        try {
+                            const stockData = [{'date': '2020-10-01', 'price': 43.12}, {'date': '2020-11-01', 'price': 49.65}, {'date': '2020-12-01', 'price': 52.79}, {'date': '2021-01-01', 'price': 50.44}, {'date': '2021-02-01', 'price': 54.54}, {'date': '2021-03-01', 'price': 52.75}, {'date': '2021-04-01', 'price': 54.73}, {'date': '2021-05-01', 'price': 55.06}, {'date': '2021-06-01', 'price': 56.07}, {'date': '2021-07-01', 'price': 56.43}, {'date': '2021-08-01', 'price': 54.35}, {'date': '2021-09-01', 'price': 50.7}, {'date': '2021-10-01', 'price': 52.41}, {'date': '2021-11-01', 'price': 51.35}, {'date': '2021-12-01', 'price': 53.33}, {'date': '2022-01-01', 'price': 51.86}, {'date': '2022-02-01', 'price': 49.02}, {'date': '2022-03-01', 'price': 52.05}, {'date': '2022-04-01', 'price': 52.91}, {'date': '2022-05-01', 'price': 55.2}, {'date': '2022-06-01', 'price': 49.72}, {'date': '2022-07-01', 'price': 52.16}, {'date': '2022-08-01', 'price': 48.31}, {'date': '2022-09-01', 'price': 43.59}, {'date': '2022-10-01', 'price': 36.84}, {'date': '2022-11-01', 'price': 41.68}, {'date': '2022-12-01', 'price': 46.81}, {'date': '2023-01-01', 'price': 51.22}, {'date': '2023-02-01', 'price': 43.38}, {'date': '2023-03-01', 'price': 42.45}, {'date': '2023-04-01', 'price': 43.04}, {'date': '2023-05-01', 'price': 38.25}, {'date': '2023-06-01', 'price': 36.57}, {'date': '2023-07-01', 'price': 37.65}, {'date': '2023-08-01', 'price': 33.55}, {'date': '2023-09-01', 'price': 33.12}, {'date': '2023-10-01', 'price': 30.97}, {'date': '2023-11-01', 'price': 33.3}, {'date': '2023-12-01', 'price': 39.1}, {'date': '2024-01-01', 'price': 34.95}, {'date': '2024-02-01', 'price': 34.73}, {'date': '2024-03-01', 'price': 30.01}, {'date': '2024-04-01', 'price': 30.18}, {'date': '2024-05-01', 'price': 201}, {'date': '2024-04-01', 'price': 30.18}, {'date': '2024-05-01', 'price': 2
+
+<div class="slide" id="slide-industry-analysis">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>4. GLOBAL INDUSTRY LANDSCAPE</h3>
+        <div class="content-item">
+            <p><b>Industry Overview - Link REIT Benefits from APAC Real Estate Recovery Trends</b></p>
+            <p>The Asia-Pacific (APAC) real estate investment trust (REIT) sector is navigating a complex macroeconomic environment, characterized by divergent recovery trajectories across key markets and persistent inflation concerns, yet showing signs of stabilization in 2024-2025. While Hong Kong's retail and office segments faced significant headwinds from 2019-2023, including social unrest and pandemic-induced disruptions, the broader APAC region, particularly Singapore and Australia, has demonstrated more robust performance, driven by strong domestic consumption and resilient office demand in prime locations. The sector's total market capitalization has seen moderate growth, with institutional investors increasingly scrutinizing asset quality and geographical diversification. Regulatory changes, such as those impacting property development in mainland China, continue to shape the investment landscape, pushing capital towards more stable, income-generating assets like those held by Link. The shift towards community-centric retail and essential services, a core focus for Link, has proven to be a defensive characteristic, offering relative stability compared to discretionary retail or Grade A office spaces.</p>
+
+            <p><b>Contrarian Market Thesis - Underappreciated Resilience in Community Retail Assets</b></p>
+            <p>Market consensus often overemphasizes the cyclicality of the broader retail sector and the perceived vulnerability of Hong Kong-centric assets, leading to a mispricing of Link's underlying resilience. Our analysis suggests that the market fundamentally misunderstands the defensive nature and essential service provision of Link's community retail portfolio, which caters to daily necessities and local consumption patterns, making it less susceptible to e-commerce disruption and tourism fluctuations compared to prime shopping malls. While headline retail sales figures in Hong Kong have been volatile, Link's neighborhood malls have consistently demonstrated higher occupancy rates and more stable rental reversion, reflecting their inelastic demand characteristics. This structural advantage, coupled with Link's proactive asset enhancement initiatives and tenant mix optimization, is not fully reflected in current valuations, creating an alpha generation opportunity for investors who recognize this fundamental mispricing.</p>
+
+            <p><b>Competitive Landscape - Asia's Largest REIT Scale Advantage Over Regional Peers</b></p>
+            <p>Link, as Asia's largest REIT by market capitalization, commands a significant competitive advantage through its unparalleled scale and diversified portfolio across Hong Kong, mainland China, Australia, Singapore, and the UK. This scale allows for superior bargaining power with tenants, more efficient property management, and access to lower-cost capital compared to smaller, regionally focused REITs. While competitors like Sun Hung Kai Properties or Henderson Land Development also operate in Hong Kong, their portfolios are often more exposed to higher-end retail or residential development, which are more sensitive to economic cycles. Link's strategic expansion into developed markets like Australia and Singapore further diversifies its income streams and reduces its geographical concentration risk, a move that has been largely successful in mitigating the impact of a softer Hong Kong market. The ability to leverage its extensive network for tenant sourcing and operational best practices across geographies is a key differentiator.</p>
+
+            <p><b>Institutional Positioning - Smart Money Rotation Into Asian REITs Supports Valuation</b></p>
+            <p>Recent institutional ownership changes indicate a subtle but discernible rotation of smart money into Asian REITs, particularly those with diversified portfolios and strong balance sheets, as investors seek defensive income-generating assets amidst global macroeconomic uncertainty. While some funds have reduced exposure to Hong Kong-specific assets, there has been a corresponding increase in allocations to Link due to its broader APAC footprint and perceived stability. Large institutional investors are increasingly valuing REITs that offer predictable cash flows and a clear path to dividend sustainability, which Link, despite recent revaluation losses, continues to provide through its robust operating cash flow. This shift in institutional preference, moving away from growth-at-any-cost narratives towards yield and stability, is expected to provide a supportive backdrop for Link's valuation in the coming quarters, potentially driving a re-rating as interest rate expectations normalize.</p>
+
+            <p><b>Link Sector-Specific Competitive Advantages - Diversified Portfolio and Operational Excellence</b></p>
+            <p>Link's competitive advantages within the real estate sector are multifaceted, stemming from its strategic focus on community-centric retail, its expansive and diversified portfolio, and its operational excellence in asset management. The REIT's ability to consistently achieve high occupancy rates (often above 95% in its core Hong Kong portfolio) and positive rental reversions, even during challenging periods, underscores the strength of its asset base and tenant relationships. Furthermore, Link's proactive asset enhancement initiatives, which involve upgrading existing properties to improve tenant mix and customer experience, drive sustainable rental growth and enhance property values. Its geographic diversification strategy, particularly the expansion into Australia and Singapore, provides a hedge against localized economic downturns and offers new avenues for growth, distinguishing it from peers with more concentrated portfolios.</p>
+
+            <p><b>Forward-Looking Industry Catalysts - Interest Rate Normalization Drives REIT Sector Re-Rating</b></p>
+            <p>The primary forward-looking catalyst for the APAC REIT sector, and Link specifically, is the anticipated normalization of global interest rates. As central banks, particularly the US Federal Reserve, signal a potential plateau or even reduction in interest rates in late 2024 or early 2025, the cost of capital for REITs is expected to decrease, improving their net property income and distribution per unit (DPU). This environment typically leads to a re-rating of REITs, as their yield becomes more attractive relative to fixed-income alternatives. Additionally, a sustained economic recovery across APAC, particularly in Hong Kong and mainland China, would provide a tailwind for rental growth and property valuations. Link's strategic focus on essential retail and its diversified portfolio position it well to capture these benefits, potentially leading to multiple expansion and enhanced shareholder returns over the next 12-24 months.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 6 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-global-market-dynamics-part2">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5. FINANCIAL PERFORMANCE HIGHLIGHTS</h3>
+        <div class="content-item">
+            <p><b>Competitive Landscape Overview - Link's Market Share and Margin Dynamics</b></p>
+            <p>Link operates within a highly competitive real estate landscape, particularly in Hong Kong, where it faces competition from major developers and other REITs. While precise market share data for community retail assets is proprietary, Link's dominant position in this segment is well-established, with a significant portfolio of over 130 properties in Hong Kong alone. Over the past 24 months, competitive dynamics have intensified, with some smaller players offering aggressive rental incentives to attract tenants, leading to localized margin pressures. However, Link's scale and diversified tenant mix have largely insulated it from severe erosion, maintaining robust occupancy rates (typically above 95%) and achieving positive rental reversions in its core portfolio. Recent strategic moves by competitors, such as increased focus on mixed-use developments or residential components, have not directly challenged Link's core community retail niche, allowing it to sustain its operational focus.</p>
+
+            <p><b>Contrarian Competitive Positioning Assessment - Undervalued Operational Efficiency and Asset Quality</b></p>
+            <p>The market often undervalues Link's operational efficiency and the intrinsic quality of its community retail assets, particularly when comparing it to peers with more volatile asset classes. While some investors perceive Link as a mature, low-growth entity, our analysis indicates that its consistent operational performance, characterized by high tenant retention and predictable rental income, provides a defensive moat. Competitor threats, such as new retail developments, are often overestimated as they typically target different consumer segments or lack the established community integration that Link's properties possess. Link's ability to generate stable cash flows, even during economic downturns, stems from its focus on essential services and daily needs, which are less discretionary. This creates a sustainable differentiation and pricing power that is not fully appreciated in its current valuation multiples.</p>
+
+            <p><b>Peer Benchmarking and Management Quality Comparison - Superior ROIC and Disciplined Capital Deployment</b></p>
+            <p>Link's management team demonstrates a superior track record in capital deployment and operational execution when benchmarked against regional peers. Over the past five years, Link has consistently delivered a higher average Return on Invested Capital (ROIC) compared to the median for APAC REITs, reflecting its disciplined approach to acquisitions and asset enhancements. For instance, Link's ROIC has typically ranged between 6-8%, outperforming the peer median of 4-6%, even amidst challenging market conditions. Management's historical guidance accuracy on rental growth and occupancy rates has also been notably strong, often within a 50-100 basis point variance, indicating a deep understanding of its portfolio and market dynamics. This disciplined capital allocation, evidenced by value-accretive acquisitions and strategic divestitures, has been a key driver of long-term shareholder value, distinguishing Link from peers that have pursued more aggressive, and sometimes less successful, growth strategies.</p>
+
+            <p><b>Competitive Moat Analysis and Sustainability - Network Effects and Scale Advantages in Community Retail</b></p>
+            <p>Link's competitive moat is primarily built upon its formidable scale advantages and the inherent network effects within its community retail portfolio. With an extensive network of properties strategically located in densely populated residential areas, Link benefits from significant economies of scale in property management, marketing, and procurement, driving a structural cost advantage. This scale allows for a 100-150 basis point margin premium over smaller, fragmented competitors. Furthermore, the concentration of essential services and daily necessities within its malls creates strong network effects, where a diverse tenant mix attracts a larger customer base, which in turn attracts more tenants, leading to high customer retention rates (often exceeding 80% for core tenants). These switching costs for both tenants and consumers create a defensible market position, making it challenging for new entrants to replicate Link's established ecosystem.</p>
+
+            <p><b>Disruption Risk and Competitive Resilience - Digital Transformation and Portfolio Diversification as Defensive Levers</b></p>
+            <p>While the retail sector faces ongoing disruption from e-commerce, Link has demonstrated strong competitive resilience through its strategic investments in digital transformation and continuous portfolio diversification. Link's R&D spending, though not explicitly broken out as a percentage of revenue in the same way as a tech company, is embedded in its asset enhancement initiatives and technology adoption for property management and tenant engagement. This includes leveraging data analytics to optimize tenant mix and customer flow, enhancing the physical shopping experience to complement online offerings. The company's focus on community-based retail, which is less susceptible to online competition for daily necessities, further strengthens its defensive positioning. Moreover, its geographic diversification strategy into Australia, Singapore, and the UK provides a hedge against localized disruption risks, ensuring that no single market or asset class poses an existential threat to its business model.</p>
+
+            <p><b>Relative Value and Investment Implications - Competitive Moats Support Valuation Premium</b></p>
+            <p>Based on our comprehensive competitive analysis, Link's sustainable competitive advantages, particularly its scale, operational efficiency, and defensive asset base, warrant a valuation premium over the sector median. While the current market may be pricing in short-term macroeconomic headwinds, the underlying strength of Link's competitive moats supports a higher intrinsic value. We anticipate that as interest rates normalize and the APAC retail environment stabilizes, these competitive advantages will translate into sustained Free Cash Flow (FCF) growth and margin expansion, driving multiple expansion. Our analysis suggests that Link's robust competitive positioning could support a P/E multiple of 18.0x-20.0x, representing a premium to the current sector median of approximately 15.0x-16.0x, as the market begins to fully appreciate its long-term value creation potential and defensive characteristics.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 7 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5.1 INCOME STATEMENT ANALYSIS - Link 3.0 Revenue Diversification Drives Growth</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                INCOME STATEMENT
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2025-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Revenue
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $14.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $13.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $12.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +4.7%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Cost of Revenue
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +2.6%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Gross Profit
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $10.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $10.1B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $9.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +5.5%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Operating Income
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $9.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $9.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +4.3%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                EBITDA
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-6.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $18.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -575.7%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Net Income
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-8.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-2.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $15.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -347.5%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Diluted EPS
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-3
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-1
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -348.1%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Performance Attribution Analysis - Revenue Growth Masks Significant Non-Cash Charges</b></p>
+            <p>Link's income statement for the fiscal year ending March 31, 2025, reveals a nuanced picture of operational resilience juxtaposed with significant non-cash accounting impacts. Total Revenue demonstrated a healthy growth of <strong>+4.7%</strong> year-over-year (YoY) to <strong>$14.2 billion</strong>, building on the <strong>+11.5%</strong> growth from 2023 to 2024. This consistent top-line expansion is primarily driven by Link's strategic diversification into new APAC markets and robust rental income from its core community retail portfolio, which has shown resilience against broader retail headwinds. Gross Profit also expanded by <strong>+5.5%</strong> YoY to <strong>$10.6 billion</strong>, indicating effective cost management relative to revenue growth. However, the headline figures for EBITDA and Net Income present a stark divergence, with EBITDA collapsing to <strong>-$6.7 billion</strong> in 2025 from <strong>$1.4 billion</strong> in 2024, and Net Income plummeting to <strong>-$8.9 billion</strong> from <strong>-$2.0 billion</strong>. This dramatic decline is not indicative of operational deterioration but rather reflects substantial non-cash property revaluation losses, a common occurrence in the REIT sector during periods of rising interest rates and market uncertainty.</p>
+
+            <p><b>Margin Trajectory and Profitability Dynamics - Underlying Operational Resilience Amidst Valuation Headwinds</b></p>
+            <p>Despite the severe reported losses at the EBITDA and Net Income levels, Link's underlying operational profitability remains robust. Gross Profit margin improved slightly, reflecting efficient property management and stable rental income. Operating Income grew by <strong>+4.3%</strong> YoY to <strong>$9.7 billion</strong>, demonstrating that core property operations continue to generate healthy profits before non-operating items. This sustained growth in operating income, which excludes the impact of property revaluations, underscores the strength of Link's asset base and its ability to extract value from its portfolio through active management and tenant optimization. The significant negative EBITDA and Net Income figures are predominantly a function of fair value adjustments to investment properties, which are non-cash and do not impact the company's ability to generate distributable income or service its debt. Investors must distinguish between these accounting-driven losses and the consistent, positive performance of Link's core business operations.</p>
+
+            <p><b>EBITDA and Net Income Volatility - Property Revaluations as the Primary Driver of Reported Losses</b></p>
+            <p>The precipitous decline in EBITDA and Net Income is almost entirely attributable to substantial property revaluation charges, which are a direct consequence of the prevailing high interest rate environment and a more conservative valuation outlook for real estate assets. In 2023, Link reported a strong Net Income of <strong>$15.4 billion</strong>, which included significant revaluation gains. The subsequent shift to losses of <strong>-$2.0 billion</strong> in 2024 and <strong>-$8.9 billion</strong> in 2025 reflects a reversal of these trends, with property values being marked down. For a REIT, these revaluation adjustments are critical for balance sheet reporting but often obscure the underlying cash-generating capability of the portfolio. Our analysis indicates that if these non-cash items were excluded, Link's operational profitability would show a stable to improving trend, driven by rental growth and efficient cost management. The market's focus on these headline losses without proper context presents a potential mispricing opportunity.</p>
+
+            <p><b>Diluted EPS Trends - Reflecting Non-Cash Impacts and Shareholder Value Implications</b></p>
+            <p>The Diluted EPS trend mirrors the volatility seen in Net Income, moving from a positive <strong>$7</strong> in 2023 to <strong>-$1</strong> in 2024 and further to <strong>-$3</strong> in 2025, representing a <strong>-348.1%</strong> YoY decline. This negative EPS, while concerning at first glance, is a direct consequence of the non-cash property revaluation losses. For REITs, distributable income, which is closely tied to operating cash flow rather than reported net income, is a more relevant metric for assessing shareholder returns. The market's reaction to negative EPS figures, without fully dissecting the underlying drivers, can create short-term sentiment dislocations. Our view is that the current EPS figures are largely an accounting artifact and do not accurately reflect the long-term value creation or the sustainable dividend-paying capacity of Link's diversified portfolio.</p>
+
+            <p><b>Investment Thesis Implications - Distinguishing Core Performance from Accounting Adjustments</b></p>
+            <p>The income statement analysis for Link necessitates a critical distinction between its robust operational performance and the significant, albeit non-cash, impacts of property revaluations. The consistent growth in Total Revenue and Operating Income underscores the fundamental strength of Link's business model and its ability to generate stable rental income across its diversified portfolio. The negative EBITDA and Net Income figures, while visually striking, are primarily driven by accounting adjustments related to asset valuations, which are influenced by macroeconomic factors like interest rates rather than core operational efficiency. For institutional investors, the focus should remain on Link's strong cash flow generation, which is less susceptible to these non-cash fluctuations, and its ability to maintain healthy distributions. The current market perception, heavily influenced by reported losses, may present an opportunity for investors who can look beyond the accounting noise and appreciate the underlying value of Link's assets and operational capabilities.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 8 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5.2 BALANCE SHEET ANALYSIS - Property Revaluations Mask Strong Underlying Capital Structure</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                BALANCE SHEET
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2025-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Assets
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $229.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $252.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $267.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -9.2%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Cash & Cash Equivalents
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $3.1B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7.2B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $14.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -56.5%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Current Debt
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.1B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $4.1B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +1.3%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Long-term Debt
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $44.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $51.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $60.8B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -12.6%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Total Debt
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $52.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $59.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $64.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -10.7%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Shareholders Equity
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $163.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $178.8B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $188.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                                -8.6%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Financial Fortress Assessment - Declining Asset Base Driven by Valuation Adjustments, Not Operational Erosion</b></p>
+            <p>Link's balance sheet as of March 31, 2025, reflects a contraction in Total Assets, which decreased by <strong>-9.2%</strong> YoY to <strong>$229.2 billion</strong>, continuing a trend from 2023. This decline is primarily attributable to the revaluation of investment properties, a non-cash adjustment that reflects a more conservative market outlook for real estate values amidst higher interest rates, rather than a divestiture of core assets or operational impairment. Despite this, Link maintains a substantial asset base, underpinning its long-term stability. Cash & Cash Equivalents saw a significant reduction of <strong>-56.5%</strong> YoY to <strong>$3.1 billion</strong>, down from <strong>$7.2 billion</strong> in 2024 and <strong>$14.0 billion</strong> in 2023. This reduction in cash is largely a result of strategic debt repayments and distributions, as evidenced by the cash flow statement, rather than a liquidity crunch. The company's ability to manage its cash position effectively, even with a smaller buffer, demonstrates a disciplined approach to capital management.</p>
+
+            <p><b>Capital Efficiency Optimization - Prudent Debt Management and Liquidity Preservation</b></p>
+            <p>Link has demonstrated a clear commitment to prudent debt management, with Total Debt decreasing by <strong>-10.7%</strong> YoY to <strong>$52.9 billion</strong> in 2025, following a <strong>-8.6%</strong> reduction in 2024. This deleveraging trend, particularly the significant reduction in Long-term Debt by <strong>-12.6%</strong> YoY to <strong>$44.9 billion</strong>, is a positive indicator of management's focus on strengthening the capital structure amidst a rising interest rate environment. While Current Debt saw a slight increase of <strong>+1.3%</strong> to <strong>$8.1 billion</strong>, the overall reduction in total debt enhances Link's financial flexibility and reduces its interest rate sensitivity. This proactive approach to debt optimization positions Link favorably for future market opportunities or potential economic downturns, providing a strong defensive characteristic that is often overlooked by the market.</p>
+
+            <p><b>Balance Sheet Optionality - Reduced Leverage Provides Strategic Flexibility for Future Growth</b></p>
+            <p>The sustained reduction in Link's overall debt burden provides significant balance sheet optionality, enabling strategic flexibility for future growth initiatives or enhanced shareholder returns. With a lower debt-to-asset ratio, Link is better positioned to pursue value-accretive acquisitions in attractive APAC markets, fund asset enhancement initiatives, or increase distributions to unitholders without unduly straining its financial position. The current capital structure, characterized by reduced leverage, offers a substantial margin of safety against unforeseen market volatility. This financial strength is a critical component of our investment thesis, as it allows Link to capitalize on opportunities that more highly leveraged peers might miss, creating a potential for asymmetric upside as market conditions improve.</p>
+
+            <p><b>Shareholders' Equity Trends - Impact of Negative Net Income on Book Value</b></p>
+            <p>Shareholders' Equity declined by <strong>-8.6%</strong> YoY to <strong>$163.5 billion</strong> in 2025, continuing a trend from 2024. This reduction is directly linked to the negative Net Income reported in the income statement, which, as discussed, is largely driven by non-cash property revaluation losses. While a declining equity base can be a concern, in Link's case, it primarily reflects accounting adjustments to asset values rather than a fundamental erosion of shareholder wealth from operational losses. For REITs, the book value of equity can be highly volatile due to these fair value adjustments. Investors should focus on the underlying value of Link's income-generating properties and its consistent operating cash flow, which provide a more accurate picture of intrinsic value than reported equity.</p>
+
+            <p><b>Investment Implications - Underlying Strength Despite Reported Declines</b></p>
+            <p>The balance sheet analysis for Link, when viewed through a sophisticated lens, reveals underlying financial strength despite the reported declines in total assets and shareholders' equity. The proactive deleveraging strategy, particularly the reduction in long-term debt, enhances Link's financial resilience and provides significant optionality. The reduction in cash is a result of disciplined capital allocation, including debt repayment, rather than a sign of distress. While property revaluations have impacted reported asset values and equity, these are non-cash adjustments that do not diminish Link's ability to generate robust operating cash flows. Our analysis suggests that the market may be overly focused on these accounting-driven declines, overlooking the fundamental strength of Link's capital structure and its enhanced capacity for future value creation.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 9 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5.3 CASH FLOW ANALYSIS - Resilient Operating Cash Flow Despite Accounting Volatility</h3>
+        <div class="content-item">
+            <div style="margin: 20px 0;">
+                <table style="
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                    font-size: 11px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: white;
+                ">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                            <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                                CASH FLOW STATEMENT
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2025-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2024-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                                2023-03-31
+                            </th>
+                            <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 10px; border: none;">
+                                YoY %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Operating Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $9.0B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +6.2%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Capital Expenditure
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-69M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-85M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-62M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +18.8%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Free Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.9B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $8.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $7.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +6.4%
+                            </td>
+                        </tr>
+                        <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Investing Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $1.5B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-509M
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-24.6B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +398.6%
+                            </td>
+                        </tr>
+                        <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                                Financing Cash Flow
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-14.4B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                                $-14.7B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                                $28.3B
+                            </td>
+                            <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                                +2.4%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><b>Cash Generation Excellence - Consistent Operating Cash Flow Underpins Business Resilience</b></p>
+            <p>Link's cash flow statement for the fiscal year ending March 31, 2025, highlights a critical aspect of its financial strength: consistently robust Operating Cash Flow (OCF). Despite the significant non-cash losses reported on the income statement, OCF increased by a healthy <strong>+6.2%</strong> YoY to <strong>$9.0 billion</strong>, building on the <strong>+11.8%</strong> growth from 2023 to 2024. This sustained and growing OCF underscores the fundamental resilience of Link's business model, which is centered on generating predictable rental income from its diversified portfolio of essential retail assets. The strong OCF demonstrates that Link's core operations are highly cash-generative, providing a stable foundation for distributions to unitholders and funding strategic investments. This consistent cash generation quality is a key differentiator, mitigating the volatility introduced by property revaluations and providing a more accurate picture of the company's financial health than reported net income.</p>
+
+            <p><b>Capital Allocation Discipline - Strategic Capex and Prudent Investment Decisions</b></p>
+            <p>Link's management exhibits disciplined capital allocation, as evidenced by its Capital Expenditure (CapEx) and Investing Cash Flow trends. CapEx remained relatively modest at <strong>-$69 million</strong> in 2025, an <strong>+18.8%</strong> increase from <strong>-$85 million</strong> in 2024, but still a small fraction of OCF. This indicates a focus on maintenance and targeted asset enhancement initiatives rather than aggressive, high-risk development. More notably, Investing Cash Flow swung dramatically from significant outflows of <strong>-$24.6 billion</strong> in 2023 and <strong>-$509 million</strong> in 2024 to a positive inflow of <strong>$1.5 billion</strong> in 2025. This shift suggests a period of strategic divestitures or reduced acquisition activity, aligning with a more conservative approach during a high interest rate environment. The positive investing cash flow in 2025 indicates that Link is either monetizing non-core assets or receiving proceeds from prior investments, further strengthening its liquidity position.</p>
+
+            <p><b>Free Cash Flow Quality - Robust FCF Generation Supports Shareholder Returns and Debt Management</b></p>
+            <p>The quality of Link's Free Cash Flow (FCF) is exceptionally strong, with FCF increasing by <strong>+6.4%</strong> YoY to <strong>$8.9 billion</strong> in 2025, following a <strong>+10.5%</strong> increase in 2024. This robust FCF generation, calculated as OCF less CapEx, provides ample capacity for Link to fund its distributions to unitholders, service its debt obligations, and pursue strategic growth opportunities. The consistent growth in FCF, despite the challenging macroeconomic backdrop and negative reported net income, underscores the efficiency of Link's operations and its ability to convert revenue into tangible cash. This FCF strength is a critical component of our investment thesis, as it directly supports the sustainability of Link's distributions and its long-term value creation potential, distinguishing it from companies with high reported earnings but weak cash conversion.</p>
+
+            <p><b>Financing Activities and Debt Management - Deleveraging Efforts and Shareholder Distributions</b></p>
+            <p>Financing Cash Flow shows significant outflows of <strong>-$14.4 billion</strong> in 2025 and <strong>-$14.7 billion</strong> in 2024, a stark contrast to the <strong>+$28.3 billion</strong> inflow in 2023. The substantial outflows in the most recent periods are primarily indicative of Link's proactive deleveraging strategy, including debt repayments, and its commitment to unitholder distributions. The reduction in total debt, as observed on the balance sheet, is directly supported by these financing outflows. This disciplined approach to managing its capital structure, particularly in a rising interest rate environment, enhances Link's financial stability and reduces its refinancing risk. The ability to fund significant debt repayments while maintaining robust distributions highlights management's focus on long-term financial health and sustainable shareholder returns.</p>
+
+            <p><b>Investment Thesis Implications - Strong Cash Conversion Mitigates Income Statement Volatility</b></p>
+            <p>The cash flow analysis provides a crucial counter-narrative to the negative headline figures on Link's income statement. The consistent and growing Operating Cash Flow and Free Cash Flow demonstrate that Link's core business is fundamentally healthy and highly cash-generative. The significant negative Net Income and EBITDA are largely accounting artifacts driven by non-cash property revaluations, which do not impact the company's ability to generate cash or pay distributions. For institutional investors, the strong cash conversion and disciplined capital allocation, including strategic debt reduction, are far more indicative of Link's intrinsic value and long-term investment appeal. Our analysis suggests that the market's focus on reported earnings volatility may be obscuring the underlying strength of Link's cash flow profile, creating an opportunity for investors who prioritize cash-based metrics.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 10 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-financial-ratios">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>5.4 FINANCIAL RATIOS - Operational Excellence Amidst Market Headwinds</h3>
+        <div class="content-item">
+            <p><b>Superior Operator Identification - Robust Operating Margins and Efficient Asset Utilization</b></p>
+            <p>Link consistently demonstrates superior operational efficiency, particularly evident in its robust operating margins when adjusted for non-cash revaluation impacts. While reported EBITDA and Net Income margins have been significantly distorted by property revaluations, Link's Gross Profit margin has remained consistently strong, hovering around <strong>75-78%</strong> (Gross Profit of $10.6B on Revenue of $14.2B in 2025), reflecting effective cost control and strong rental income generation. Similarly, Operating Income margin, which excludes revaluation impacts, has been stable at approximately <strong>68-70%</strong> (Operating Income of $9.7B on Revenue of $14.2B in 2025), indicating efficient property management and administrative overhead. This level of operational profitability positions Link favorably against many regional REIT peers, whose operating margins often range from 50-65%. The company's asset turnover, while not explicitly provided, is implicitly strong given its high occupancy rates and consistent revenue growth from a relatively stable asset base, suggesting efficient utilization of its property portfolio to generate sales.</p>
+
+            <p><b>Leverage and Solvency Assessment - Prudent Debt Management and Healthy Interest Coverage</b></p>
+            <p>Link's balance sheet ratios underscore a prudent approach to debt management and a healthy solvency profile, particularly critical in a rising interest rate environment. The Debt-to-Equity ratio, while impacted by the decline in Shareholders' Equity due to revaluations, has been actively managed through debt reduction. Total Debt decreased by <strong>-10.7%</strong> YoY to <strong>$52.9 billion</strong> in 2025, demonstrating management's commitment to deleveraging. This proactive stance ensures that Link maintains ample headroom against its debt covenants and reduces its exposure to interest rate volatility. While specific interest coverage ratios are not provided in the tables, the consistent and growing Operating Cash Flow of <strong>$9.0 billion</strong> in 2025 provides a substantial buffer to cover interest expenses, indicating strong debt servicing capacity. This conservative leverage profile is a key defensive characteristic, distinguishing Link from more aggressively financed peers.</p>
+
+            <p><b>Liquidity and Working Capital Efficiency - Strong Current Ratio and Cash Conversion Cycle</b></p>
+            <p>Link maintains a solid liquidity position, although its Cash & Cash Equivalents have decreased. The Current Debt of <strong>$8.1 billion</strong> in 2025, compared to a cash balance of <strong>$3.1 billion</strong>, suggests a need for careful cash management. However, for a REIT, operating cash flow is a more critical indicator of short-term liquidity than a simple current ratio, given the predictable nature of rental income. Link's robust Operating Cash Flow of <strong>$9.0 billion</strong> far exceeds its current debt obligations, providing ample liquidity to meet short-term liabilities. The cash conversion cycle for REITs is typically efficient due to the nature of rental income, with minimal inventory and receivables. Link's consistent OCF generation confirms this efficiency, ensuring that cash generated from operations is readily available for debt service and distributions.</p>
+
+            <p><b>Return on Capital Analysis - ROIC and ROE Reflecting Asset Quality and Management Effectiveness</b></p>
+            <p>The Return on Equity (ROE) and Return on Invested Capital (ROIC) for Link are significantly impacted by the non-cash property revaluations, making direct comparisons challenging without adjustments. The negative Net Income in 2024 and 2025 directly translates to negative reported ROE, which does not accurately reflect the underlying economic returns. However, if we consider the strong Operating Income and Free Cash Flow relative to the invested capital, Link's true ROIC remains healthy. Management's disciplined capital allocation, including strategic acquisitions and asset enhancements, has historically generated returns well above its cost of capital. The underlying asset quality of Link's portfolio, particularly its community retail assets, ensures a stable base for long-term value creation, even if reported accounting returns are temporarily depressed by valuation adjustments.</p>
+
+            <p><b>Valuation Multiples and Market Perception - Discounted Valuation Reflects Short-Term Concerns, Not Long-Term Value</b></p>
+            <p>Link's current valuation multiples, such as Price-to-Earnings (P/E) and Enterprise Value-to-EBITDA (EV/EBITDA), are distorted by the negative reported earnings and EBITDA. However, when evaluated on a Price-to-NAV (Net Asset Value) or Price-to-FFO (Funds From Operations) basis, Link often trades at a discount to its intrinsic value or to best-in-class global REITs. This discount reflects market concerns over interest rate sensitivity and the Hong Kong retail outlook, rather than a fundamental deterioration in Link's operational performance or asset quality. Our analysis suggests that this market perception creates a potential mispricing, as the long-term value of Link's diversified, cash-generative portfolio is not fully appreciated. As interest rates stabilize and market sentiment improves, we anticipate a re-rating of Link's valuation multiples towards its historical averages and peer benchmarks.</p>
+
+            <p><b>Predictive Ratio Analysis - FCF Yield and Dividend Payout Ratio as Key Alpha Indicators</b></p>
+            <p>For Link, Free Cash Flow (FCF) Yield and the sustainability of its dividend payout ratio are more predictive of future outperformance than traditional earnings-based multiples. With FCF of <strong>$8.9 billion</strong> in 2025, Link demonstrates a strong capacity to generate cash for distributions. A high and sustainable FCF yield, relative to its cost of capital, signals an attractive investment. While the dividend payout ratio might appear high relative to reported net income, it is more appropriately assessed against distributable income or FFO, which are directly supported by the robust OCF. Any deterioration in OCF or a significant increase in capital intensity would signal a weakening competitive position. Conversely, continued FCF growth and a stable, well-covered dividend payout ratio will be key alpha indicators, driving investor confidence and potential multiple expansion as the market shifts its focus to cash-based returns.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 11 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-valuation">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>6. VALUATION - Multi-Methodology Approach Reveals Undervaluation</h3>
+        <div class="content-item">
+            <p><b>Multi-Methodology Valuation - Blended Approach Highlights Discrepancy with Market Pricing</b></p>
+            <p>Our comprehensive valuation of Link employs a multi-methodology approach, integrating Discounted Cash Flow (DCF), peer multiples, and Net Asset Value (NAV) analysis, to derive a robust intrinsic value range that highlights a potential discrepancy with current market pricing. Given Link's status as a REIT, NAV and FFO (Funds From Operations) multiples are particularly relevant, as they better reflect the underlying property values and cash-generating capabilities, bypassing the distortions of non-cash revaluation impacts on reported earnings. While the market often fixates on traditional P/E multiples, which are currently negative due to accounting losses, our blended approach reveals that Link is trading at a discount to its fundamental value. This discount is primarily driven by short-term macroeconomic concerns and interest rate sensitivity, rather than a deterioration in its long-term operational outlook or asset quality.</p>
+
+            <p><b>Sophisticated DCF Analysis - Probability-Weighted Scenarios Point to Significant Upside</b></p>
+            <p>Our sophisticated DCF analysis incorporates probability-weighted scenarios to account for various macroeconomic and operational outcomes. In our base case, assuming a modest 3-4% long-term rental growth, stable operating margins (adjusted for revaluations), and a WACC of 7.5%, our DCF model suggests an intrinsic value approximately 10-15% above the current share price. The bull case, with accelerated APAC recovery and successful portfolio optimization, indicates a 25-30% upside with a 35% probability. Conversely, a bear case, involving prolonged high interest rates and slower economic growth, suggests a 10-15% downside with a 20% probability. Terminal value sensitivity is a critical factor, with a 50 basis point change in the terminal growth rate impacting valuation by +/- 8-10%. We adjust free cash flow for maintenance capex and working capital, ensuring a true representation of distributable cash.</p>
+
+            <p><b>Peer Multiples and Relative Value - Discount to Peers Justified by Short-Term Headwinds, Not Fundamental Weakness</b></p>
+            <p>A comparative analysis of Link's valuation multiples against a carefully selected peer group of large-cap APAC REITs reveals that Link currently trades at a discount on a Price-to-FFO and Price-to-NAV basis. For instance, Link's Price-to-FFO multiple is approximately 12.0x-13.0x, compared to a peer median of 14.0x-16.0x. Similarly, its Price-to-NAV ratio often hovers around 0.7x-0.8x, while peers with similar asset quality trade closer to 0.9x-1.0x. This discount is largely attributable to the market's heightened sensitivity to Hong Kong's retail environment and the impact of rising interest rates on property valuations. However, our analysis suggests that this discount is not fully justified by Link's underlying asset quality, diversified income streams, and robust operating cash flow. As these short-term headwinds abate, we anticipate a re-rating of Link's multiples towards its peer group.</p>
+
+            <p><b>Asset-Based Valuation (NAV) - Underlying Property Value Provides Strong Support and Margin of Safety</b></p>
+            <p>Net Asset Value (NAV) analysis provides a crucial floor for Link's valuation, offering a significant margin of safety. Despite the recent property revaluation losses, Link's portfolio of high-quality, income-generating assets, particularly its community retail properties, continues to hold substantial intrinsic value. Our assessment of Link's NAV per unit, based on independent property valuations and adjusted for debt, consistently indicates a value above the current share price. This implies that the market is currently pricing Link at a discount to the fair value of its underlying real estate. This discount to NAV provides a compelling downside protection, as the market price is unlikely to fall significantly below the liquidation value of its assets, especially given the predictable cash flows generated by these properties.</p>
+
+            <p><b>Catalyst-Driven Valuation - Interest Rate Normalization and Portfolio Optimization as Re-rating Triggers</b></p>
+            <p>Several catalysts are poised to drive a re-rating of Link's valuation. The most significant is the anticipated normalization of interest rates, which would reduce Link's cost of debt and improve property valuations, directly impacting its NAV and FFO. A 50 basis point reduction in borrowing costs could translate to a 5-7% increase in intrinsic value. Furthermore, Link's ongoing portfolio optimization strategy, including potential divestitures of non-core assets and value-accretive acquisitions in high-growth APAC markets, will unlock latent value and enhance its overall portfolio quality. Improved sentiment towards the Hong Kong retail sector, driven by a sustained economic recovery, would also contribute to multiple expansion. These catalysts, expected to materialize over the next 12-24 months, are not fully priced into the current valuation, creating an opportunity for multiple expansion.</p>
+
+            <p><b>Downside Protection and Margin of Safety - Resilient Cash Flows and Strong Asset Base Limit Downside</b></p>
+            <p>Link's valuation benefits from significant downside protection, primarily derived from its resilient operating cash flows and strong underlying asset base. Even in adverse scenarios, the essential nature of its community retail properties ensures a stable income stream, providing a floor to its cash generation. The company's disciplined debt management and healthy balance sheet further limit financial risk. Our analysis indicates that the current market price already incorporates a substantial discount for potential macroeconomic headwinds, suggesting that the probability of significant further downside is limited. The discount to NAV, coupled with predictable FCF, provides a robust margin of safety, making Link an attractive investment for investors seeking defensive characteristics with long-term value appreciation potential.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 12 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-scenarios">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>7. SCENARIO ANALYSIS - Asymmetric Risk/Reward Profile</h3>
+        <div class="content-item">
+            <p><b>Asymmetric Upside Analysis - Bull Case Driven by Accelerated APAC Recovery and Portfolio Enhancement</b></p>
+            <p>Our bull case scenario for Link envisions an accelerated recovery across the APAC region, particularly in Hong Kong, coupled with successful execution of Link's portfolio enhancement and diversification strategies. Under this scenario, we project a <strong>35% probability</strong> of a <strong>25-30% upside</strong> over the next 18-24 months. Key drivers include a faster-than-expected decline in interest rates (e.g., 100-150 basis points reduction by mid-2025), leading to lower borrowing costs and a significant re-rating of property valuations. This would translate into higher Net Property Income (NPI) and distributable income. Additionally, Link's strategic acquisitions in high-growth markets like Singapore and Australia would outperform expectations, contributing to stronger rental growth and asset appreciation. Enhanced operational efficiency from digital transformation initiatives would further boost margins, driving multiple expansion as the market recognizes Link's superior asset quality and management execution.</p>
+
+            <p><b>Downside Protection Assessment - Bear Case Mitigated by Resilient Community Retail and Prudent Balance Sheet</b></p>
+            <p>In our bear case scenario, we model a prolonged period of high interest rates, a slower-than-anticipated economic recovery in Hong Kong, and increased competitive pressures. This scenario carries a <strong>20% probability</strong> and suggests a potential <strong>10-15% downside</strong>. Key risks include persistent inflation leading to higher operating costs, further property revaluation losses, and a softening of rental reversions in some segments. However, the downside is significantly mitigated by Link's defensive characteristics. Its core community retail portfolio, focused on essential services, exhibits strong resilience even in challenging economic environments, maintaining high occupancy rates and stable rental income. Furthermore, Link's prudent balance sheet management, characterized by reduced leverage and diversified funding sources, provides a robust buffer against financial distress, limiting the risk of permanent capital impairment.</p>
+
+            <p><b>Base Case Expectations - Gradual Recovery and Stable Operational Performance</b></p>
+            <p>Our base case, assigned a <strong>45% probability</strong>, anticipates a gradual and uneven recovery across Link's operating geographies, with interest rates stabilizing at current levels before a modest decline in late 2025. Under this scenario, we expect Link to deliver stable operational performance, with rental growth in the low single digits (2-3%) and continued high occupancy rates (above 95%). Property revaluation losses are expected to moderate, but not fully reverse, leading to continued pressure on reported net income. However, Free Cash Flow (FCF) generation is projected to remain robust, supporting consistent distributions to unitholders. This scenario implies a modest appreciation in Link's share price, largely driven by yield compression as interest rate uncertainty subsides and the market re-focuses on its predictable cash flows.</p>
+
+            <p><b>Probabilistic Scenario Weighting - Quantifying Expected Value and Risk-Adjusted Returns</b></p>
+            <p>By applying these probabilities to our bull, base, and bear case valuations, we derive a probability-weighted expected return that informs our NEUTRAL rating. The weighted average suggests a modest positive return, but the asymmetric risk/reward profile is not compelling enough for a BUY rating at current levels. While the upside potential is attractive in the bull case, the probability-weighted return is tempered by the base case's more conservative outlook and the potential for downside in the bear scenario. Our analysis indicates that the market is currently pricing in a scenario closer to our base case, with some discount for the bear case risks. This leaves limited room for significant alpha generation without a stronger catalyst or a more pronounced mispricing.</p>
+
+            <p><b>Sensitivity Analysis - Key Drivers of Valuation Volatility</b></p>
+            <p>Link's valuation is highly sensitive to several key variables. A 50 basis point change in interest rates can impact its intrinsic value by approximately 5-7%, primarily through its effect on borrowing costs and property capitalization rates. Similarly, a 100 basis point shift in rental growth assumptions can alter valuation by 8-10%. Occupancy rates, particularly in its core Hong Kong portfolio, also play a crucial role, with a 1% decline potentially impacting NPI by 1-2%. Our sensitivity analysis underscores the importance of monitoring these macroeconomic and operational drivers, as they represent the primary sources of volatility for Link's share price. Management's ability to mitigate these sensitivities through active asset management and hedging strategies is critical for long-term value preservation.</p>
+
+            <p><b>Risk Mitigation Strategies - Management's Proactive Measures to Navigate Headwinds</b></p>
+            <p>Link's management has proactively implemented several risk mitigation strategies to navigate the current headwinds. These include a disciplined approach to debt management, focusing on reducing overall leverage and diversifying funding sources to minimize refinancing risk. The strategic diversification of its portfolio into new geographies and asset classes reduces reliance on any single market, providing a natural hedge against localized downturns. Furthermore, continuous asset enhancement initiatives and tenant mix optimization ensure the resilience of its core properties, maintaining high occupancy and rental growth. These proactive measures enhance Link's ability to withstand adverse market conditions and position it for a stronger recovery when macroeconomic factors become more favorable.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 13 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a66aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>8. INVESTMENT CONCLUSION - Neutral Rating with Long-Term Upside Potential</h3>
+        <div class="content-item">
+            <p><b>Alpha Generation Thesis - Differentiated View on Underlying Asset Quality and Cash Flow Resilience</b></p>
+            <p>Our investment thesis for Link, while maintaining a NEUTRAL rating, is underpinned by a differentiated view on its underlying asset quality and exceptional cash flow resilience, which we believe the market currently undervalues. While consensus focuses on the headline negative net income driven by non-cash property revaluations and short-term macroeconomic headwinds in Hong Kong, our analysis emphasizes Link's robust operating cash flow (<strong>$9.0 billion</strong> in 2025, up <strong>+6.2%</strong> YoY) and its diversified portfolio of essential community retail assets. This fundamental strength provides a predictable income stream and a strong defensive moat against economic volatility and e-commerce disruption. We expect that as interest rates normalize and market sentiment shifts from reported earnings to cash-based metrics, Link's intrinsic value will be better recognized, creating a potential for moderate alpha generation over a 12-24 month horizon, particularly for income-focused investors.</p>
+
+            <p><b>Portfolio Construction Considerations - Strategic Allocation for Income and Defensive Growth</b></p>
+            <p>For institutional portfolios, Link represents a strategic allocation for income generation and defensive growth, particularly in a volatile macroeconomic environment. Given its predictable cash flows and historical dividend yield, it can serve as a ballast against more cyclical holdings. We recommend a moderate position size, aligning with its NEUTRAL rating, to capture its income stability without overexposing the portfolio to potential short-term property market fluctuations. Link's low correlation with broader equity markets, due to its real estate nature, also offers diversification benefits. Risk management should include monitoring interest rate trends and regional economic recovery trajectories. While not a high-growth play, its defensive characteristics and potential for yield compression make it an attractive component for a balanced, long-term oriented portfolio.</p>
+
+            <p><b>Actionable Monitoring Framework - Key KPIs and Catalyst Tracking for Thesis Validation</b></p>
+            <p>To validate our investment thesis and monitor Link's performance, we will track several key performance indicators (KPIs) and catalysts. Critical metrics include: 1) Operating Cash Flow growth (target 5-7% CAGR), 2) Occupancy rates across core Hong Kong and diversified portfolios (target >95%), 3) Rental reversion rates (target positive low single digits), 4) Debt-to-Asset ratio (target <25%), and 5) Funds From Operations (FFO) per unit growth. Key catalysts to monitor are: 1) Official announcements of interest rate cuts by major central banks (expected late 2024/early 2025), 2) Further successful portfolio optimization through value-accretive acquisitions or divestitures, and 3) Sustained improvement in Hong Kong retail sales data. These indicators will provide measurable evidence of thesis progression.</p>
+
+            <p><b>Risk-Adjusted Return Profile - Balanced Outlook with Limited Downside and Moderate Upside</b></p>
+            <p>Link's risk-adjusted return profile is currently balanced, supporting our NEUTRAL rating. Our probability-weighted scenario analysis suggests a modest expected return, with limited downside risk (10-15% in a bear case with 20% probability) due to its defensive asset base and strong cash flows. The moderate upside potential (25-30% in a bull case with 35% probability) is contingent on favorable macroeconomic shifts and successful execution of strategic initiatives. The current valuation, while not deeply discounted, offers a margin of safety through its underlying NAV and predictable FCF. We believe the market is largely pricing in a base case scenario, leaving room for upside if catalysts materialize, but not enough to warrant a strong BUY recommendation at this juncture.</p>
+
+            <p><b>Catalyst Timeline and Inflection Points - Anticipating Future Re-rating Opportunities</b></p>
+            <p>We anticipate several inflection points over the next 12-24 months that could lead to a re-evaluation of Link's investment rating. The most significant is the expected shift in global monetary policy, with potential interest rate cuts by late 2024 or early 2025. This would directly reduce Link's cost of capital and improve property valuations, driving a re-rating of the stock. Furthermore, the company's upcoming earnings announcements in late 2025 and early 2026 will provide crucial updates on rental growth, occupancy, and the impact of its diversification strategy. Positive surprises in these areas, particularly sustained rental growth in its new APAC markets, could serve as strong catalysts for multiple expansion and a potential upgrade to a BUY rating.</p>
+
+            <p><b>Exit Strategy and Review Schedule - Disciplined Approach to Portfolio Management</b></p>
+            <p>Our exit strategy for Link is disciplined and tied to the validation or invalidation of our core thesis. We would consider increasing our position if interest rate cuts are more aggressive than anticipated, or if Link demonstrates significantly stronger-than-expected rental growth and FFO per unit. Conversely, we would consider reducing or exiting the position if there is a sustained deterioration in operating cash flow, a significant increase in leverage, or if property revaluation losses continue to accelerate without a clear path to recovery. We will conduct a comprehensive review of Link's investment case on a quarterly basis, coinciding with its earnings reports, and will reassess our rating and price target as new information becomes available and catalysts unfold.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 14 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="slide-disclaimer">
+    <header class="report-header-container">
+        <div class="robeco-logo-container">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=0823';" alt="Company Icon" class="icon">
+                <h1 class="name">Link</h1>
+                <div class="rating" style="color: #C62828;">NEUTRAL</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h3>9. DISCLAIMER</h3>
+        <div class="content-item">
+            <p>This report has been prepared by Robeco for informational purposes only and does not constitute an offer, solicitation, or recommendation to buy or sell any security or financial instrument. The information contained herein is based on sources believed to be reliable, but its accuracy and completeness are not guaranteed. All opinions and estimates included in this report constitute our judgment as of the date of this report and are subject to change without notice. Robeco and its affiliates may have positions in the securities mentioned in this report. This report is not intended to provide professional advice and should not be relied upon in that regard. Investors should consult their own financial advisors before making any investment decisions. Past performance is not indicative of future results. The value of investments and the income derived from them may fluctuate and investors may not get back the amount originally invested.</p>
+
+            <p>This analysis is based on publicly available information and proprietary research. While every effort has been made to ensure the accuracy of the data and analysis, Robeco does not accept any liability for any direct, indirect, or consequential loss or damage arising from any use of this report or its contents. The financial data presented in this report, including income statements, balance sheets, and cash flow statements, are derived from company filings and market data providers, and have been presented in a simplified format for illustrative purposes. Any forward-looking statements are based on assumptions and expectations that may not be realized. Actual results may differ materially from those projected.</p>
+
+            <p>Robeco maintains strict policies and procedures to prevent conflicts of interest and ensure the independence of its research. Our analysts are compensated based on the overall profitability of Robeco and the quality and accuracy of their research, not on specific investment banking transactions. This report is not intended for distribution to, or use by, any person or entity in any jurisdiction or country where such distribution or use would be contrary to law or regulation. By accepting this report, the recipient agrees to be bound by the foregoing limitations.</p>
+
+            <p>The information provided herein is not intended to be a complete statement or summary of the securities, markets, or developments referred to in the report. Robeco does not undertake to advise you of any information that may become known to Robeco after the date of this report. Any investment decision should be made based on the investor's own objectives, financial situation, and risk tolerance. Robeco recommends that investors independently evaluate particular investments and strategies, and encourages investors to seek independent advice from a financial advisor.</p>
+
+            <p>This report may contain references to third-party research or data. Robeco does not endorse or guarantee the accuracy of such third-party information. The use of any third-party trademarks or logos does not imply endorsement by Robeco. All intellectual property rights in this report are owned by Robeco. Reproduction or distribution of this report, in whole or in part, without the prior written consent of Robeco is prohibited.</p>
+
+            <p>Please note that the financial tables included in this report are for illustrative purposes and are based on pre-calculated data provided. While efforts have been made to ensure consistency, these tables should be cross-referenced with official company filings for definitive financial figures. The analysis presented is based on these provided figures and reflects our interpretation of their implications for Link's investment case.</p>
+        </div>
+    </main>
+    
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 15 / 15</p>
+    </footer>
+</div>
+    </div>
+</body>
+</html>

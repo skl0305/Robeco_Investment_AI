@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+    <div id="stock-price-line-chart" style="width: 500px; height: 300px; border: 1px solid black;"></div>
+    
+    <script>
+        // Test the exact same data and code from the HTML
+        const stockData = [{'date': '2020-10-01', 'close': 0.91, 'high': 1.05, 'low': 0.88}, {'date': '2020-11-01', 'close': 1.02, 'high': 1.07, 'low': 0.88}, {'date': '2020-12-01', 'close': 1.09, 'high': 1.11, 'low': 1.0}, {'date': '2021-01-01', 'close': 1.09, 'high': 1.19, 'low': 1.04}, {'date': '2021-02-01', 'close': 1.04, 'high': 1.11, 'low': 1.02}];
+        
+        console.log('D3 available:', typeof d3 !== 'undefined');
+        console.log('Stock data:', stockData);
+        
+        if (typeof d3 === 'undefined') {
+            document.getElementById('stock-price-line-chart').innerHTML = '<p>D3.js library not loaded</p>';
+        } else {
+            try {
+                const margin = {top: 20, right: 30, bottom: 30, left: 40},
+                    width = 500 - margin.left - margin.right,
+                    height = 250 - margin.top - margin.bottom;
+
+                const svg = d3.select("#stock-price-line-chart")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                const parseDate = d3.timeParse("%Y-%m-%d");
+                stockData.forEach(d => {
+                    d.date = parseDate(d.date);
+                    d.close = +d.close;
+                });
+
+                const x = d3.scaleTime()
+                    .domain(d3.extent(stockData, d => d.date))
+                    .range([0, width]);
+
+                const y = d3.scaleLinear()
+                    .domain([0.8, 1.2])
+                    .range([height, 0]);
+
+                svg.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x));
+
+                svg.append("g")
+                    .call(d3.axisLeft(y));
+
+                const line = d3.line()
+                    .x(d => x(d.date))
+                    .y(d => y(d.close));
+
+                svg.append("path")
+                    .datum(stockData)
+                    .attr("fill", "none")
+                    .attr("stroke", "#005F90")
+                    .attr("stroke-width", 2)
+                    .attr("d", line);
+                    
+                console.log('Chart rendered successfully');
+                
+            } catch (error) {
+                console.error('Chart rendering error:', error);
+                document.getElementById('stock-price-line-chart').innerHTML = '<p>Chart rendering failed: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
