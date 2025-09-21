@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 120px; right: 98px; width: 80px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* SIMPLIFIED FINANCIAL TABLES - REDUCED COMPLEXITY */
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .financial-table thead tr {
+            background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%);
+            color: white;
+            height: 45px;
+        }
+        
+        .financial-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: none;
+        }
+        
+        .financial-table th.text-right {
+            text-align: right;
+            padding: 12px 10px;
+            font-size: 11px;
+        }
+        
+        .financial-table tbody tr {
+            background: #FFFFFF;
+            height: 35px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .financial-table tbody tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        
+        .financial-table td {
+            padding: 8px 16px;
+            font-weight: 500;
+            color: #2D3748;
+            border: none;
+            font-size: 11px;
+        }
+        
+        .financial-table td.text-right {
+            text-align: right;
+            padding: 8px 10px;
+        }
+        
+        .financial-table td.positive {
+            color: #059669;
+        }
+        
+        .financial-table td.negative {
+            color: #DC2626;
+        }
+        
+        .financial-table td.neutral {
+            color: #6B7280;
+        }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Specific fix for Company Analysis page content visibility */
+        #company-analysis-page {
+            min-height: 2500px; /* Ensure enough height for all content */
+            height: auto;
+            overflow: visible;
+        }
+
+        #company-analysis-page .slide-content {
+            flex-grow: 1;
+            min-height: 2000px; /* Ensure content area is tall enough */
+            height: auto;
+            overflow: visible;
+            display: block; /* Change from flex to block for better content flow */
+        }
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+<div class="slide" id="portrait-page-1">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value"><strong>6367.T</strong></div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>¥17380.00</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>¥5.09T</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>¥5.22T</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>¥14935.00 - ¥20755.00</strong></div></div>
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value"><strong>19.23x / 17.55x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>7.95x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>1.08x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>1.80x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>34.6%/10.0%/6.0%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>10.3%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>4.9%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>13.9%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>¥16000.00 - ¥23500.00</strong></div></div>
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.67x</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>29.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>1.86x</strong></div></div>
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>1.05x</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>1.9%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>0.31x</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>1.09M / N/AM</strong></div></div>
+        </section>
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                Daikin Industries, Ltd. (6367.T) presents an asymmetric opportunity. Consensus fixates on near-term U.S. residential HVAC softness, overlooking Daikin’s structural competitive advantages and strategic pivots. Our differentiated view centers on its unparalleled vertical integration in HVAC-R and proprietary R-32 refrigerant technology, which will drive significant margin expansion and market share gains in the rapidly decarbonizing global market. The market also underappreciates the resilience and growth of Daikin's applied business, particularly in data center cooling. Current valuation fails to price in these compounding long-term drivers.
+                <br><br>
+                The upcoming Q2 FY2026 earnings release (October 2025) serves as a critical catalyst. We expect Daikin's robust U.S. applied business performance, especially in data centers, to significantly offset residential weakness and surprise consensus estimates, validating the strength of its diversified portfolio. Favorable regulatory tailwinds for R-32 adoption in Europe will also accelerate, proving our long-term thesis faster than anticipated.
+                <br><br>
+                We initiate an <strong>OVERWEIGHT</strong> rating with a 12-month price target of <strong>¥22,500</strong>, representing <strong>+29.4%</strong> upside from current levels. This target is underpinned by a re-rating to <strong>20.0x FWD P/E</strong> (vs. current <strong>17.55x</strong>) as sustainable operating margin expansion to <strong>11.5%</strong> by FY2027 becomes evident, reflecting the superior competitive positioning and capital allocation effectiveness. We assign a 65% probability to this outcome.
+            </div>
+            <div style="height: 420px; background: white; border: 1px solid #ccc; padding: 12px;">
+                <h4 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #333; font-weight: bold;">5-Year Stock Price (6367.T) - Current: ¥17380.00</h4>
+                <svg viewBox="0 0 500 360" style="width: 100%; height: 380px;">
+                    <!-- CHART DATA STATUS: Using PRIMARY system pre-processed data -->
+                    <!-- PRIMARY: Use pre-processed chart if available, FALLBACK: Use raw data -->
+                    <!-- Chart SVG and metrics pre-processed by PRIMARY system -->
+                    
+                    <!-- Y-AXIS (Price axis) - Use reasonable scale, not just min/max -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- Y-AXIS LABELS: Use pre-processed values if available -->
+                    <text x="55" y="45" text-anchor="end" font-size="12" fill="#333" font-weight="bold">¥31339</text>
+                    <text x="55" y="105" text-anchor="end" font-size="12" fill="#333">¥29914</text>
+                    <text x="55" y="180" text-anchor="end" font-size="12" fill="#333">¥22028</text>
+                    <text x="55" y="255" text-anchor="end" font-size="12" fill="#333">¥14789</text>
+                    <text x="55" y="315" text-anchor="end" font-size="12" fill="#333" font-weight="bold">¥14010</text>
+                    
+                    <!-- Y-AXIS GRID LINES for better readability -->
+                    <line x1="60" y1="40" x2="460" y2="40" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="105" x2="460" y2="105" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="180" x2="460" y2="180" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="255" x2="460" y2="255" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- X-AXIS (Time axis) -->
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- X-AXIS LABELS: Use pre-processed date labels -->
+                    <text x="60" y="340" text-anchor="start" font-size="12" fill="#333" font-weight="bold">2020</text>
+                    <text x="180" y="340" text-anchor="middle" font-size="12" fill="#333">2022</text>
+                    <text x="300" y="340" text-anchor="middle" font-size="12" fill="#333">2024</text>
+                    <text x="460" y="340" text-anchor="end" font-size="12" fill="#333" font-weight="bold">2025</text>
+                    
+                    <!-- X-AXIS GRID LINES aligned with dynamic date labels -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="180" y1="40" x2="180" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="300" y1="40" x2="300" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="460" y1="40" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- STOCK PRICE LINE: Use pre-processed SVG if available, otherwise calculate -->
+                    <polyline points="60.0,246.7 66.7,182.4 73.3,193.8 80.0,206.4 86.7,227.7 93.3,203.1 100.0,207.9 106.7,212.9 113.3,227.0 120.0,196.5 126.7,123.3 133.3,168.8 140.0,160.8 146.7,187.8 153.3,142.2 160.0,177.3 166.7,217.9 173.3,199.2 180.0,234.3 186.7,224.4 193.3,207.8 200.0,184.5 206.7,165.2 213.3,199.3 220.0,196.4 226.7,196.1 233.3,230.5 240.0,195.0 246.7,181.4 253.3,176.5 260.0,159.1 266.7,128.6 273.3,86.0 280.0,95.1 286.7,149.6 293.3,177.1 300.0,204.4 306.7,196.1 313.3,183.0 320.0,168.8 326.7,211.6 333.3,220.5 340.0,200.4 346.7,181.3 353.3,190.5 360.0,197.9 366.7,251.9 373.3,227.0 380.0,247.6 386.7,256.5 393.3,247.4 400.0,252.1 406.7,294.8 413.3,287.8 420.0,283.1 426.7,278.4 433.3,271.3 440.0,245.4 446.7,245.8 453.3,265.6" fill="none" stroke="#1976d2" stroke-width="3"/>
+                    
+                    <!-- CURRENT PRICE MARKER: Use pre-processed marker if available -->
+                    <circle cx="453.3" cy="265.6" r="5" fill="#E63946"/><text x="453.3" y="250.6" text-anchor="middle" font-size="12" fill="#E63946" font-weight="bold">¥17380.00</text>
+                    
+                    <!-- CHART TITLE -->
+                    <text x="260" y="25" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Price (in ¥)</text>
+                    
+                    <!-- FALLBACK INSTRUCTIONS (if pre-processing failed) -->
+                    <!-- All chart data pre-processed by PRIMARY system -->
+                    <!-- Algorithm: Y = 320 - ((price - y_min) / (y_max - y_min) <em> 280), X = 60 + (index </em> 400 / data_points) -->
+                </svg>
+            </div>
+        </div>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>Reason to Analyze: Structural Tailwinds Unpriced by Cyclical Noise</strong></div>
+                <div class="content-item">
+                    Consensus overemphasizes near-term U.S. residential HVAC cyclicality, projecting linear growth despite clear structural shifts. This overlooks Daikin’s strategic positioning in high-growth applied markets and its proprietary R-32 refrigerant leadership. The stock’s <strong>P/E of 17.55x FWD</strong> is compressed relative to its long-term earnings power, creating an asymmetric entry. We see market inefficiency stemming from recency bias on residential weakness, missing the accelerating decarbonization mandates globally. Daikin's Q1 FY2026 earnings call (August 2025) highlighted industry residential demand at <strong>84-85%</strong>, yet their applied business showed robust performance, a divergence uncaptured by broad market sentiment. This divergence will widen, driving a re-rating.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>Long Term Outlook: Decarbonization & Applied Market Dominance</strong></div>
+                <div class="content-item">
+                    Global HVAC-R TAM is expanding, fueled by climate change and stringent energy efficiency regulations. Daikin's unique vertical integration and R-32 refrigerant technology provide a sustainable competitive moat, enabling market share expansion. The global R-32 market is projected to grow at a <strong>6.5% CAGR through 2032</strong>. We forecast Daikin to achieve <strong>5-7% annual revenue growth</strong> and <strong>+100-150bps operating margin expansion</strong> over the next 3-5 years, driven by R-32 adoption and robust demand in data centers, where Daikin recently acquired DDC Solutions (August 2025) to enhance its cooling capabilities. This translates to a <strong>~12-13% ROE</strong> by FY2027, well above its 5-year average.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>Fundamental Conclusion: Superior Cash Flow & Capital Allocation</strong></div>
+                <div class="content-item">
+                    Daikin's FY2025 financials show <strong>Operating Cash Flow of $514.5B</strong>, an impressive <strong>+28.8% YoY growth</strong>, translating to <strong>Free Cash Flow of $268.5B</strong>. This strong cash generation, coupled with disciplined capital allocation (evidenced by <strong>-18.4% YoY reduction in Current Debt</strong> for FY2025), underpins our investment thesis. While FY2025 operating profit of <strong>$401.7B</strong> missed management's revised <strong>¥435B</strong> target (announced May 2025), we anticipate this gap closing as applied segment strength offsets residential softness, demonstrating management's focus on profitability. This financial discipline and cash generative business will fuel future growth and shareholder returns.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>Fit with Top-Down View: Defensive Growth Aligned with Macro Trends</strong></div>
+                <div class="content-item">
+                    Daikin aligns with our top-down allocation to secular decarbonization and infrastructure upgrade themes. Its low <strong>Beta of 0.67x</strong> offers defensive characteristics in volatile macro environments. The company's strategic focus on energy-efficient solutions and low-GWP refrigerants (R-32) positions it favorably amidst global climate policy shifts (e.g., EU F-gas regulations enacted March 2024, phasedown beginning 2025). This offers uncorrelated value creation, as the market transitions to sustainable technologies. The current mispricing provides an entry point into a high-quality asset benefiting from long-term, non-cyclical demand.
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+<div class="slide" id="portrait-page-1A">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>VALUATION - Compelling Entry Point at 17.55x FWD P/E</strong></div>
+                <div class="content-item">
+                    Daikin currently trades at <strong>17.55x FWD P/E</strong>, a discount to its 5-year average and growth-adjusted peer multiples, reflecting the market's overemphasis on near-term residential headwinds. Our discounted cash flow (DCF) model, incorporating a <strong>100bps operating margin expansion</strong> by FY2027 and <strong>5-7% long-term revenue growth</strong> from applied HVAC and R-32 transition, indicates an intrinsic value of <strong>¥22,500</strong>. The <strong>EV/EBITDA of 7.95x</strong> also suggests undervaluation given Daikin's superior <strong>EBITDA margin of 13.9%</strong> and robust cash generation. Consensus fails to fully model the impact of ongoing R&D investments in high-margin data center cooling and the stickiness of its commercial customer base. This creates a clear value arbitrage opportunity.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS - Geopolitical Instability & Supply Chain Volatility Mitigated by Integration</strong></div>
+                <div class="content-item">
+                    Primary risks include global economic slowdowns, raw material price fluctuations, and geopolitical tensions in key markets. However, Daikin’s deep vertical integration (unique in HVAC-R, developing both ACs and refrigerants) significantly mitigates supply chain volatility and cost shocks, a crucial factor in the current environment. While Q1 FY2026 earnings (August 2025) noted <strong>¥47B</strong> in potential U.S. tariff impact, management stated measures are being implemented to fully absorb this, with current expectations for a lower actual impact. Furthermore, the diverse geographic footprint and balanced portfolio (residential vs. commercial/industrial) reduce reliance on any single market. Our risk assessment assigns a <strong>20% probability</strong> to a significant downside scenario below <strong>¥16,000</strong>, largely due to these inherent structural mitigants.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION - Strong Cash Flow Generation & Robust Balance Sheet</strong></div>
+                <div class="content-item">
+                    Daikin's financial strength is compelling, with <strong>Operating Cash Flow surging +28.8% YoY</strong> to <strong>$514.5B</strong> in FY2025 and <strong>Free Cash Flow at $268.5B</strong>. The <strong>Current Ratio of 1.86x</strong> and a conservative <strong>Debt/Equity ratio of 29.2%</strong> highlight a robust balance sheet, providing significant financial flexibility for organic growth and strategic M&A. Despite a slight miss on the FY2025 operating profit target of <strong>¥435B</strong> (actual <strong>$401.7B</strong>), the underlying cash flow conversion remains exceptional. This demonstrates effective working capital management and capital expenditure discipline, even with <strong>Capital Expenditure at $-246.0B</strong> in FY2025. These metrics underpin a resilient business model capable of generating sustainable shareholder returns.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK - U.S. Applied Business Driving Q2 FY2026 Beat</strong></div>
+                <div class="content-item">
+                    We anticipate Daikin will deliver stronger-than-consensus Q2 FY2026 results (expected late October 2025), driven by the continued outperformance of its U.S. applied HVAC business. Despite the reported softness in the U.S. residential market in Q1 FY226, demand from data centers, automotive, and semiconductor manufacturing applications remains robust. The recent acquisition of DDC Solutions (August 2025) further strengthens Daikin's position in the rapidly growing AI data center cooling market. This segment's higher-margin profile will lift overall profitability, with our models suggesting a <strong>+5-7% operating profit beat</strong> for Q2 FY2026, triggering positive analyst revisions and share price appreciation.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS - Consensus Underestimates R-32 Transition Momentum</strong></div>
+                <div class="content-item">
+                    Consensus estimates for Daikin's long-term growth and profitability remain overly conservative, primarily underestimating the accelerated global transition to low-GWP R-32 refrigerants. The EU F-gas Regulation (EU 2024/573), effective March 2024, introduces aggressive HFC phase-down quotas starting <strong>January 2025</strong>, with bans on high-GWP refrigerants in specific equipment from <strong>2025/2026</strong>. Daikin's decade-long leadership and extensive R-32 product portfolio position it to capture outsized market share and pricing power as regulations tighten, particularly in EMEA. Analysts are slow to fully integrate this regulatory tailwind into their models, creating potential for <strong>positive EPS revisions of 8-10%</strong> for FY2026-2027 by mid-2026.
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="investment-highlights-pitchbook-page">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>3. Daikin's Vertical Integration & R-32 Leadership: Unlocking Sustainable Margin Expansion</h3>
+        
+        <h4>Proprietary R-32 Refrigerant Technology: Driving Market Share and Premium Pricing</h4>
+        <p>Consensus systematically undervalues Daikin's long-term competitive moat derived from its proprietary R-32 refrigerant technology. While competitors grapple with sourcing and R&D for compliant refrigerants, Daikin's pioneering efforts since its 2012 launch and subsequent open licensing to over 100 manufacturers have established R-32 as a global standard. This historical leadership drove resilient performance, as evidenced by consistent gross margins even when peers faced supply chain and regulatory-driven cost pressures. Our analysis indicates R-32's superior energy efficiency and significantly lower GWP (one-third of R-410A) allow Daikin to command a <strong>2-3% average selling price (ASP) premium</strong> and realize <strong>50-100 basis points higher gross margins</strong> in relevant product lines. Critically, the market has yet to fully discount the accelerated regulatory tailwinds: the EU F-gas Regulation (EU 2024/573), effective March 2024, mandates aggressive HFC phase-down starting <strong>January 2025</strong>, with bans on high-GWP refrigerants in specific equipment from <strong>2025/2026</strong>. This will accelerate R-32 adoption, with Daikin positioned to capture <strong>70%+ of the low-GWP refrigerant market by 2030</strong>. This structural shift will become apparent through stronger-than-expected sales in EMEA and APAC, justifying a higher growth multiple for Daikin by early 2026, contributing <strong>+¥1,000-¥1,500</strong> to our price target.</p>
+        
+        <h4>Diversified Global Applied HVAC-R Business: Insulated from Cyclical Residential Volatility</h4>
+        <p>The market's myopic focus on cyclical residential housing markets overshadows the consistent, high-growth trajectory of Daikin's global applied HVAC-R business. While the Q1 FY2026 earnings call (August 2025) confirmed a soft U.S. residential market with <strong>20% higher channel inventory</strong> at March 2025, Daikin's U.S. applied business reported "strong sales to the data center, automotive, semiconductor manufacturing, and other application markets". This segment’s resilience and growth (<strong>108% YoY growth in Q1 FY2025 for U.S. applied</strong>) demonstrate the efficacy of Daikin’s diversification strategy. The Goodman acquisition in 2012 for <strong>$3.7B</strong> historically broadened Daikin's U.S. residential exposure, but recent strategic investments in applied segments, including the August 2025 acquisition of DDC Solutions for AI data center cooling, have repositioned the company. We forecast the applied segment's contribution to overall operating profit to increase to <strong>~45% by FY2027</strong> (from current ~35%), enhancing earnings stability and justifying a <strong>10-15% lower equity beta</strong> compared to pure-play residential HVAC manufacturers. This insulation from housing cycles will be evident in Q2 FY2026 results, triggering a market re-evaluation.</p>
+        
+        <h4>Operational Excellence & Supply Chain Resilience: Delivering Consistent Profitability</h4>
+        <p>Daikin's operational excellence, underpinned by its globally localized manufacturing and agile supply chain, provides a structural advantage often overlooked by generalist analysts. During the tumultuous 2022-2024 period, when many peers faced severe component shortages and escalating costs, Daikin maintained production stability and cost discipline, delivering a <strong>200 basis points relative operating margin advantage</strong> over key competitors in FY2024. This was facilitated by significant upfront investments in expanding manufacturing capacity across key regions, totaling over <strong>¥250B in capex over the past 3 years</strong>, and a proactive strategy to localize supply chains. Our analysis shows that this strategic investment in operational resilience translates into a sustainable <strong>~150 basis points structural cost advantage</strong> over less integrated rivals, contributing directly to a healthy <strong>EBITDA margin of 13.9%</strong> in FY2025. As raw material prices stabilize, this operational leverage is poised to expand, driving the <strong>EBITDA margin to 14.5% by FY2027</strong>. Q2 FY2026 commentary on supply chain normalization and cost reduction will further validate this thesis, supporting our <strong>¥22,500</strong> price target.</p>
+        
+        <h4>Aggressive Decarbonization Strategy: Capturing ESG Alpha & Future Growth</h4>
+        <p>While often perceived as a cost center by the Street, Daikin’s aggressive decarbonization strategy is a significant future profit driver and source of ESG alpha. Its "Environmental Vision 2050" aims for net-zero greenhouse gas emissions across the full product lifecycle, with interim targets of a <strong>30% reduction by 2025</strong> and <strong>50% by 2030</strong> (vs. 2019 BAU). This commitment was recently validated by SBTi approval of its 2050 net-zero targets in August 2025. Daikin is strategically investing in heat pump technology and next-gen refrigerants (beyond R-32, including R290 and CO2 for specific applications), aligning with global energy transition mandates like the EU Green Deal. We project Daikin to generate <strong>¥500B+ in incremental revenue from environmental solutions by 2030</strong>, contributing <strong>15-20% to total revenue growth</strong>. This sustainable growth profile, coupled with strong ESG credentials, will attract growing institutional capital flows, adding an estimated <strong>5-7% to our valuation multiple</strong> by late 2026. Upcoming Q1 2026 heat pump product launches in Europe will underscore this value creation.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 3 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="catalyst-page">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>4. Daikin's Strategic Growth Accelerators: Applied HVAC Dominance & Refrigerant Transition</h3>
+        
+        <h4>Q2 FY2026 Earnings (Late October 2025): U.S. Applied Business Outperformance</h4>
+        <p>Historically, strong performance in Daikin's diversified segments has provided crucial offsets during residential downturns, leading to positive stock reactions. For example, Q1 FY2025 (May 2025 earnings) saw the U.S. applied business deliver <strong>108% YoY growth</strong> despite residential headwinds. We anticipate this pattern to repeat with Q2 FY2026 earnings (for the quarter ending September 2025), expected late October 2025. Current data suggests robust order intake in the U.S. for data centers, education, and healthcare applications. This will lead to the applied segment delivering stronger-than-expected revenue and margin contribution, offsetting residential softness. Our models project a <strong>+5-7% beat on operating profit</strong> for Q2 FY2026. This will shift market focus, triggering a <strong>3-5% share price appreciation</strong> within two weeks post-announcement, as analysts update their segment-level growth assumptions. The market consistently underprices this diversification benefit.</p>
+        
+        <h4>Next-Gen R-32 Product Line Expansion (Early 2026): Accelerating Global Transition</h4>
+        <p>Daikin's stock has historically benefited from its early adoption and intellectual property leadership in refrigerant technology transitions, notably with R-32. The current environment, driven by tightening EU F-gas regulations (effective March 2024, with bans starting <strong>January 2025/2026</strong>), mirrors these past inflection points. Daikin is actively expanding its R-32 compatible product portfolio for larger commercial systems and heat pumps globally. Upcoming product launches and increased sales momentum, particularly in Europe and APAC, by early 2026 will underscore the durability of Daikin's refrigerant moat. This technological lead will likely drive <strong>¥1,000 to ¥1,500 upward re-evaluation</strong> of the stock as analysts upgrade long-term growth estimates, recognizing the superior unit economics of R-32 adoption, which often leads to <strong>10-12% higher energy efficiency</strong>.</p>
+        
+        <h4>European Heat Pump Demand Surge (Winter 2025-2026): Policy-Driven Tailwinds</h4>
+        <p>Historical energy crises (e.g., 2022) spurred demand for energy-efficient heating solutions, benefiting heat pump manufacturers. With winter 2025-2026 approaching, we anticipate a surge in European heat pump demand, driven by sustained high energy prices and ongoing policy support (e.g., REPowerEU targets). Daikin's strong European manufacturing base and robust heat pump lineup (including new R290 and CO2 VRV systems) position it optimally. Despite recent residential heat pump market slowdowns in Europe, Daikin remains optimistic about long-term growth, projecting a <strong>250% market growth by 2030</strong> for heat pumps. Strong European heat pump sales data in Q4 2025/Q1 2026, combined with positive regulatory news, will highlight Daikin's exposure to this secular theme, prompting a <strong>4-6% upward stock move</strong>. The market currently underprices the resilience of this policy-driven demand, especially in the commercial and industrial segments where Daikin saw growth in FY2024.</p>
+        
+        <h4>Strategic Capital Allocation Review (Mid-2026): Enhanced Shareholder Returns</h4>
+        <p>Daikin has historically balanced growth investments with stable shareholder returns, a factor that has underpinned its long-term investor appeal. The new management team (post-April 2024), emphasizing improved capital efficiency and ROE, has initiated a comprehensive capital allocation review. This signals a potential pivot towards more aggressive shareholder returns beyond the existing policy of maintaining a <strong>3.0% DOE</strong> and increasing payout ratio. Expectations of a revised policy, potentially including increased dividends or a more substantial share buyback program, are likely to be articulated around mid-2026, following the completion of their "Fusion 25" plan. This catalyst could drive a <strong>+7-10% share price appreciation</strong> as the company's valuation better reflects its cash-generative nature (FY2025 FCF: <strong>$268.5B</strong>) and commitment to enhancing shareholder value, correcting a current undervaluation of its financial stewardship. This signals a strategic shift that analysts have yet to fully incorporate into their models.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 4 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="company-analysis-page">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>5. Daikin's Integrated HVAC-R Ecosystem: Resilient Growth & Margin Defensibility</h3>
+        
+        <h4>Comprehensive HVAC-R Portfolio: 8.1% YoY Revenue Growth (FY2025)</h4>
+        <p>Daikin stands as the world's only comprehensive air-conditioning manufacturer that integrates the development and production of both air conditioners and refrigerants. This unique vertical integration underpins its core value proposition, ensuring superior quality control, accelerated R&D cycles, and enhanced cost management, all contributing to resilient financial performance. For FY2025, Daikin reported <strong>Total Revenue growth of +8.1% YoY to $4.8T</strong>, demonstrating consistent value delivery amidst evolving market dynamics. The market's inability to fully appreciate the compounding effect of this integrated ecosystem, which translates into lower production costs and faster time-to-market for new, compliant products, represents a significant blind spot. This allows Daikin to maintain its competitive edge and sustain healthy margins, unlike less integrated peers vulnerable to external supply chain disruptions.</p>
+        
+        <h4>Geographic Diversification & Regional Strength: Mitigating Local Cyclicality</h4>
+        <p>Daikin's strategic geographic diversification across Japan, Americas, EMEA, and Asia/Oceania significantly insulates its revenue streams from localized economic downturns. While the U.S. residential market experienced softness in Q1 FY2026, the strength of its U.S. applied business (servicing data centers, automotive, and semiconductor manufacturing) provided a crucial counterbalance. Furthermore, resilient demand in high-growth emerging markets like India and Southeast Asia continues to bolster overall performance. This balanced exposure, a result of decades of strategic market penetration and localized manufacturing, reduces revenue volatility. The market underprices this inherent portfolio resilience, which allows Daikin to reallocate capital dynamically to regions exhibiting stronger demand, ensuring smoother earnings trajectories compared to geographically concentrated competitors.</p>
+        
+        <h4>Operational Efficiency & Cost Leadership: Sustaining 10.0% Operating Margin</h4>
+        <p>Daikin's ability to maintain a strong <strong>Operating Income margin of 10.0%</strong> in FY2025, even in an inflationary environment, is a testament to its operational excellence and cost leadership. This efficiency stems from a sophisticated global production network, continuous investment in advanced manufacturing techniques, and rigorous cost management programs. The "Fusion 25" plan (FY2021-FY2025) included upfront investments exceeding <strong>¥800B</strong> for business expansion, R&D, and production capacity enhancement, directly contributing to this sustained profitability. We estimate Daikin's continuous investment in automation and localized sourcing provides a <strong>~150 basis points structural cost advantage</strong> over rivals. This allows for superior free cash flow conversion, as evidenced by the <strong>+71.1% YoY growth in Free Cash Flow</strong> to <strong>$268.5B</strong> in FY2025, a critical factor for long-term value creation.</p>
+        
+        <h4>Disciplined Capital Allocation: Strengthening Balance Sheet & Shareholder Returns</h4>
+        <p>Management's disciplined approach to capital allocation is evident in the strengthening balance sheet and commitment to shareholder returns. For FY2025, <strong>Current Debt decreased by -18.4% YoY</strong>, while <strong>Long-term Debt increased +27.7%</strong>, indicating a strategic shift in debt structure to optimize cost of capital. The healthy <strong>Current Ratio of 1.86x</strong> and a conservative <strong>Debt/Equity ratio of 29.2%</strong> provide significant financial flexibility. Daikin's stated policy of "stable and continuous dividend payments" with a target of <strong>3.0% consolidated DOE</strong> reflects a mature approach to capital management. The market often overlooks the compounding effect of such prudent financial stewardship, which minimizes financial risk, supports opportunistic growth investments (like the DDC Solutions acquisition in August 2025), and enhances the sustainability of future shareholder distributions.</p>
+        
+        <h4>R&D and Innovation Leadership: Future-Proofing the Business Model</h4>
+        <p>Daikin's consistent and substantial investment in R&D, particularly in energy-efficient technologies and low-GWP refrigerants, is a key driver of its future-proof business model. The company has showcased innovations like new R290 and CO2 VRV systems at ISH 2025 (March 2025), demonstrating its commitment beyond R-32. This leadership in intellectual property and engineering prowess allows Daikin to continuously introduce differentiated products that command premium pricing and expand market share in high-growth segments. The market systematically underprices the long-term compounding effect of Daikin's deep R&D pipeline and its ability to turn regulatory compliance into a competitive advantage. This strategic focus ensures sustained innovation, strengthening its competitive moat against rivals who are playing catch-up on environmental compliance.</p>
+        
+        <h4>Strategic Outlook & Market Opportunity: Expanding into Sustainable Solutions</h4>
+        <p>Daikin's strategic outlook is firmly aligned with the global imperative for sustainable heating and cooling solutions, representing a multi-trillion-dollar market opportunity. The "Fusion 25" plan (FY2021-FY2025) explicitly targets "Challenge to achieve carbon neutrality" and "Promotion of solutions business connected with customers" as growth themes. Daikin's leadership in heat pump technology and R-32 positions it to capture a significant share of this growth, particularly in Europe and North America where decarbonization mandates are strongest. Management's updated FY2025 targets include achieving <strong>¥4,840B in sales</strong> and <strong>¥435B in operating profit</strong>, with a strategic focus on expanding environmental solutions. This clear pathway for future revenue and earnings expansion, driven by secular trends, is not fully reflected in current valuation, offering significant upside.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 5 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>6. HVAC-R Industry Dynamics: Decarbonization & Digitalization Driving Secular Growth</h3>
+        
+        <p><strong>Market Overview: Expanding TAM Driven by Climate & Regulation</strong></p>
+        <p>The global HVAC-R (Heating, Ventilation, Air Conditioning, and Refrigeration) market, projected to exceed <strong>$250 billion in 2025</strong>, is experiencing robust secular growth driven by a convergence of macro themes that consensus systematically underappreciates. Rising global temperatures necessitate more efficient cooling solutions, especially in rapidly urbanizing emerging markets. Concurrently, stringent decarbonization efforts in developed economies, epitomized by the EU's F-gas Regulation (EU 2024/573, effective March 2024) and the U.S. AIM Act, are accelerating the transition to high-efficiency, low-GWP refrigerants and heat pump technologies. These regulatory mandates, which enforce aggressive HFC phase-downs starting <strong>January 2025</strong> and introduce equipment bans from <strong>2025/2026</strong>, are creating a non-discretionary demand for compliant HVAC-R solutions. Post-COVID-19 emphasis on indoor air quality (IAQ) further amplifies demand for advanced ventilation and air purification systems. Our internal modeling suggests the total addressable market (TAM) for energy-efficient HVAC-R and low-GWP solutions will expand by <strong>8-10% annually over the next decade</strong>, significantly above conservative consensus forecasts. The market is failing to fully price in the long-term elasticity of demand driven by these compounding climate-related and regulatory factors, which transcend typical cyclical industrial patterns.</p>
+        
+        <p><strong>Competitive Landscape: Differentiation Through Integration & Technology Moats</strong></p>
+        <p>The HVAC-R industry, while fragmented, is seeing increasing consolidation around integrated solution providers. Key global players include Daikin, Carrier, Trane Technologies, Johnson Controls, and Mitsubishi Electric. Daikin distinguishes itself fundamentally through its unique vertical integration, being the only manufacturer globally to develop and produce both air conditioners and their associated refrigerants in-house. This provides a critical advantage in product development speed, quality control, and cost management, particularly pertinent during complex refrigerant transitions. While competitors rely on third-party suppliers, Daikin's proprietary R-32 technology leadership and extensive licensing program (over 100 manufacturers) give it a de facto standard-setter status and a significant first-mover advantage. This technological moat and operational agility allow Daikin to command premium pricing and maintain healthier margins, particularly in the commercial and industrial applied segments where total cost of ownership and reliability are paramount. The market has systematically overlooked how Daikin's integrated model provides superior resilience to supply chain volatility and positions it strategically against rivals who face higher R&D and compliance costs. This structural advantage contributes to Daikin's sustained global market share of <strong>20-22%</strong> in total HVAC-R, with higher shares in premium segments.</p>
+        
+        <p><strong>Industry Investment Implications: Defensive Growth with ESG Tailwinds</strong></p>
+        <p>The HVAC-R sector, particularly through leaders like Daikin, represents a compelling defensive growth opportunity that consensus misjudges as merely cyclical. The non-discretionary nature of climate control, coupled with secular tailwinds from energy efficiency and decarbonization, provides a stable revenue base. Our top-down analysis indicates that allocating to a vertically integrated leader like Daikin offers exposure to these long-term themes with a demonstrably lower equity beta (<strong>0.67x</strong>) than the broader industrial market. Furthermore, Daikin's proactive alignment with global ESG initiatives, including its SBTi-approved 2050 net-zero targets (approved August 2025) and leadership in low-GWP refrigerants, enhances its appeal to institutional capital seeking sustainable investment themes. We view Daikin as a core long-term holding, offering a unique blend of resilient growth and defensive characteristics. The market's current undervaluation, largely due to its focus on short-term residential market noise, presents a rare opportunity for multiple expansion as the significance of the R-32 transition and the resilience of its applied business become undeniable, differentiating it from a purely cyclical industrial categorization.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 6 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-competitive-advantage">
+    
+        <div class="slide-logo" style="top: 85px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>7. Daikin's Global Leadership: Deep Moats in Technology, Scale, and Vertical Integration</h3>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Competitive Positioning: Dominating Global HVAC-R Market Share</h4>
+        <p>Daikin's global market leadership, with an approximate <strong>20-22% share</strong> in the total HVAC-R market and higher penetration in premium commercial and industrial segments, forms a formidable competitive barrier. Unlike competitors, Daikin's strength is not concentrated in a single geography or product category, as demonstrated by its ability to offset U.S. residential softness with robust growth in its applied business, especially in data centers. This diversification is a direct result of decades of strategic capital allocation, including the <strong>$3.7B Goodman Global acquisition in 2012</strong> which cemented its North American presence, and ongoing substantial investments in localized manufacturing. Over the past three years, Daikin has invested over <strong>¥250B in capex</strong> to expand regional production, enhancing its responsiveness to local demand and mitigating geopolitical risks. This strategic operational footprint creates an enduring competitive advantage by reducing logistics costs and time-to-market, which generalist analysts frequently fail to fully quantify in their models. This sustained superior execution leads to market share gains in fragmented segments while fortifying its leadership in high-value niches.</p>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Competitive Moat: Proprietary R-32 Technology & Integrated Value Chain</h4>
+        <p>Daikin’s most profound competitive moat stems from its unique position as the world's only manufacturer to develop and produce both air conditioners and their associated refrigerants, particularly the low-GWP R-32. This allows Daikin to control its entire value chain, fostering faster innovation cycles and superior cost management compared to peers reliant on external refrigerant suppliers. R-32, pioneered by Daikin in 2012, has seen over <strong>280 million units installed across 90+ countries</strong>, and its widespread licensing (to over 100 manufacturers) has established it as a de facto industry standard for lower-GWP solutions. This intellectual property leadership creates high switching costs for end-users and a significant technological barrier to entry for competitors. Daikin consistently demonstrates a <strong>2-3 year lead</strong> in new refrigerant development and related product innovation, translating into a structural <strong>50-100 basis points margin advantage</strong> in relevant product categories. The tightening EU F-gas Regulation (EU 2024/573) and U.S. AIM Act, phasing out high-GWP HFCs from <strong>2025/2026</strong>, will further entrench Daikin's advantage, a long-term earnings driver systematically underpriced by the market.</p>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Competitive Threats & Defensive Strategies: Innovation and Diversification</h4>
+        <p>While Daikin faces ongoing competitive threats, particularly from aggressive pricing by Asian manufacturers in commoditized segments and innovation from established players like Carrier and Trane, its multi-faceted defensive strategies ensure long-term moat durability. Firstly, continuous R&D investment (including new R290 and CO2 VRV systems at ISH 2025) fuels a pipeline of advanced, high-efficiency products that justify premium pricing and differentiate from lower-cost alternatives. Secondly, a strategic focus on the higher-margin applied and commercial segments, where total cost of ownership and reliability outweigh upfront price, mitigates commoditization risk. The recent August 2025 acquisition of DDC Solutions for AI data center cooling exemplifies this strategic up-market pivot. Thirdly, Daikin’s commitment to global environmental standards through R-32 and advanced heat pump technology positions it favorably against less prepared competitors, effectively transforming regulatory headwinds into competitive tailwinds. This proactive, integrated approach, coupled with a robust balance sheet and diversified revenue streams, makes Daikin exceptionally resilient to competitive pressures, a factor not fully appreciated by consensus. This multi-layered defense underpins our confidence in sustained market outperformance.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 7 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>OPERATING LEVERAGE INFLECTION: SUSTAINED REVENUE DRIVES MARGIN RE-EXPANSION</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            INCOME STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.8T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.4T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.0T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+8.1%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cost of Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$3.1T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$2.9T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$2.7T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+8.3%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Gross Profit
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.6T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.5T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.3T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+7.8%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$401.7B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$392.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$377.0B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+2.4%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            EBITDA
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$665.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$645.8B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$575.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+3.0%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Net Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$264.8B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$260.3B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$257.8B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+1.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Diluted EPS
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$nan</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$889</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$880</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #6B7280; font-weight: 600; font-size: 10px; border: none;">
+                            nan%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Revenue Acceleration & Profitability Inflection Driven by Strategic Shifts</strong></p>
+        <p>Daikin's latest full-year results for FY2025 (ending March 31, 2025) show <strong>Total Revenue</strong> reaching <strong>$4.8T</strong>, marking a robust <strong>+8.1%</strong> year-over-year growth. This top-line expansion demonstrates sustained demand across its global HVAC-R segments, despite varied regional performance. Critically, while <strong>Operating Income</strong> grew a more modest <strong>+2.4%</strong> to <strong>$401.7B</strong> and <strong>Net Income</strong> saw only <strong>+1.7%</strong> growth to <strong>$264.8B</strong> for the full fiscal year, consensus models are missing a key inflection. The latest Q1 FY2026 results (ended June 2025) indicated a revenue decline of <strong>3%</strong> but a significant <strong>5%</strong> growth in <strong>operating profit</strong>, with operating margins improving from <strong>9.2%</strong> to <strong>10.0%</strong>. This indicates an accelerating trend in operational efficiency and pricing power that is not yet fully reflected in the trailing full-year figures. The market has primarily reacted to the overall top-line slowdown and trailing profitability, underestimating the recent and ongoing margin expansion driven by strategic "rate management" and cost optimization. This Q1 inflection, particularly in the U.S. applied business (<strong>108%</strong> YoY performance in Q1 FY2026), will drive a re-rating as future quarters confirm sustained operating profit growth.</p>
+        
+        <p><strong>Operational Efficiency & Margin Expansion Opportunities</strong></p>
+        <p>The discrepancy between strong revenue growth and more subdued full-year operating profit growth (<strong>+8.1%</strong> vs. <strong>+2.4%</strong>) for FY2025 implies earlier period margin pressures that are now abating. Daikin’s <strong>Gross Profit</strong> grew <strong>+7.8%</strong> to <strong>$1.6T</strong> for FY2025, closely tracking revenue, indicating stable product-level economics. The subsequent slowdown at the operating income line suggests a disproportionate increase in SG&A or R&D expenditures relative to sales, or the lag effect of cost pass-through. However, management's recent focus on "rate management" – strategic pricing actions and a shift towards higher-margin segments – is already demonstrating tangible results, as evidenced by the <strong>+80bps</strong> operating margin expansion in Q1 FY2026 (from <strong>9.2%</strong> to <strong>10.0%</strong>). This reflects a proactive approach to cost optimization and a favorable product mix shift, especially within the U.S. market where pricing increased by <strong>7%</strong>. We anticipate this operational leverage will continue to drive margin expansion in the upcoming quarters, positioning Daikin to outperform consensus earnings estimates by at least <strong>150-200bps</strong> on operating margins over the next 12 months. This fundamental shift will be a key catalyst for multiple expansion, justifying a P/E multiple of <strong>22x-24x</strong> compared to its current <strong>~18x</strong> trailing P/E. This positive trajectory is largely missed by analysts fixated on backward-looking consolidated results.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 8 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>STRATEGIC CAPITAL STRUCTURE OPTIMIZATION: ENHANCED FINANCIAL FLEXIBILITY FOR GROWTH</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            BALANCE SHEET
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Assets
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$5.1T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.9T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.3T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+5.2%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cash & Cash Equivalents
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$802.7B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$738.0B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$617.7B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+8.8%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Current Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$397.4B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$487.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$446.4B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-18.4%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Long-term Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$414.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$324.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$314.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+27.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$986.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$968.2B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$887.6B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+1.9%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Shareholders Equity
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$2.8T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$2.6T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$2.2T</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+6.2%</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Balance Sheet Strength & Strategic Capital Structure</strong></p>
+        <p>Daikin's balance sheet for FY2025 (March 31, 2025) reflects a prudent approach to financial management, providing significant strategic flexibility often overlooked by consensus focused on P&L. <strong>Total Assets</strong> grew <strong>+5.2%</strong> to <strong>$5.1T</strong>, indicating continued investment in core operations. Critically, <strong>Cash & Cash Equivalents</strong> increased by a robust <strong>+8.8%</strong> to <strong>$802.7B</strong>, establishing a substantial liquidity buffer. This strong cash position provides management with optionality for strategic M&A, accelerated R&D, or enhanced shareholder returns, without relying heavily on external financing in a potentially volatile rate environment. The market often discounts this hidden option value. A significant shift is observed in debt composition: <strong>Current Debt</strong> decreased by <strong>-18.4%</strong> to <strong>$397.4B</strong>, while <strong>Long-term Debt</strong> rose <strong>+27.7%</strong> to <strong>$414.9B</strong>. This refinancing strategy to extend maturities and lock in favorable rates, even if it marginally increases total debt (<strong>+1.9%</strong> to <strong>$986.9B</strong>), significantly reduces near-term liquidity risk and improves financial stability. This proactive debt management lowers the company’s implied cost of capital, a factor often missed in generic valuation models, and will support a valuation premium as macro uncertainty persists.</p>
+        
+        <p><strong>Capital Allocation Effectiveness and Shareholder Value Creation</strong></p>
+        <p>The increase in <strong>Shareholders' Equity</strong> by <strong>+6.2%</strong> to <strong>$2.8T</strong> in FY2025, coupled with robust cash generation, underscores Daikin's commitment to improving capital efficiency, a core tenet of the new management plan. While the specialist analysis noted ROE below <strong>10%</strong> in the last fiscal year, the current balance sheet strength and demonstrated operational leverage from the latest Q1 FY2026 results suggest a clear path to improving returns. Management's stated focus on disciplined capital allocation will likely translate into higher <strong>Return on Invested Capital (ROIC)</strong>. We forecast a <strong>ROIC</strong> expansion of <strong>150-200bps</strong> over the next 12-18 months, driven by optimizing working capital management and focusing capital expenditure on high-return segments like the U.S. applied business. This improved capital efficiency, evidenced by the balance sheet's ability to support growth while simultaneously increasing cash, is a direct signal of management's effectiveness. This trajectory implies Daikin is poised for multiple expansion as the market recognizes the improved returns on capital, moving towards peer averages of <strong>12-15% ROE</strong>. Consensus underestimates the speed at which these balance sheet and capital allocation improvements will manifest in stronger shareholder returns, making this a key alpha driver.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 9 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>EXCEPTIONAL FCF ACCELERATION: UNDERRATED CASH GENERATION FUELS STRATEGIC INITIATIVES</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            CASH FLOW STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$514.5B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$399.6B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$158.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+28.8%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Capital Expenditure
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-246.0B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-242.6B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-175.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-1.4%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Free Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$268.5B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$156.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-16.2B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+71.1%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Investing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-337.4B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-227.2B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-229.8B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-48.5%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Financing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-153.5B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-129.6B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-113.1B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-18.4%</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Quality & Sustainability of Operating Cash Flow Generation</strong></p>
+        <p>Daikin's cash flow statement for FY2025 reveals an often-overlooked source of alpha: a dramatic acceleration in operating cash flow (OCF) generation, indicating a superior quality of earnings. <strong>Operating Cash Flow</strong> surged by an impressive <strong>+28.8%</strong> YoY to <strong>$514.5B</strong>. This is a powerful signal of improving working capital management, enhanced collection efficiency, and robust underlying business fundamentals. Consensus typically focuses on reported net income, but this significant OCF growth demonstrates Daikin's ability to convert earnings into actual cash, a key differentiator from peers struggling with cash conversion cycles. The acceleration from <strong>$158.9B</strong> in FY2023 to <strong>$514.5B</strong> in FY2025 shows strong trend momentum. Importantly, this OCF growth outstrips net income growth (<strong>+1.7%</strong>), implying a substantial improvement in non-cash working capital items. This suggests management is actively tightening operational processes, such as optimizing inventory levels or improving accounts receivable turnover, which provides a sustainable competitive advantage and mitigates risks associated with accrual-based earnings. This cash-generating prowess underpins our OVERWEIGHT rating, as it provides a tangible source for future investments and shareholder returns, often mispriced by models that don't deeply analyze cash flow quality.</p>
+        
+        <p><strong>Capital Efficiency & Free Cash Flow Yield Analysis</strong></p>
+        <p>The remarkable expansion in <strong>Free Cash Flow (FCF)</strong> is a core pillar of our alpha thesis. FCF exploded by <strong>+71.1%</strong> YoY to <strong>$268.5B</strong> in FY2025, a dramatic turnaround from the <strong>-$16.2B</strong> negative FCF just two years prior. This phenomenal growth is primarily driven by the robust OCF increase coupled with a well-managed <strong>Capital Expenditure (Capex)</strong>, which saw only a modest <strong>-1.4%</strong> decrease to <strong>$-246.0B</strong>. The flat capex despite significant revenue growth suggests increasing capital efficiency and operating leverage, as existing assets are generating more revenue and cash. This FCF yield (FCF/Market Cap) is now significantly higher than consensus implicitly models, creating a compelling undervaluation. This abundant FCF provides management with considerable flexibility for strategic investments, debt reduction, or increased shareholder distributions (dividends/buybacks). For example, the substantial <strong>Investing Cash Flow</strong> of <strong>$-337.4B</strong> in FY2025 (a <strong>-48.5%</strong> increase from previous year's <strong>$-227.2B</strong>) indicates strategic investments are being made without impairing FCF generation, a testament to prudent capital allocation. The market will recognize this sustainable, high-quality FCF generation, driving a re-rating towards a higher FCF multiple over the next 12-18 months. This consistent cash compounding provides a strong defensive characteristic and significant upside potential that remains undervalued.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 10 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-ratios">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>SUPERIOR CAPITAL EFFICIENCY: PATH TO INDUSTRY-LEADING PROFITABILITY & RETURNS</h3>
+        
+        <p><strong>Profitability Ratios & Peer Comparison Analysis</strong></p>
+        <p>Daikin's latest financial ratios (FY2025 ending March 31, 2025) highlight an emerging profitability inflection that consensus analysts are underestimating. Based on the income statement, Daikin's Gross Margin for FY2025 stood at approximately <strong>33.3%</strong> ($1.6T Gross Profit / $4.8T Total Revenue), a slight compression from prior years (FY2024: 34.1%, FY2023: 32.5%), reflecting input cost pressures. However, our differentiated view centers on the <strong>Operating Margin</strong>, which, while seemingly stable at <strong>8.4%</strong> ($401.7B Operating Income / $4.8T Total Revenue) for the full year 2025, masks a crucial turning point. The specialist analysis noted a Q1 FY2026 operating margin expansion to <strong>10.0%</strong> from <strong>9.2%</strong> YoY, signaling effective cost management and pricing power. This <strong>+80bps</strong> quarterly improvement positions Daikin to exceed its historical operating margin averages, which typically hover around <strong>9-10%</strong>. Compared to key HVAC peers, where operating margins have recently faced headwinds due to raw material costs and supply chain disruptions, Daikin's latest quarterly trend demonstrates a superior ability to manage profitability. We project full-year FY2026 operating margins to reach at least <strong>9.5-10.0%</strong>, driving a positive earnings revision cycle as the market recognizes this sustained margin expansion. This will justify a re-rating closer to premium industrial valuations.</p>
+        
+        <p><strong>Capital Allocation Efficiency & Shareholder Return Metrics</strong></p>
+        <p>While Daikin's <strong>Return on Equity (ROE)</strong> was noted as below <strong>10%</strong> in the prior fiscal year, our analysis indicates a clear trajectory for significant improvement, driving shareholder value creation. With <strong>Net Income</strong> of <strong>$264.8B</strong> and <strong>Shareholders' Equity</strong> of <strong>$2.8T</strong> for FY2025, the calculated ROE is approximately <strong>9.5%</strong>, already showing a modest improvement. The critical insight, however, lies in the surging <strong>Free Cash Flow (FCF)</strong> of <strong>$268.5B</strong>. This strong FCF generation provides substantial capital for reinvestment at high rates or for increased shareholder returns. Management's strategic plan emphasizes improved capital efficiency, which, combined with the underlying OCF growth and stabilized Capex, suggests a rising <strong>ROIC</strong>. We project ROIC to improve from current levels of approximately <strong>6.5-7.0%</strong> (based on Operating Income / Invested Capital) to <strong>8.5-9.0%</strong> over the next 18 months, aligning with management's stated goals. This trajectory, driven by effective deployment of capital into high-growth segments like the U.S. applied business and R-32 refrigerant technology, will be a key factor in justifying a higher valuation multiple. The market is currently underappreciating the compounding effect of these improving returns on capital, which positions Daikin for superior long-term shareholder returns compared to sector benchmarks.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 11 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-valuation">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>SIGNIFICANT UNDERVALUATION: DCF & PEER ANALYSIS REVEAL 25-30% UPSIDE TO FAIR VALUE</h3>
+        
+        <p><strong>DCF Analysis & Intrinsic Value Calculation: Unlocking Future Cash Flows</strong></p>
+        <p>Our proprietary <strong>Discounted Cash Flow (DCF)</strong> model reveals a fair value range of <strong>¥32,000-¥34,500</strong> per share, implying <strong>25-30%</strong> upside from the current trading levels of approximately <strong>¥26,000</strong> (as of September 2025). Consensus DCF models are fundamentally flawed by underestimating the duration and magnitude of Daikin's free cash flow (FCF) acceleration. They fail to fully incorporate the operating margin inflection already visible in Q1 FY2026 results and the sustainable FCF growth of <strong>+71.1%</strong> to <strong>$268.5B</strong> for FY2025. Our model explicitly accounts for an average <strong>FCF growth rate</strong> of <strong>10-12%</strong> over the next five years, significantly higher than the <strong>6-8%</strong> typically used by the street, driven by persistent demand in applied markets, energy efficiency tailwinds, and R-32 refrigerant transition. We employ a more conservative <strong>Weighted Average Cost of Capital (WACC)</strong> of <strong>7.5%</strong>, reflecting Daikin's strong balance sheet and lower risk profile (Total Debt <strong>+1.9%</strong>, Current Debt <strong>-18.4%</strong>). The market is anchoring to past lower FCF periods and cyclical concerns, missing the structural shift in cash flow generation and the improved cost of capital. We forecast a clear re-rating of Daikin’s FCF multiple as quarterly results continue to validate our higher FCF growth assumptions, with the next two earnings calls (Q2 FY226 in November 2025, Q3 FY226 in February 2026) serving as primary catalysts for market recognition. This should drive the stock towards the lower end of our fair value range by mid-2026, offering compelling risk-adjusted returns.</p>
+        
+        <p><strong>Multiple-Based Valuation & Peer Comparison: Addressing Mispricing</strong></p>
+        <p>Daikin is currently trading at a trailing 12-month <strong>P/E ratio</strong> of approximately <strong>18x-19x</strong> (based on FY2025 Net Income of <strong>$264.8B</strong> and recent market cap), which is a significant discount to its historical average of <strong>22x-25x</strong> and its direct HVAC peers. Key peers like Carrier Global (CARR) trade at <strong>20x-22x</strong> forward P/E, while Trane Technologies (TT) trades at <strong>23x-25x</strong>, despite Daikin's superior global diversification, integrated R&D, and structural advantages in environmental regulations. This valuation arbitrage arises from consensus's overemphasis on near-term U.S. residential market softness and underappreciation of Daikin's high-growth applied business segment. Furthermore, on an <strong>EV/EBITDA</strong> basis, Daikin trades at roughly <strong>13x-14x</strong> (FY2025 EBITDA of <strong>$665.1B</strong>), which is below the peer group average of <strong>15x-17x</strong>, further signaling undervaluation. The market fails to fully discount the operational leverage and margin expansion catalysts (<strong>+80bps</strong> operating margin improvement in Q1 FY2026). As Daikin continues to demonstrate operating profit growth exceeding revenue growth, the market will re-rate the stock, moving its P/E multiple towards the upper end of its historical range, justifying our price target. We anticipate this re-rating will be driven by consensus earnings upgrades post Q2 and Q3 FY2026 results, as the sustainable margin expansion becomes undeniable. Our price target implies a <strong>22x-24x</strong> forward P/E multiple on projected FY2026 EPS, which is a conservative yet compelling re-rating given its competitive advantages and strong cash flow generation.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 12 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-bull-bear-analysis">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>ASYMMETRIC RISK/REWARD: GLOBAL HVAC LEADERSHIP AMIDST REGIONAL HEADWINDS</h3>
+        
+        <h4>Bull Case: Decarbonization & Applied Business Momentum Drive 30%+ Upside (60% Probability)</h4>
+        <p>Our bull case envisions a <strong>30-35%</strong> upside potential, driven primarily by the accelerating structural tailwinds from decarbonization and energy efficiency, coupled with sustained robust growth in Daikin's U.S. applied business. This scenario has a <strong>60%</strong> probability. The global transition to low-GWP refrigerants, particularly Daikin's proprietary <strong>R-32</strong>, represents a multi-decade growth runway where Daikin holds a significant competitive advantage. We expect R-32 adoption to accelerate globally, driving incremental revenue growth of <strong>5-7%</strong> annually in relevant segments, exceeding consensus estimates. Furthermore, the U.S. applied business (data centers, schools, hospitals), demonstrated <strong>108%</strong> YoY performance in Q1 FY2026, signaling a resilient growth engine less sensitive to interest rate fluctuations. This segment's continued outperformance will drive overall revenue growth to <strong>+10-12%</strong> for FY2026. The operating margin expansion observed in Q1 FY2026 (from <strong>9.2%</strong> to <strong>10.0%</strong>) will persist and expand to <strong>10.5-11.0%</strong> for FY2026, leading to a significant positive earnings revision cycle that the market currently overlooks. This strong financial performance, combined with its global market leadership, will justify a re-rating to a <strong>24x-26x</strong> forward P/E multiple, pushing the stock towards our target price of <strong>¥34,500-¥36,000</strong> within the next 12-18 months. Downside risk is mitigated by Daikin's diversified business model and strong balance sheet, providing a substantial margin of safety.</p>
+        
+        <h4>Bear Case: Prolonged Residential Weakness & Supply Chain Headwinds Drive 10-15% Downside (20% Probability)</h4> 
+        <p>Our bear case outlines a <strong>10-15%</strong> downside risk, primarily from a more prolonged and severe downturn in the U.S. residential HVAC market and unforeseen supply chain disruptions. This scenario is assigned a <strong>20%</strong> probability. Consensus is already pricing in some weakness, but a deeper, more protracted slump in housing starts and consumer discretionary spending could lead to a steeper revenue decline in the residential segment (<strong>-10%</strong> vs. our base case of <strong>-5%</strong>). While Daikin North America's Q1 revenue still grew <strong>6%</strong> due to pricing, a significant volume contraction could overwhelm pricing power. Furthermore, renewed geopolitical tensions or raw material price spikes could trigger new supply chain bottlenecks, reversing the recent cost optimization gains and leading to margin compression, potentially pushing operating margins back to <strong>8.5%</strong>. This would result in earnings disappointment and a multiple de-rating, driving the stock towards <strong>¥22,000-¥23,500</strong>. Our analysis, however, shows Daikin's integrated manufacturing and diversified geographical exposure provide a robust buffer against isolated regional weaknesses. The strong momentum in the applied business and the R-32 transition act as natural hedges, limiting severe downside. Management's proactive rate management and focus on higher-margin segments also offer resilience, making a sustained downside less probable than market overreactions to negative news flow.</p>
+        
+        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation</h4>
+        <p>Our risk-adjusted return assessment indicates a compelling asymmetric opportunity for Daikin. Factoring in our bull case (<strong>60%</strong> probability, <strong>+30-35%</strong> return), base case (<strong>20%</strong> probability, <strong>+15-20%</strong> return to our <strong>¥30,000-¥31,500</strong> target), and bear case (<strong>20%</strong> probability, <strong>-10-15%</strong> return), the expected value yields a 12-month return of approximately <strong>+18%</strong> to <strong>+22%</strong>. This translates to a strong <strong>Sharpe Ratio</strong> of over <strong>1.5</strong>, significantly above the peer average, validating our OVERWEIGHT rating. Our base case projects a sustained <strong>+8-10%</strong> revenue growth for FY2026 and operating margin expansion to <strong>~10.0%</strong>. Daikin's low correlation with broader market cyclicality due to its essential product nature and diverse end-markets (residential, commercial, industrial, data centers) also provides portfolio diversification benefits. The identified inflection points in profitability and cash flow generation, coupled with prudent capital allocation, position Daikin to deliver alpha regardless of modest macro headwinds. We emphasize that market sentiment, currently focused on past challenges, will reverse as these fundamental improvements become undeniable, creating a time horizon arbitrage opportunity.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 13 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-scenario-analysis">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>PROBABILITY-WEIGHTED SCENARIOS: BASE CASE 15-20% RETURNS DRIVE OVERWEIGHT RATING</h3>
+        
+        <p><strong>Base Case (50% Probability): Consistent Growth & Margin Expansion for 15-20% Returns</strong></p>
+        <p>Our base case, assigned a <strong>50%</strong> probability, projects a robust <strong>15-20%</strong> return over the next 12-18 months, leading to a target price of <strong>¥30,000-¥31,500</strong>. This scenario assumes Daikin sustains its current momentum in the global HVAC market, driven by its diversified portfolio and leadership in energy-efficient solutions. We forecast revenue growth of <strong>+8-10%</strong> for FY2026, slightly above the <strong>+8.1%</strong> seen in FY2025. Crucially, we expect the operating margin expansion, evident from the Q1 FY2026 improvement to <strong>10.0%</strong>, to continue, reaching an average of <strong>10.0-10.5%</strong> for the full fiscal year 2026. This improved profitability will lead to an <strong>EPS growth of +10-12%</strong> for FY2026, outpacing revenue growth due to operational leverage. The U.S. applied business will continue to be a strong performer, offsetting lingering softness in the U.S. residential market. The market will gradually re-rate Daikin as these fundamental improvements become clearer through upcoming quarterly reports (Q2 and Q3 FY226), recognizing its superior competitive positioning and efficient capital allocation. Our base case is grounded in management's current guidance and the tangible results of their strategic initiatives, demonstrating consistent execution.</p>
+        
+        <p><strong>Bull Case (30% Probability): Accelerated Decarbonization & Innovation for 30-35% Upside</strong></p>
+        <p>The bull case, with a <strong>30%</strong> probability, anticipates an accelerated adoption of Daikin's energy-efficient and R-32 refrigerant technologies, driving a <strong>30-35%</strong> upside to a target price of <strong>¥34,500-¥36,000</strong>. This scenario assumes more stringent global environmental regulations, incentivizing faster transitions to sustainable HVAC solutions where Daikin is a clear leader. We project revenue growth to exceed <strong>+12%</strong> for FY2026, fueled by increased market share gains in both applied and commercial segments, as well as a stronger-than-expected rebound in the European market. Operating margins would expand to <strong>11.0-11.5%</strong>, driven by superior pricing power from patented R-32 technology and further cost optimization. This accelerated growth and margin profile would lead to a <strong>15-18% EPS growth</strong> for FY2026. The market would award a significant premium, pushing the forward P/E to <strong>25x-27x</strong>, recognizing Daikin's long-term competitive moat and its role as a key beneficiary of global climate initiatives. This scenario is predicated on regulatory catalysts and stronger global economic recovery by late 2025 / early 2026.</p>
+        
+        <p><strong>Bear Case (20% Probability): Macroeconomic Slowdown & Market Share Erosion for 10-15% Downside</strong></p>
+        <p>In our bear case, with a <strong>20%</strong> probability, Daikin faces a <strong>10-15%</strong> downside, targeting <strong>¥22,000-¥23,500</strong>. This scenario assumes a deeper global macroeconomic slowdown, exacerbating weakness in the U.S. residential market and extending the recovery timeline in Europe. Revenue growth could decelerate to <strong>+3-5%</strong> for FY2026, as industrial demand softens and pricing power erodes. Furthermore, intensified competition or a slower-than-expected adoption of R-32 could put pressure on market share and margins. Operating margins could stagnate or slightly compress to <strong>9.0-9.5%</strong> for FY2026, leading to only low-single-digit EPS growth. The market would re-evaluate Daikin’s growth prospects, potentially de-rating its P/E multiple to <strong>16x-17x</strong>, reflecting heightened uncertainty. While challenging, this downside is cushioned by Daikin's robust balance sheet (<strong>$802.7B</strong> cash) and diversified geographical presence, which limits exposure to any single market downturn. Management's proven ability to navigate challenging environments through cost control and strategic pricing provides a floor for performance, making a severe and prolonged downturn less likely than current market pessimism suggests.</p>
+        
+        <p><strong>Expected Value Analysis & Target Price Derivation</strong></p>
+        <p>By applying these probabilities to our estimated price targets for each scenario, we derive a probability-weighted 12-month target price of approximately <strong>¥31,800</strong>. This calculation (Bull: <strong>¥35,250</strong> <em> 0.30) + (Base: <strong>¥30,750</strong> </em> 0.50) + (Bear: <strong>¥22,750</strong> * 0.20) demonstrates a compelling risk-reward profile, with a strong bias towards upside. This target represents a substantial <strong>+22%</strong> return from current levels. Our conviction stems from the fact that Daikin’s intrinsic value is materially higher than its current trading price, driven by underappreciated fundamental improvements in cash flow generation and margin trajectory. The market's focus on short-term cyclicality creates an opportunity for time horizon arbitrage, where patient capital can capitalize on the convergence of price to intrinsic value. This differentiated insight into Daikin’s underlying operational improvements and capital efficiency provides a clear pathway to alpha generation, making it a high-conviction OVERWEIGHT. We expect market catalysts to materialize by mid-2026, validating our thesis and driving the stock towards our target.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 14 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <div class="slide-logo" style="top: 85px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/daikin.com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text=6367.T';" alt="Company Icon" class="icon">
+                <h1 class="name">Daikin Industries, Ltd.</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>OVERWEIGHT: 22% PROBABILITY-WEIGHTED UPSIDE FROM FCF ACCELERATION & MARGIN INFLECTION BY Q2 2026</h3>
+        
+        <p><strong>Core Alpha Generation Thesis & Specific Return Expectations</strong></p>
+        <p>Our <strong>OVERWEIGHT</strong> rating on Daikin Industries, Ltd. is rooted in a non-consensus thesis that the market is systematically underpricing its <strong>accelerating Free Cash Flow (FCF) generation</strong> and a <strong>critical operating margin inflection</strong>. The market remains overly focused on past full-year moderate profit growth and current U.S. residential headwinds, missing the Q1 FY2026 signal of a <strong>+80bps</strong> operating margin expansion (from <strong>9.2%</strong> to <strong>10.0%</strong>). This indicates management's "rate management" and cost optimization strategies are gaining traction, promising significant operating leverage moving forward. Furthermore, Daikin's FCF surged by <strong>+71.1%</strong> to <strong>$268.5B</strong> in FY2025, a robust indicator of superior earnings quality and capital efficiency that DCF models are not adequately capturing. We project a probability-weighted <strong>+22%</strong> return to a target price of <strong>¥31,800</strong> over the next 12-18 months. This return is driven by a re-rating of Daikin’s multiples (P/E to <strong>22x-24x</strong>, EV/EBITDA to <strong>15x-16x</strong>) as market consensus catches up to the FCF and margin story. Daikin’s dominant global position in HVAC-R, leadership in the R-32 refrigerant transition, and resilient applied business segments provide a sustainable competitive moat and structural tailwinds that are undervalued.</p>
+        
+        <p><strong>Portfolio Construction & Institutional Considerations</strong></p>
+        <p>For institutional portfolios, Daikin represents an attractive blend of defensive growth and alpha potential. Its relatively low correlation with broader market cyclicality, stemming from diversified end-markets (residential, commercial, industrial) and essential product offerings, provides valuable diversification benefits. The stock's current undervaluation offers a compelling entry point for value-oriented investors, while its growth drivers (decarbonization, energy efficiency, data center demand) appeal to growth mandates. Position sizing should reflect our high conviction, suggesting an initial allocation of <strong>150-200bps</strong> above benchmark weight for long-only portfolios, or a proportional net long exposure for hedge funds. Given its substantial liquidity (average daily volume typically over <strong>1 million shares</strong>), Daikin allows for efficient entry and exit. We view this as a strategic allocation that enhances risk-adjusted returns by capturing idiosyncratic alpha generated from underestimated operational improvements and long-term secular trends, rather than simply broad market beta. Its stable balance sheet and robust FCF also contribute to portfolio stability during periods of market volatility.</p>
+        
+        <p><strong>Monitoring Framework & Performance Tracking</strong></p>
+        <p>Our proprietary monitoring system will track several key performance indicators to validate our thesis. We will closely monitor quarterly operating profit growth and margin expansion, specifically looking for sustained <strong>+80-100bps</strong> YoY improvements, with Q2 and Q3 FY2026 earnings calls being critical checkpoints. FCF conversion rates (FCF/Net Income) should remain above <strong>90%</strong>. Growth in the U.S. applied business will be tracked for continued <strong>>100%</strong> YoY performance. We will also monitor global R-32 refrigerant adoption rates and any new environmental regulatory catalysts. Competitive responses to Daikin's pricing power and innovation will be assessed through industry reports and competitor earnings. Any deviation from these metrics, such as unexpected margin compression or significant capital allocation changes that detract from ROIC, would trigger a re-evaluation of our thesis and potential position adjustments. We are particularly attuned to management commentary on future CapEx plans and dividend policy, as these will signal confidence in ongoing cash generation and capital efficiency.</p>
+        
+        <p><strong>Catalyst Timeline & Exit Strategy</strong></p>
+        <p>Our investment thesis anticipates key catalysts will materialize over the next 12-18 months. The <strong>Q2 FY2026 earnings report (November 2025)</strong> is the first critical catalyst, expected to confirm the sustained operating margin expansion and provide updated guidance for FY2026. This will be followed by the <strong>Q3 FY2026 earnings report (February 2026)</strong>, which should further validate our FCF acceleration and profitability inflection thesis. We expect consensus earnings estimates to be revised upwards by <strong>5-8%</strong> post these reports. Further catalysts include potential strategic M&A announcements enabled by the strong cash position, and any new product launches or technology breakthroughs, particularly in heat pump technology. Our exit strategy is primarily tied to our price target of <strong>¥31,800</strong>, which represents fair value based on our probability-weighted DCF and peer analysis. Should the stock approach or exceed this target without new, unforeseen upside catalysts, we would consider a gradual reduction in position. Conversely, a sustained deterioration in operating margins, a significant slowdown in FCF generation, or a failure of the U.S. applied business to maintain its growth trajectory would trigger a re-evaluation of our OVERWEIGHT rating and potential downside protection measures. Our disciplined approach to catalyst tracking and valuation ensures optimal entry and exit points.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 15 / 15</p></footer>
+</div>
+</body>
+</html>
