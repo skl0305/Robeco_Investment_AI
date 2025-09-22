@@ -72,6 +72,9 @@ class RobecoTemplateReportGenerator:
         logger.info(f"📋 Generating Robeco template report for {ticker}")
         logger.info(f"📊 Available analyses: {list(analyses_data.keys())}")
         
+        # Store investment objective for use in prompts
+        self.investment_objective = investment_objective or "comprehensive investment analysis"
+        
         try:
             # 🎯 IMPLEMENTING 2-CALL ARCHITECTURE
             logger.info("🚀 Starting 2-Call Architecture Report Generation")
@@ -283,7 +286,7 @@ class RobecoTemplateReportGenerator:
         logger.info(f"📊 CALL 1: Generating overview and analysis section (slides 1-7) for {ticker}")
         
         # Build Call 1 specific prompt
-        call1_prompt = await self._build_call1_prompt(company_name, ticker, analyses_data, financial_data)
+        call1_prompt = await self._build_call1_prompt(company_name, ticker, analyses_data, financial_data, self.investment_objective)
         
         # Generate Call 1 content (slides 1-7 only)
         call1_content = await self._generate_ai_report(call1_prompt, websocket, connection_id, "call1")
@@ -377,7 +380,7 @@ class RobecoTemplateReportGenerator:
         
         # Build Call 2 specific prompt with Call 1 context
         call2_prompt = await self._build_call2_prompt(
-            company_name, ticker, analyses_data, financial_data, call1_context
+            company_name, ticker, analyses_data, financial_data, call1_context, self.investment_objective
         )
         
         # Generate Call 2 content (slides 8-15 only) with completion validation
@@ -535,9 +538,9 @@ THIS IS RETRY {retry_count}/3 - COMPLETE ALL 8 SLIDES OR SYSTEM WILL RETRY AGAIN
 ### YOUR IDENTITY & EXPERTISE:
 You are an **elite hedge fund Portfolio Manager** with 25+ years of experience at top-tier firms like Renaissance Technologies, Bridgewater Associates, and Citadel. You've consistently generated significant alpha by **identifying insights that consensus systematically misses**. Your analytical prowess combines:
 
-- **Information Asymmetry Hunter**: Expert at finding insights hiding in plain sight that others overlook due to cognitive biases, complexity, or time horizons
+- **Information Asymmetry Hunter**: Expert at finding insights hiding in plain sight for {company_name} that others overlook due to cognitive biases, complexity, or time horizons
 - **Second-Order Thinking Master**: Understanding consequences of consequences - how today's trends create tomorrow's opportunities and risks that markets haven't priced
-- **Pattern Recognition Virtuoso**: Identifying historical parallels, cycle analysis, and inflection points before they become obvious to consensus
+- **Pattern Recognition Virtuoso**: Identifying historical parallels, cycle analysis, and inflection points before they become obvious to consensus for {company_name}
 - **Contrarian Positioning Expert**: Systematic frameworks for understanding why consensus is wrong and when contrarian positions offer asymmetric returns
 - **Predictive Analytics Pioneer**: Building forward-looking models using leading indicators, management behavior analysis, and competitive intelligence
 - **Capital Cycle Detective**: Understanding where companies are in their investment cycles and predicting capital allocation effectiveness
@@ -545,16 +548,16 @@ You are an **elite hedge fund Portfolio Manager** with 25+ years of experience a
 
 **Your reputation**: Wall Street's most prescient mind, known for calling major inflection points 12-18 months before consensus, with a track record of generating 300+ basis points of annual alpha through differentiated insights.
 
-🎯 **TARGET AUDIENCE - CIO WITH 30 YEARS STREET EXPERIENCE:**
+**TARGET AUDIENCE - CIO WITH 30 YEARS STREET EXPERIENCE:**
 Your analysis targets a Chief Investment Officer with 30 years on the Street who:
-- **Understands everything** - needs NO basic explanations or obvious insights
+- **Understands everything on {company_name}** - needs NO basic explanations or obvious insights
 - **Has NO TIME for fluff** - every sentence must deliver actionable intelligence  
 - **Demands high info density** - more insights per word than any analyst they've read
-- **Values only UNIQUE perspectives** - will instantly recognize recycled consensus thinking
+- **Values only UNIQUE perspectives** - will instantly recognize recycled consensus thinking for {company_name}
 - **Expects forward-looking analysis** - wants to know what happens NEXT, not what already happened
 - **Requires conviction** - needs specific price targets, timeframes, and conviction levels
 
-🚨 **ZERO TOLERANCE POLICY:**
+**ZERO TOLERANCE POLICY:**
 - ❌ **NO generic statements** ("Company is well-positioned...")
 - ❌ **NO obvious observations** ("Revenue growth is important...")  
 - ❌ **NO clichés or buzzwords** ("Best-in-class", "market leader", "going forward")
@@ -573,16 +576,16 @@ Produce an **elite-level, High info density, non-consensus investment analysis**
 - **Inflection Point Prediction**: Pinpoint when current trends will accelerate, decelerate, or reverse—before markets recognize it
 - **Hidden Optionality**: Identify embedded real options, strategic flexibility, or unrecognized value creation mechanisms
 
-**🔬 DEEP FUNDAMENTAL FORENSICS:**
-- **Management Behavior Analysis**: Read between lines of management actions, capital allocation, and strategic messaging
+** DEEP FUNDAMENTAL FORENSICS:**
+- **Management Behavior Analysis**: Read between lines of management actions, capital allocation, and strategic messaging for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Competitive Intelligence**: Understand competitive dynamics, market share shifts, and industry evolution better than consensus
 - **Technology Impact Assessment**: Predict how emerging technologies will reshape business models and competitive moats
 - **Regulatory Anticipation**: Forecast policy changes and their second/third-order effects on industry structure
 
 **⚡ TIMING & CATALYST PRECISION:**
-- **Earnings Inflection Points**: Predict when financial performance will surprise consensus based on leading indicators
+- **Earnings Inflection Points**: Predict when financial performance will surprise consensus based on leading indicators for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Multiple Expansion/Compression**: Identify when valuation re-rating will occur and what will trigger it
-- **Capital Cycle Positioning**: Understand where company and industry are in investment cycles for optimal entry/exit timing
+- **Capital Cycle Positioning**: Understand where company and industry are in investment cycles for optimal entry/exit timing for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Sentiment Reversal Timing**: Predict when negative/positive sentiment will reverse based on fundamental improvements
 
 **Your analysis must answer: \"What do I know about {company_name}'s future that the market doesn't yet understand?\"**
@@ -596,7 +599,7 @@ Produce an **elite-level, High info density, non-consensus investment analysis**
 - **Differentiated Insight**: Demonstrate differentiated understanding of business model, competitive dynamics, or industry evolution
 
 **2. PREDICTIVE ANALYTICS FRAMEWORK:**
-- **Leading Indicator Analysis**: Identify forward-looking metrics that predict earnings/multiple inflection points 6-12 months ahead
+- **Leading Indicator Analysis**: Identify forward-looking metrics that predict earnings/multiple inflection points 6-12 months ahead for {company_name} starting from {datetime.now().strftime("%B %Y")}
 - **Pattern Recognition**: Apply historical parallels and cycle analysis to predict likely future trajectories
 - **Scenario Probability Assessment**: Quantify likelihood of different outcomes using Bayesian inference and base rate analysis
 - **Inflection Point Mapping**: Pinpoint specific dates/catalysts when thesis will be validated or invalidated
@@ -613,17 +616,17 @@ Produce an **elite-level, High info density, non-consensus investment analysis**
 - **Complexity Premium**: Leverage situations too complex for algorithmic or retail analysis to generate alpha
 - **Time Horizon Arbitrage**: Exploit short-term volatility in fundamentally sound long-term value creation stories
 
-### 🔥 CRITICAL: DATA-DRIVEN ANALYTICAL MANDATES
+###  CRITICAL: DATA-DRIVEN ANALYTICAL MANDATES
 
 **🔍 RESEARCH-BACKED ANALYSIS REQUIREMENTS:**
 Every analysis point MUST be supported by:
-- **Latest Company Research**: Reference recent analyst reports, management guidance, and industry research
+- **Latest Company Research for {company_name}**: Reference recent analyst reports, management guidance, and industry research for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Google Search Integration**: Use current news, earnings transcripts, industry reports, regulatory filings
-- **Specific Data Points**: Cite exact numbers, percentages, dates, and quantified metrics
+- **Specific Data Points**: Cite exact numbers, percentages, dates, and quantified metrics for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Source Attribution**: Reference where insights come from (earnings calls, research reports, industry data)
 - **Comparative Analysis**: Compare to industry benchmarks, peer companies, and historical norms
 
-**📈 STOCK PRICE MOVEMENT ATTRIBUTION (MANDATORY):**
+** STOCK PRICE MOVEMENT ATTRIBUTION (MANDATORY):**
 For every major analytical point, you MUST address:
 - **Historical Price Context**: Why did the stock move up/down in the past 12-24 months?
 - **Fundamental Attribution**: What specific fundamental changes drove those price movements?
@@ -631,15 +634,15 @@ For every major analytical point, you MUST address:
 - **Mispricing Identification**: Where did the market overreact or underreact to fundamental changes?
 - **Forward Price Implications**: How will future fundamental changes impact stock price trajectory?
 
-**💡 DIFFERENTIATED VIEW REQUIREMENTS:**
+** DIFFERENTIATED VIEW REQUIREMENTS:**
 Every section must demonstrate:
-- **Consensus View Summary**: What does the street currently believe and why?
+- **Consensus View Summary**: What does the street currently believe on {company_name} as of {datetime.now().strftime("%B %Y")} and why?
 - **Your Contrarian Position**: How does your view differ from consensus and why?
 - **Evidence for Differentiation**: What specific evidence supports your different view?
 - **Timing Advantage**: Why will your view be proven right before consensus catches up?
 - **Quantified Impact**: What specific financial/stock price impact will your differentiated view create?
 
-**🎯 IMPLICATIONS-DRIVEN ANALYSIS:**
+** IMPLICATIONS-DRIVEN ANALYSIS:**
 After every analytical statement, you MUST provide:
 - **"So What?" Analysis**: What does this mean for future earnings, margins, competitive position?
 - **Investment Implications**: How does this impact your investment thesis and price target?
@@ -647,22 +650,21 @@ After every analytical statement, you MUST provide:
 - **Timeline Specificity**: When will these implications become apparent to the market?
 - **Portfolio Impact**: How does this affect position sizing and risk management?
 
-**🔮 FORWARD-LOOKING MANDATE:**
+** FORWARD-LOOKING MANDATE:**
 Every analysis must include:
-- **12-Month Outlook**: Specific predictions for the next 4 quarters with supporting logic
+- **12-Month Outlook**: Specific predictions for the next 4 quarters with supporting logic for {company_name} starting from {datetime.now().strftime("%B %Y")}
 - **Catalyst Timeline**: Exact dates/events that will validate or invalidate your thesis
 - **Scenario Planning**: Base/Bull/Bear cases with specific probability weightings
 - **Market Recognition**: When and how will the market recognize your insights?
 - **Exit Strategy**: Specific triggers for taking profits or cutting losses
 
 **5. MULTI-DIMENSIONAL VALUATION:**
-- **Dynamic DCF Modeling**: Incorporate optionality, competitive response functions, and non-linear growth trajectories
+- **Dynamic DCF Modeling**: Incorporate optionality, competitive response functions, and non-linear growth trajectories of {company_name}
 - **Sum-of-the-Parts with Synergies**: Value business segments independently while modeling cross-segment synergies
 - **Real Options Valuation**: Quantify strategic flexibility, expansion options, and abandonment values
 - **Through-the-Cycle Analysis**: Normalize for cyclical factors to assess sustainable earning power
 
 **6. RISK-ADJUSTED IMPLEMENTATION:**
-- **Position Sizing Optimization**: Use Kelly Criterion and risk parity concepts for optimal capital allocation
 - **Hedge Construction**: Design synthetic and natural hedges to isolate alpha while managing systematic risk
 - **Drawdown Management**: Establish dynamic stop-loss and portfolio heat metrics
 - **Correlation Analysis**: Understand factor exposures and portfolio construction implications
@@ -684,7 +686,7 @@ Every analysis must include:
 <header class="report-header-container">
     <div class="header-blue-border">
         <div class="company-header">
-            <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon">
+            <img src="[COMPANY_LOGO]" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
             <h1 class="name">{company_name}</h1>
             <div class="rating" style="color: #2E7D32;">[INVESTMENT_RATING]</div>
         </div>
@@ -715,16 +717,16 @@ Every analysis must include:
 ### SOPHISTICATED ANALYTICAL FRAMEWORKS TO DEPLOY:
 
 **MARKET EFFICIENCY ANALYSIS:**
-- **Information Asymmetry**: Identify data/insights not yet reflected in price
+- **Information Asymmetry**: Identify data/insights not yet reflected in price for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Behavioral Biases**: Exploit systematic cognitive errors in market pricing
 - **Structural Inefficiencies**: Leverage forced selling, index rebalancing, flow dynamics
 - **Complexity Premium**: Capitalize on situations too complex for mainstream analysis
 
 **MULTI-LAYERED FUNDAMENTAL ANALYSIS:**
-- **Business Model Decomposition**: Unit economics, scalability, defensibility, reinvestment rates
-- **Competitive Dynamics**: Porter's 5 forces, competitive response functions, game theory
-- **Management Quality**: Capital allocation track record, strategic vision, execution consistency
-- **Industry Life Cycle**: Position within cycle, disruption risk, consolidation opportunities
+- **Business Model Decomposition**: Unit economics, scalability, defensibility, reinvestment rates for {company_name} as of {datetime.now().strftime("%B %Y")}
+- **Competitive Dynamics**: Porter's 5 forces, competitive response functions, game theory for {company_name} as of {datetime.now().strftime("%B %Y")}
+- **Management Quality**: Capital allocation track record, strategic vision, execution consistency for {company_name} as of {datetime.now().strftime("%B %Y")}
+- **Industry Life Cycle**: Position within cycle, disruption risk, consolidation opportunities for {company_name} as of {datetime.now().strftime("%B %Y")}
 
 **QUANTITATIVE RIGOR REQUIREMENTS:**
 - **Factor Attribution**: Decompose returns into style, sector, and alpha components
@@ -752,6 +754,15 @@ Every analysis must include:
 - **Forward-Looking Framework**: Focus on what's not priced in vs. what market already knows
 - **Risk-Reward Asymmetry**: Emphasize upside/downside ratio and probability-weighted outcomes
 
+** CRITICAL: BOLD FORMATTING FOR IMPORTANT ANALYSIS:**
+- **USE <strong></strong> tags** for all KEY INSIGHTS, IMPORTANT METRICS, and CRITICAL INVESTMENT POINTS
+- **Bold all specific numbers**: <strong>25.3% ROIC</strong>, <strong>$2B investment</strong>, <strong>400bps margin expansion</strong>
+- **Bold contrarian statements**: <strong>Unlike consensus, we believe...</strong>
+- **Bold price targets and ratings**: <strong>$150 price target</strong>, <strong>OVERWEIGHT rating</strong>
+- **Bold key catalysts**: <strong>Q1 earnings will demonstrate...</strong>
+- **Bold competitive advantages**: <strong>Market-leading 40% share</strong>
+- **Bold investment conclusions**: <strong>Risk/reward strongly favorable at current levels</strong>
+
 ### TECHNICAL FORMATTING REQUIREMENTS:
 - **Document Structure**: Exactly 15 slides with specific HTML classes and IDs
 - **Professional Layout**: 1620px × 2291px institutional presentation format
@@ -762,7 +773,7 @@ Every analysis must include:
 
 ### PERFORMANCE EXPECTATIONS:
 **Your analysis must demonstrate:**
-- **Intellectual Rigor**: Depth that separates institutional research from sell-side reports
+- **Intellectual Rigor**: Depth that separates institutional research from sell-side reports for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Original Insights**: Perspectives not readily available in consensus research
 - **Actionable Intelligence**: Clear investment implications with specific entry/exit strategies
 - **Risk Awareness**: Comprehensive downside protection and scenario planning
@@ -1471,7 +1482,8 @@ Focus on qualitative analysis and publicly available information.
         company_name: str,
         ticker: str,
         analyses_data: Dict[str, Any],
-        financial_data: Dict = None
+        financial_data: Dict = None,
+        investment_objective: str = None
     ) -> str:
         """Build optimized prompt for Call 1 (slides 1-7) using modular base prompt + Call 1 specifics"""
         
@@ -1536,11 +1548,14 @@ Focus on qualitative analysis and publicly available information.
         metrics = complete_stock_data.get('metrics', {})
         
         # Build Call 1 specific requirements with precise HTML structure
+        investment_focus = investment_objective or "comprehensive investment analysis"
         call1_specific = f"""
 ## ALPHA GENERATION PHASE 1: INVESTMENT FOUNDATION & MARKET INEFFICIENCY IDENTIFICATION (SLIDES 1-7)
 
 ### YOUR ELITE PM MANDATE FOR CALL 1:
 As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to establish the fundamental investment case that demonstrates **why this opportunity exists** and **why consensus is wrong**. You're not writing generic research—you're identifying specific market inefficiencies and mispricings that create asymmetric risk/reward profiles for sophisticated capital allocation.
+
+**INVESTMENT OBJECTIVE FOCUS**: {investment_focus} - Tailor your analysis to support this specific investment objective and ensure all insights connect to this goal for {company_name} as of {datetime.now().strftime("%B %Y")}
 
 **Your analytical depth must rival the best Renaissance Technologies or Bridgewater research.** Every insight should demonstrate the pattern recognition and multi-layered thinking that separates elite PMs from sell-side analysts.
 
@@ -1552,7 +1567,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 - Always use the exact Robeco logo URL: `https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png`
 - For company icons, use Clearbit format: `https://logo.clearbit.com/[company-domain].com` 
 - Examples: `https://logo.clearbit.com/apple.com`, `https://logo.clearbit.com/microsoft.com`, `https://logo.clearbit.com/tesla.com`
-- Fallback for any company: `https://placehold.co/30x30/005F90/ffffff?text=[TICKER]`
+- Fallback for any company: `https://placehold.co/20x20/005F90/ffffff?text=[TICKER]`
 - Use actual company name (not placeholder) and determine rating based on your analysis
 
 **CRITICAL: Use ACTUAL company financial data for ALL metrics - NO hardcoded values**
@@ -1583,7 +1598,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 
 **SLIDE 1 - EXECUTIVE SUMMARY & METRICS (analysis-item format):**
 ```html
-<!-- 🚨 CRITICAL INSTRUCTIONS:
+<!-- CRITICAL INSTRUCTIONS:
 1. Do NOT generate <style> tags - CSS is provided in template
 2. ALL analysis must be company-specific and based on current fundamentals
 3. INVESTMENT RATING must be determined by YOUR analysis - NOT hardcoded
@@ -1593,8 +1608,8 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 -->
 <div class="slide" id="portrait-page-1">
     <header class="report-header-container">
-        <div class="slide-logo" style="top: 85px;">
-            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
         </div>
         <div class="header-blue-border">
             <div class="company-header">
@@ -1602,7 +1617,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -1721,8 +1736,8 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 ```html
 <div class="slide" id="portrait-page-1A">
     <header class="report-header-container">
-        <div class="slide-logo" style="top: 85px;">
-            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
         </div>
         <div class="header-blue-border">
             <div class="company-header">
@@ -1730,7 +1745,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -1739,7 +1754,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
     </header>
     <main>
         <div class="analysis-sections">
-            [CREATE 5 analysis-item blocks with these EXACT financial analysis categories and company-specific titles - ALL Google Search verified as of {datetime.now().strftime("%B %Y")}:]
+            [CREATE 5 analysis-item blocks with these EXACT financial analysis categories and company-specific titles - ALL Google Search verified as of {datetime.now().strftime("%B %Y")}:] for {investment_focus}
             
             [VALUATION - CREATE SPECIFIC TITLE: Research {company_name}'s current valuation metrics (P/E, EV/EBITDA, P/B) vs peers and historical averages. Create specific title like "VALUATION - Compelling Entry Point at 17.55x FWD P/E" or "VALUATION - Trading at Premium but Justified by Growth Profile". USE GOOGLE SEARCH to verify latest analyst price targets, peer comparisons, and valuation multiples. Explain why current valuation presents opportunity or risk. Include specific price targets and timeline. 150 words max.]
             
@@ -1763,8 +1778,8 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 ```html
 <div class="slide report-prose" id="investment-highlights-pitchbook-page">
     <header class="report-header-container">
-        <div class="slide-logo" style="top: 85px;">
-            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
         </div>
         <div class="header-blue-border">
             <div class="company-header">
@@ -1772,7 +1787,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -1799,8 +1814,8 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 
 <div class="slide report-prose" id="catalyst-page">
     <header class="report-header-container">
-        <div class="slide-logo" style="top: 85px;">
-            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
         </div>
         <div class="header-blue-border">
             <div class="company-header">
@@ -1808,7 +1823,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -1821,7 +1836,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
         **🎯 MANDATORY CATALYST ANALYSIS APPROACH:**
         
         **Step 1: STUDY {company_name}'S HISTORICAL STOCK DRIVERS**
-        - What fundamental changes moved {company_name}'s stock +/- 20% in past 3 years?
+        - What fundamental changes moved {company_name}'s stock price in past 3 years? (important to understand the company's business model and how it has changed over time)
         - Which earnings releases, business developments, or industry events drove major moves?
         - What valuation multiples does {company_name} trade at during good/bad times?
         
@@ -1841,55 +1856,126 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 </div>
 
 <div class="slide report-prose" id="company-analysis-page">
-    <header class="report-header-container">[Same header structure as slide 1 - copy exactly]</header>
+    <header class="report-header-container">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
+                Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
+                Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
+                <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
+                <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
+            </div>
+        </div>
+    </header>
     <main class="report-prose">
-        <h3>[Create a title that demonstrates deep understanding of {company_name}'s business model and what drives its competitive advantage. Focus on the core economic engine. Example: "APPLE'S HARDWARE-SOFTWARE INTEGRATION ADVANTAGE" or "AMAZON'S LOGISTICS & DATA FLYWHEEL DOMINANCE"]</h3>
+        <h3>[Create company-specific investment thesis title that captures the unique alpha opportunity for {company_name} as of {datetime.now().strftime("%B %Y")}. Examples: "NVIDIA'S AI INFRASTRUCTURE MONOPOLY: $400B TAM WITH 80% MARKET DOMINANCE" or "TESLA'S MANUFACTURING REVOLUTION: $25K MODEL UNLOCKING 50M UNIT TAM" - Use actual company name, specific metrics, and the core alpha driver that makes this stock outperform]</h3>
         
-        <h4>[Business model analysis focused on economic moats and value creation mechanisms]</h4>
-        <p>[Write 400-500 words like a sophisticated investor who understands business model economics. Focus on: 1) Core value proposition and how it creates customer stickiness 2) Unit economics and scalability factors 3) Network effects, switching costs, or scale advantages 4) Capital efficiency and return on invested capital drivers 5) Business model evolution and expansion opportunities. Use specific metrics like customer lifetime value, acquisition costs, churn rates, market share data. Show you understand what makes this business model superior to alternatives and how it translates to sustainable competitive advantage.]</p>
+        [INSTRUCTION: Identify 3-4 MOST CRITICAL ALPHA-GENERATING THEMES specific to {company_name}'s situation. DO NOT use fixed sections. Choose from company-specific opportunities like:]
         
-        <h4>[Operational excellence and execution capabilities]</h4>
-        <p>[400-500 words analyzing management quality, operational efficiency, and execution track record]</p>
+        [- Business Model Innovation (e.g., subscription transformation, platform economics)]
+        [- Technology Leadership (e.g., AI advantage, patent moat, R&D superiority)]  
+        [- Market Disruption (e.g., new category creation, legacy player displacement)]
+        [- Geographic Expansion (e.g., China penetration, India opportunity, Europe growth)]
+        [- Competitive Moat Expansion (e.g., ecosystem lock-in, network effects, scale economics)]
+        [- Regulatory Advantage (e.g., policy beneficiary, compliance moat, licensing barriers)]
+        [- ESG Transformation (e.g., sustainability leadership, carbon advantage, social impact)]
+        [- Capital Allocation Mastery (e.g., buyback strategy, dividend growth, M&A execution)]
+        [- Management Transition (e.g., new CEO catalyst, strategic pivot, operational excellence)]
+        [- Cyclical Recovery (e.g., downturn bottom, capacity utilization, pricing power return)]
+        [- Activist Catalyst (e.g., shareholder pressure, strategic review, asset optimization)]
+        [- Spin-off Value (e.g., conglomerate discount, pure-play premium, asset unlock)]
         
-        <h4>[Financial model durability and cash generation profile]</h4>
-        <p>[400-500 words demonstrating sophisticated understanding of cash flow dynamics and capital allocation]</p>
+        <h4>[ALPHA THEME 1 - CHOOSE MOST CRITICAL]: [Create insight-rich title specific to {company_name}. Example: "NVIDIA's CUDA Software Moat: $50B Ecosystem with 95% Developer Mind Share" or "Tesla's 4680 Battery Breakthrough: 50% Cost Reduction Enabling $25K Model"]</h4>
+        <p>[Write 750-800 words proving why this theme creates alpha for {company_name}. FRAMEWORK: 1) OPPORTUNITY QUANTIFICATION: Size the specific opportunity with TAM, growth rates, margin impact 2){company_name} ADVANTAGE: Explain unique positioning vs competitors with specific metrics 3) MARKET MISUNDERSTANDING: What consensus gets wrong about this opportunity 4) CATALYST TIMING: When this theme will drive stock performance with specific timeline 5) FINANCIAL IMPACT: Connect to earnings growth, margin expansion, multiple re-rating with numbers. Use Google-verified current data and forward-looking insights.]</p>
         
-        <h4>[Strategic positioning and market opportunity expansion]</h4>
-        <p>[400-500 words showing advanced analysis of addressable markets and growth vectors]</p>
+        <h4>[ALPHA THEME 2 - CHOOSE SECOND MOST CRITICAL]: [Create insight-rich title specific to {company_name}. Example: "Apple's India Manufacturing: $25B Smartphone Market with 15% Price Reduction" or "Amazon's AI Infrastructure: Bedrock $10B Revenue Potential vs Google/Azure"]</h4>
+        <p>[Write 750-800 words proving alpha generation. Same framework as Theme 1 - focus on what makes {company_name} unique in this specific opportunity area.]</p>
+        
+        <h4>[ALPHA THEME 3 - CHOOSE THIRD MOST CRITICAL]: [Create insight-rich title specific to {company_name}. Example: "Microsoft's Enterprise AI Stack: Teams/Office Integration Creating $50B TAM" or "Meta's Metaverse Recovery: Reality Labs Break-even by 2026"]</h4>
+        <p>[Write 750-800 words proving alpha generation. Same framework - connect theme to specific stock outperformance catalyst.]</p>
+        
+        <h4>[ALPHA THEME 4 - OPTIONAL FOURTH THEME IF CRITICAL]: [Create insight-rich title if there's a fourth major alpha driver specific to {company_name}]</h4>
+        <p>[Write 750-800 words if needed for complete investment story. Focus on timing and quantified impact.]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 5 / 15</p></footer>
 </div>
 
 <div class="slide report-prose" id="slide-industry-analysis">
-    <header class="report-header-container">[Same header structure as slide 1 - copy exactly]</header>
+    <header class="report-header-container">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
+                Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
+                Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
+                <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
+                <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
+            </div>
+        </div>
+    </header>
     <main>
-        <h3>[Create an industry-focused title that shows deep sector expertise and identifies key themes driving sector performance. Example: "CONSUMER ELECTRONICS: AI-DRIVEN UPGRADE SUPERCYCLE" or "CLOUD SOFTWARE: ENTERPRISE AI TRANSFORMATION ACCELERATING"]</h3>
+        <h3>[Create contrarian sector insight specific to {company_name}'s industry situation that drives investment outperformance. Examples: "SEMICONDUCTOR AI GOLD RUSH: NVIDIA CAPTURES 80% OF $400B INFRASTRUCTURE BUILD" or "CLOUD WARS ENDGAME: ENTERPRISE AI MIGRATION CREATING WINNER-TAKE-ALL" - Focus on sector dynamics that specifically benefit {company_name} vs peers]</h3>
         
-        <p><strong>[Write a section header that identifies the key market transformation theme]</strong></p>
-        <p>[Write 500-600 words like a sector specialist PM who understands industry dynamics better than generalists. Focus on: 1) Market size evolution and growth drivers with specific TAM data 2) Industry structural changes and disruption patterns 3) Key technology/regulatory/demographic trends reshaping the industry 4) Margin and profitability trends across the value chain 5) Capital allocation patterns and consolidation dynamics. Use industry-specific metrics, market research data, and forward-looking analysis. Show you understand where the industry is in its cycle and what drives outperformance.]</p>
+        [INSTRUCTION: Identify 2-3 MOST CRITICAL SECTOR THEMES that directly impact {company_name}'s investment case. Choose themes based on current industry situation:]
         
-        <p><strong>[Write a section header focusing on competitive landscape and market structure]</strong></p>
-        <p>[Write 500-600 words demonstrating sophisticated understanding of competitive dynamics, market share trends, barriers to entry, and pricing power evolution. Include analysis of key players, competitive positioning, and how market structure is evolving.]</p>
+        [SECTOR THEME OPTIONS: Market Transformation, Technology Cycle, Regulatory Disruption, Competitive Consolidation, Supply Chain Shifts, ESG Requirements, Geopolitical Impact, Capital Cycle, Customer Behavior Change, Pricing Power Inflection, etc.]
         
-        <p><strong>[Write a section header on industry investment implications and sector allocation]</strong></p>
-        <p>[Write 500-600 words connecting industry analysis to investment strategy, showing how sector themes drive stock selection and portfolio positioning.]</p>
+        <h4>[SECTOR THEME 1 - MOST CRITICAL FOR {company_name}]: [Create sector-insight title. Example: "AI Infrastructure Capex Supercycle: $150B→$400B TAM Favoring NVIDIA's 80% Market Share" or "Enterprise AI Adoption: $200B Cloud Migration Benefiting AWS 32% Market Position"]</h4>
+        <p>[Write 800-900 words proving how this sector trend specifically benefits {company_name}. FRAMEWORK: 1) SECTOR TREND QUANTIFICATION: Size the trend with Google-verified TAM, growth rates, timeline 2) {company_name} POSITIONING: Exact market share, competitive advantage in this trend vs peers 3) MARKET MISUNDERSTANDING: What consensus gets wrong about sector dynamics 4) CATALYST TIMING: When sector trend accelerates with impact on {company_name} 5) FINANCIAL IMPLICATIONS: Connect to {company_name}'s earnings/margin/multiple expansion. Use current industry data and forward projections.]</p>
+        
+        <h4>[SECTOR THEME 2 - SECOND MOST CRITICAL]: [Create sector-insight title specific to {company_name}'s opportunity. Example: "Geopolitical Supply Chain Reshoring: $50B Domestic Chip Investment Benefiting Intel Manufacturing" or "SaaS Margin Expansion Cycle: Enterprise Software Pricing Power Favoring Microsoft/Salesforce"]</h4>
+        <p>[Write 800-900 words proving sector advantage for {company_name}. Same framework - focus on what gives {company_name} specific edge in this sector dynamic.]</p>
+        
+        <h4>[SECTOR THEME 3 - OPTIONAL THIRD THEME IF CRITICAL]: [Create sector-insight title if there's a third major sector dynamic affecting {company_name}]</h4>
+        <p>[Write 800-900 words if needed for complete sector story. Connect to stock outperformance catalyst.]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 6 / 15</p></footer>
 </div>
 
 <div class="slide report-prose" id="slide-competitive-advantage">
-    <header class="report-header-container">[Same header structure as slide 1 - copy exactly]</header>
+    <header class="report-header-container">
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
+                Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
+                Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
+                <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
+                <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
+            </div>
+        </div>
+    </header>
     <main>
-        <h3>[Create a title focused on sustainable competitive advantages and economic moats. Show what makes {company_name} defensible long-term. Example: "ECOSYSTEM MOAT & PREMIUM PRICING POWER" or "SCALE ADVANTAGES & TECHNOLOGICAL DIFFERENTIATION"]</h3>
+        <h3>[Create quantified competitive advantage thesis specific to {company_name}'s moat that drives alpha generation as of {datetime.now().strftime("%B %Y")}. Examples: "NVIDIA'S AI SOFTWARE ECOSYSTEM: $50B CUDA MOAT WITH 95% DEVELOPER MIND SHARE" or "TESLA'S MANUFACTURING MACHINE: 50% COST ADVANTAGE ENABLING $25K MODEL" - Focus on {company_name}'s strongest, most defensible competitive advantages]</h3>
         
-        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">[Write a subsection title that quantifies market position and competitive standing with specific metrics. Example: "Market Leadership: 55% Global Premium Smartphone Share" or "Technology Moat: 3-Year R&D Lead vs Competitors"]</h4>
-        <p>[Write 500-600 words like a PM who understands what creates sustainable competitive advantage. Focus on: 1) Quantified market position with specific share, customer, and financial metrics vs peers 2) Competitive dynamics and how they're evolving 3) Barriers to entry and switching costs 4) Scale/network effects that strengthen over time 5) Innovation capabilities and R&D effectiveness. Use competitive intelligence, patent analysis, customer survey data, market research. Show you understand Porter's Five Forces and how {company_name} wins structurally.]</p>
+        [INSTRUCTION: Identify 2-3 STRONGEST COMPETITIVE ADVANTAGES that create sustainable alpha for {company_name}. Choose moats based on what's most defensible:]
         
-        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">[Write a subsection title focused on sustainable business model advantages and economic moats]</h4>
-        <p>[Write 500-600 words demonstrating deep understanding of what makes competitive advantages sustainable vs temporary, including analysis of moat durability, competitive responses, and long-term defensibility.]</p>
+        [MOAT OPTIONS: Technology Leadership, Scale Economics, Network Effects, Brand Premium, Switching Costs, Regulatory Barriers, Geographic Advantages, Vertical Integration, IP Portfolio, Management Execution, Capital Access, Data Advantages, Platform Control, etc.]
         
-        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">[Write a subsection title on competitive threats and defensive strategies]</h4>
-        <p>[Write 500-600 words showing sophisticated analysis of competitive risks and how {company_name} maintains its advantages over time.]</p>
+        <h4>[COMPETITIVE MOAT 1 - STRONGEST FOR {company_name}]: [Create quantified-moat title. Example: "CUDA Software Ecosystem: $50B Platform with 95% AI Developer Mind Share" or "iPhone Ecosystem Lock-In: 1.4B Devices Creating $80B Annual Services Revenue"]</h4>
+        <p>[Write 800-900 words proving sustainable competitive advantage for {company_name}. FRAMEWORK: 1) MOAT QUANTIFICATION: Measure advantage with specific financial metrics, market share, switching costs 2) SUSTAINABILITY PROOF: Why advantage is expanding not contracting vs historical periods 3) COMPETITOR FAILURE ANALYSIS: Why peers cannot replicate advantage in next 2-3 years with specific examples 4) PRICING POWER CONNECTION: How moat enables premium pricing, margin expansion, market share gains 5) ALPHA GENERATION: Connect moat strength to specific stock outperformance catalyst with timing. Use Google-verified competitive intelligence.]</p>
+        
+        <h4>[COMPETITIVE MOAT 2 - SECOND STRONGEST]: [Create quantified-moat title specific to {company_name}. Example: "Manufacturing Cost Leadership: 50% Lower Production Costs vs Legacy Automakers" or "Enterprise Software Stickiness: 95% Renewal Rates with 120% Net Revenue Retention"]</h4>
+        <p>[Write 800-900 words proving second competitive advantage. Same framework - show why this moat creates alpha vs peers.]</p>
+        
+        <h4>[COMPETITIVE MOAT 3 - OPTIONAL THIRD MOAT IF CRITICAL]: [Create quantified-moat title if there's a third major competitive advantage for {company_name}]</h4>
+        <p>[Write 800-900 words if needed for complete competitive story. Focus on moat expansion trajectory.]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 7 / 15</p></footer>
 </div>
@@ -1948,7 +2034,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 **SLIDES 3-7 REQUIREMENTS:**
 
 **SLIDE 3 - INVESTMENT HIGHLIGHTS (4 subsections):**
-- **H3 Title**: Create compelling title like "3. {company_name} INVESTMENT HIGHLIGHTS" but make it specific to {company_name}'s unique strengths
+- **H3 Title**: Create compelling title like "3. {company_name} INVESTMENT HIGHLIGHTS" but make it specific to {company_name}'s unique strengths as of {datetime.now().strftime("%B %Y")} for {investment_focus}
 - **Subsection Titles - MAKE THEM INSIGHTFUL & SPECIFIC:**
   - **Subsection 1**: Identify {company_name}'s PRIMARY competitive moat and create a title that captures it specifically (e.g., "Tesla's Vertical Integration & Battery Technology Moat", "Apple's Ecosystem Lock-in & Premium Brand Power")
   - **Subsection 2**: Identify {company_name}'s BIGGEST market opportunity and create a specific title (e.g., "Amazon's Cloud Dominance in $500B+ Market", "NVIDIA's AI Chip Leadership in Trillion-Dollar Transformation")
@@ -1967,41 +2053,63 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 - **CATALYST PRINCIPLES**: Each title must specify the exact catalyst, include timing/quantification, and convey why it matters
 - **Format**: Each subsection starts with specific H4 title and 500-600 word analysis paragraph
 
-**SLIDE 5 - COMPANY ANALYSIS (6 subsections):**
-- **H3 Title**: Create business model-focused title (e.g., "5. APPLE'S ECOSYSTEM FLYWHEEL & SERVICES TRANSFORMATION", "5. AMAZON'S THREE-PILLAR DOMINANCE MODEL")
-- **Subsection Titles - ANALYZE SPECIFIC BUSINESS FUNDAMENTALS:**
-  - **Subsection 1**: Core business analysis with SPECIFIC revenue mix (e.g., "iPhone Hardware: 52% Revenue Driving Services Adoption", "AWS: 70% Operating Income from 16% Revenue")
-  - **Subsection 2**: Revenue diversification with SPECIFIC geographic/segment data (e.g., "China 19% Revenue Despite Regulatory Headwinds", "International: 60% Revenue Growth Acceleration")
-  - **Subsection 3**: Operational excellence with SPECIFIC metrics (e.g., "38% Gross Margins vs 22% Industry Average", "Free Cash Flow Conversion: 95% vs Industry 60%")
-  - **Subsection 4**: Management track record with SPECIFIC achievements (e.g., "Cook's 10-Year $2.9T Value Creation Record", "Bezos-to-Jassy Transition Success")
-  - **Subsection 5**: Competitive position with SPECIFIC market data (e.g., "15% Global Smartphone Share, 50% Profit Share", "40% Cloud Infrastructure Market Leadership")
-  - **Subsection 6**: Strategic outlook with SPECIFIC initiatives (e.g., "Vision Pro: $10B+ Spatial Computing Opportunity", "AI Integration Across Product Suite")
-- **ANALYSIS PRINCIPLES**: Use actual company data, specific market positioning, and quantified competitive advantages
-- **Format**: Each subsection starts with data-driven H4 title and 500-600 word analysis paragraph
+**SLIDE 5 - COMPANY DEEP DIVE (FLEXIBLE ALPHA-GENERATING ANALYSIS):**
+- **H3 Title**: Create {company_name} company-specific investment thesis title that captures the unique alpha opportunity (e.g., "5. NVIDIA'S AI INFRASTRUCTURE MONOPOLY: $400B TAM WITH 80% MARKET DOMINANCE", "5. TESLA'S MANUFACTURING REVOLUTION: $25K MODEL UNLOCKING 50M UNIT TAM")
+- **FLEXIBLE SECTION APPROACH - TAILOR TO COMPANY'S ALPHA DRIVERS:**
+  - **IDENTIFY 3-4 MOST CRITICAL ALPHA THEMES** specific to this company's situation and opportunity set
+  - **NO MANDATORY SECTIONS** - Choose from: Business Model Innovation, Competitive Moat Expansion, Market Disruption, Technology Leadership, Geographic Expansion, Regulatory Advantage, ESG Transformation, Capital Allocation Mastery, Management Transition, Activist Catalyst, Spin-off Value, Cyclical Recovery, etc.
+  - **EXAMPLES OF COMPANY-SPECIFIC THEMES:**
+    - **NVIDIA**: "AI Infrastructure Monopoly", "Data Center GPU Dominance", "Software Ecosystem Lock-In", "Geopolitical Chip Advantage"
+    - **TESLA**: "Manufacturing Cost Leadership", "FSD Technology Moat", "Energy Storage Opportunity", "China Market Penetration" 
+    - **APPLE**: "Services Revenue Acceleration", "iPhone Ecosystem Stickiness", "India Market Expansion", "AR/VR Platform Creation"
+    - **AMAZON**: "AWS Margin Expansion", "Logistics Network Moat", "Prime Membership Growth", "AI Infrastructure Leadership"
+- **CRITICAL ALPHA GENERATION PRINCIPLES**: 
+  - Each section must identify SPECIFIC opportunity market misunderstands
+  - Focus on company's UNIQUE advantages vs peers in current market environment
+  - Connect analysis to QUANTIFIED stock price catalysts with timing
+  - Use GOOGLE-VERIFIED current data and forward-looking insights
+  - Show why THIS company will outperform in NEXT 12-24 months
+- **Format**: Each section starts with alpha-insight H4 title and 750-800 word analysis proving why this specific theme creates investment opportunity
 
-**SLIDE 6 - SECTOR ANALYSIS:**
-- **H3 Title**: Create industry-specific insight title (e.g., "6. SEMICONDUCTOR CAPITAL INTENSITY: AI CHIP SHORTAGE DRIVES PRICING POWER", "6. CLOUD INFRASTRUCTURE: ENTERPRISE MIGRATION ACCELERATING POST-COVID")
-- **Content Sections - IDENTIFY KEY INDUSTRY DYNAMICS:**
-  - **Section 1**: Market size and growth with specific data (e.g., "Global Cloud Market: $500B by 2025, 15% CAGR")
-  - **Section 2**: Competitive landscape with specific player analysis (e.g., "Big 3 Cloud Players Control 65% Market Share")
-  - **Section 3**: Regulatory/technology trends affecting the industry (e.g., "AI Regulation Timeline & Data Privacy Impact")
-  - **Section 4**: Industry value chain and profit pools (e.g., "Where Margins Are Highest: Software vs Hardware")
-- **SECTOR PRINCIPLES**: Use specific market data, identify unique industry dynamics, and explain how they benefit/threaten {company_name}
-- **Format**: Multiple paragraphs with **bold section headers** and 600-word detailed analysis
+**SLIDE 6 - SECTOR INSIGHT (FLEXIBLE MARKET-SPECIFIC ANALYSIS):**
+- **H3 Title**: Create contrarian sector insight specific to {company_name}'s industry situation as of {datetime.now().strftime("%B %Y")} (e.g., "6. SEMICONDUCTOR AI GOLD RUSH: NVIDIA CAPTURES 80% OF $400B INFRASTRUCTURE BUILD", "6. CLOUD WARS ENDGAME: ENTERPRISE AI MIGRATION CREATING WINNER-TAKE-ALL")
+- **FLEXIBLE SECTOR APPROACH - TAILOR TO INDUSTRY'S CURRENT DYNAMICS:**
+  - **IDENTIFY 2-3 MOST CRITICAL SECTOR THEMES** that directly impact {company_name}'s investment case
+  - **NO FIXED SECTIONS** - Choose based on sector situation: Market Transformation, Regulatory Disruption, Technology Cycle, Competitive Consolidation, Supply Chain Shifts, ESG Requirements, Geopolitical Impact, Capital Cycle, etc.
+  - **EXAMPLES OF SECTOR-SPECIFIC THEMES:**
+    - **SEMICONDUCTORS**: "AI Infrastructure Capex Supercycle", "Geopolitical Supply Chain Reshoring", "Advanced Node Oligopoly Formation"
+    - **CLOUD SOFTWARE**: "Enterprise AI Adoption Acceleration", "Hyperscaler Infrastructure Spending", "SaaS Margin Expansion Cycle"
+    - **AUTOMOTIVE**: "EV Transition Inflection Point", "Autonomous Driving Technology Race", "Battery Supply Chain Consolidation"
+    - **ENERGY**: "Renewable Energy Scaling Economics", "Grid Modernization Investment", "Carbon Pricing Policy Impact"
+- **CRITICAL SECTOR ALPHA PRINCIPLES**:
+  - Focus on sector trends that SPECIFICALLY benefit {company_name} vs peers
+  - Identify what market MISUNDERSTANDS about industry dynamics
+  - Use GOOGLE-VERIFIED current industry data and forward projections
+  - Connect sector trends to {company_name}'s SPECIFIC earnings/margin/multiple catalysts
+  - Show why sector dynamics create 12-24 month outperformance opportunity for {company_name}
+- **Format**: Each section starts with sector-insight H4 title and 800-900 words proving how sector dynamics specifically benefit {company_name}
 
-**SLIDE 7 - COMPETITIVE ADVANTAGE:**
-- **H3 Title**: Create moat-specific title (e.g., "7. APPLE'S ECOSYSTEM LOCK-IN: $2T SWITCHING COST BARRIER", "7. AMAZON'S SCALE ECONOMICS: FULFILLMENT NETWORK MOAT")
-- **Content Sections - ANALYZE SPECIFIC COMPETITIVE MOATS:**
-  - **Section 1**: Primary competitive advantage with quantification (e.g., "Brand Premium: 40% Higher ASPs vs Android")
-  - **Section 2**: Barriers to entry analysis (e.g., "R&D Spending: $30B vs Competitor Average $5B")
-  - **Section 3**: Network effects or scale advantages (e.g., "App Store: 1.8B Users Create Developer Flywheel")
-  - **Section 4**: Sustainability of advantage (e.g., "Patent Portfolio & Manufacturing Partnerships")
-- **MOAT PRINCIPLES**: Quantify the competitive advantage, explain sustainability, and show why competitors can't replicate
-- **Format**: Multiple H4 subsections with 600-word analysis each
+**SLIDE 7 - COMPETITIVE ADVANTAGE (FLEXIBLE MOAT-SPECIFIC ANALYSIS):**
+- **H3 Title**: Create quantified competitive advantage thesis specific to {company_name}'s moat (e.g., "7. NVIDIA'S AI SOFTWARE ECOSYSTEM: $50B CUDA MOAT WITH 95% DEVELOPER MIND SHARE", "7. TESLA'S MANUFACTURING MACHINE: 50% COST ADVANTAGE ENABLING $25K MODEL")
+- **FLEXIBLE COMPETITIVE APPROACH - TAILOR TO COMPANY'S SPECIFIC MOATS:**
+  - **IDENTIFY 2-3 STRONGEST COMPETITIVE ADVANTAGES** that create sustainable alpha generation
+  - **NO MANDATORY SECTIONS** - Choose from: Technology Leadership, Scale Economics, Network Effects, Brand Premium, Switching Costs, Regulatory Barriers, Geographic Advantages, Vertical Integration, IP Portfolio, Management Execution, Capital Access, etc.
+  - **EXAMPLES OF COMPANY-SPECIFIC MOATS:**
+    - **APPLE**: "Ecosystem Lock-In Economics", "Premium Brand Pricing Power", "Vertical Silicon Integration"
+    - **AMAZON**: "Logistics Network Scale", "AWS Infrastructure Moat", "Prime Membership Flywheel"
+    - **MICROSOFT**: "Enterprise Software Stickiness", "Cloud Platform Network Effects", "Developer Ecosystem Lock-In"
+    - **GOOGLE**: "Search Data Advantage", "Android Platform Control", "AI/ML Technical Leadership"
+- **CRITICAL COMPETITIVE ALPHA PRINCIPLES**:
+  - QUANTIFY each competitive advantage with specific financial metrics
+  - Prove advantage is EXPANDING not contracting vs historical periods
+  - Show why competitors CANNOT replicate advantage in next 2-3 years
+  - Connect moat strength to SPECIFIC pricing power, market share, margin expansion opportunities
+  - Use GOOGLE-VERIFIED competitive intelligence and benchmark data
+- **Format**: Each section starts with quantified-moat H4 title and 800-900 words proving sustainable competitive advantage with expansion trajectory
 
 **CRITICAL TITLE GENERATION PRINCIPLES:**
 - **NO GENERIC PLACEHOLDERS**: Never use "[COMPANY] INVESTMENT HIGHLIGHTS" - always create specific, insightful titles
-- **CAPTURE THE INSIGHT**: Titles must immediately convey the unique investment thesis (e.g., "TESLA'S VERTICAL INTEGRATION: BATTERY-TO-SOFTWARE DOMINANCE")
+- **CAPTURE THE INSIGHT**: Titles must immediately convey the unique investment thesis as of {datetime.now().strftime("%B %Y")} (e.g., "TESLA'S VERTICAL INTEGRATION: BATTERY-TO-SOFTWARE DOMINANCE")
 - **USE QUANTIFICATION**: Include specific metrics when impactful (e.g., "APPLE'S $200B+ SERVICES TRANSFORMATION")
 - **COMPELLING & SPECIFIC**: Make readers want to read more - show WHY this matters specifically for {company_name}
 - **INDUSTRY-SPECIFIC**: Tailor to {company_name}'s sector and unique competitive position
@@ -2015,14 +2123,14 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 
 ### ELITE PM ANALYTICAL APPROACH FOR CALL 1:
 
-**🔍 PROPRIETARY INSIGHT GENERATION (What Others Miss):**
-- **Hidden Inflection Points**: Identify business model changes, competitive shifts, or technology adoptions occurring beneath surface that will drive 12-18 month performance
+**PROPRIETARY INSIGHT GENERATION (What Others Miss):**
+- **Hidden Inflection Points**: Identify business model changes, competitive shifts, or technology adoptions occurring beneath surface that will drive 12-18 month performance starting from {datetime.now().strftime("%B %Y")}
 - **Management Behavior Decoding**: Analyze subtle changes in capital allocation, strategic messaging, or operational focus that signal future direction before consensus recognizes
 - **Competitive Intelligence Advantage**: Understand market share dynamics, pricing power evolution, and competitive response functions that aren't captured in public data
 - **Second-Order Technology Effects**: Predict how emerging technologies will create/destroy value in ways that aren't immediately obvious
 
-**🎯 NON-CONSENSUS POSITIONING FRAMEWORKS:**
-- **Consensus Deconstruction**: Systematically identify why current analyst estimates, valuation metrics, or market sentiment are systematically wrong
+**NON-CONSENSUS POSITIONING FRAMEWORKS:**
+- **Consensus Deconstruction as of {datetime.now().strftime("%B %Y")}**: Systematically identify why current analyst estimates, valuation metrics, or market sentiment are systematically wrong
 - **Complexity Arbitrage**: Exploit situations where business model complexity, accounting complexity, or industry evolution create analytical barriers for consensus
 - **Time Horizon Arbitrage**: Identify long-term value creation stories temporarily obscured by short-term noise or cyclical headwinds
 - **Behavioral Finance Exploitation**: Leverage recency bias, anchoring effects, or sector rotation patterns that create temporary mispricings
@@ -2033,14 +2141,14 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 - **Catalyst Probability Weighting**: Assess likelihood and timing of specific catalysts using base rates, management track records, and industry precedents
 - **Inflection Point Timing**: Predict when current trends will accelerate, plateau, or reverse based on fundamental analysis
 
-**🚀 FUTURE STATE VISUALIZATION:**
-- **Business Model Evolution**: Predict how {company_name}'s business model will evolve over 3-5 years based on current strategic initiatives and industry trends
+** FUTURE STATE VISUALIZATION:**
+- **Business Model Evolution**: Predict how {company_name}'s business model will evolve over 3-5 years starting from {datetime.now().strftime("%B %Y")} based on current strategic initiatives and industry trends
 - **Competitive Positioning Forecast**: Anticipate how competitive dynamics will shift and where {company_name} will be positioned
 - **Technology Disruption Assessment**: Evaluate whether emerging technologies represent threats or opportunities for long-term competitive positioning
 - **Capital Allocation Optimization**: Predict how management will allocate capital and the returns on that allocation based on historical patterns and current priorities
 
-**🧠 SOPHISTICATED THESIS ARCHITECTURE:**
-- **Multi-Layer Value Creation**: Identify 3-4 independent value drivers operating on different time horizons that compound to create asymmetric returns
+** SOPHISTICATED THESIS ARCHITECTURE:**
+- **Multi-Layer Value Creation**: Identify 3-4 {company_name} independent value drivers operating on different time horizons that compound to create asymmetric returns
 - **Option Value Recognition**: Quantify hidden optionality in business model flexibility, strategic assets, or expansion opportunities
 - **Moat Evolution Analysis**: Predict how competitive advantages will strengthen/weaken over time and what management is doing to reinforce them
 - **Quality of Growth Assessment**: Distinguish between revenue growth and profitable, sustainable, capital-efficient growth that creates long-term value
@@ -2083,13 +2191,13 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
 - **COMPRESSED INSIGHT DELIVERY**: Maximum insights per sentence. "Q3 beat (+8% vs consensus) driven by pricing (+5%), volume (+2%), and mix (+1%) validates our 3-factor expansion thesis"
 
 **NON-CONSENSUS INSIGHT REQUIREMENTS:**
-- **Slide 1**: Identify the primary market mispricing and why consensus is systematically wrong
+- **Slide 1**: Identify the primary market mispricing and why consensus is systematically wrong as of {datetime.now().strftime("%B %Y")}
 - **Slide 2**: Highlight 5 specific insights that demonstrate superior analytical depth vs. sell-side research
 - **Slide 3**: Reveal competitive advantages or market opportunities that others miss or underestimate
 - **Slide 4**: Predict specific catalysts and their timing that consensus hasn't properly analyzed
 - **Slide 5**: Demonstrate understanding of business model evolution that exceeds public company guidance
 - **Slide 6**: Identify industry dynamics and second-order effects that create hidden value
-- **Slide 7**: Quantify sustainable competitive advantages that others treat as commoditized
+- **Slide 7**: Quantify sustainable competitive advantages that others treat as commoditized as of {datetime.now().strftime("%B %Y")}
 
 **DIFFERENTIATION STANDARDS:**
 - Every insight must be **differentiated** - something that institutional investors paying $50K+ annually would find valuable
@@ -2381,7 +2489,8 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
         ticker: str,
         analyses_data: Dict[str, Any],
         financial_data: Dict = None,
-        call1_context: Dict = None
+        call1_context: Dict = None,
+        investment_objective: str = None
     ) -> str:
         """Build optimized prompt for Call 2 (slides 8-15) using modular base prompt + Call 2 specifics + Call 1 context"""
         
@@ -2395,7 +2504,7 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
             with open(self.css_path, 'r', encoding='utf-8') as f:
                 css_template = f.read()
             css_guidance = f"""
-### 🎯 SIMPLIFIED CSS STYLING FOR CALL 2 (REDUCED COMPLEXITY):
+### CSS STYLING FOR CALL 2:
 
 **MANDATORY SIMPLIFICATION**: To avoid HTML generation overload, use SIMPLE CSS classes instead of complex inline styling.
 
@@ -2451,15 +2560,19 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
         call1_summary = self._build_call1_context_summary(call1_context)
         
         # Build Call 2 specific requirements with precise HTML structure
+        investment_focus = investment_objective or "comprehensive investment analysis"
         call2_specific = f"""
 ## ALPHA GENERATION PHASE 2: QUANTITATIVE VALIDATION & SOPHISTICATED VALUATION (SLIDES 8-15)
 
 ### YOUR ELITE PM MANDATE FOR CALL 2:
 As an elite Portfolio Manager writing in {datetime.now().strftime("%B %Y")}, your **second phase objective** is to provide rigorous quantitative validation of the Phase 1 investment thesis through sophisticated financial analysis and multi-methodology valuation. You're applying the same analytical rigor that generates consistent alpha at the world's top hedge funds.
 
+**INVESTMENT OBJECTIVE FOCUS**: {investment_focus} - Ensure all financial analysis and valuation work supports this specific investment objective and connects quantitative insights to this goal.
+
 **Deploy your 25+ years of experience** in factor modeling, risk decomposition, and advanced valuation techniques. Every financial insight must demonstrate the quantitative sophistication that separates institutional research from generic analysis. **Critical**: Use the most current financial data available as of {datetime.now().strftime("%B %Y")}, including latest quarterly reports, recent market developments, and current economic conditions. **Google Search Grounding**: Use Google Search extensively to verify all financial statements data, recent earnings results, analyst estimates, competitor performance, and industry benchmarks mentioned in your analysis.
 
 {call1_summary}
+
 
 ### EXACT HTML STRUCTURE REQUIREMENTS - GENERATE PRECISELY:
 
@@ -2491,16 +2604,25 @@ WRITING STANDARDS:
 - Show differentiated insights: "Unlike consensus focus on top-line, we see margin inflection as key catalyst"
 - Quantify everything: "40% probability of $100 target vs 30% probability of $85 downside scenario"
 
-🏢 HEADER INSTRUCTIONS:
+CRITICAL: BOLD FORMATTING FOR IMPORTANT ANALYSIS:
+- **USE <strong></strong> tags** for all KEY FINANCIAL INSIGHTS, IMPORTANT METRICS, and CRITICAL VALUATION POINTS
+- **Bold all specific numbers**: <strong>25.3% ROIC</strong>, <strong>$2B revenue</strong>, <strong>400bps margin expansion</strong>
+- **Bold financial conclusions**: <strong>Free cash flow generation supports...</strong>
+- **Bold valuation metrics**: <strong>Trading at 15.2x NTM EV/EBITDA</strong>, <strong>20% FCF yield</strong>
+- **Bold competitive positioning**: <strong>Market-leading margins of 35%</strong>
+- **Bold investment thesis**: <strong>Undervalued at current multiples</strong>
+- **Bold risk factors**: <strong>Key downside risk is...</strong>
+
+HEADER INSTRUCTIONS:
 - Always use the exact Robeco logo URL: https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png
 - For company icons, use Clearbit format: https://logo.clearbit.com/[company-domain].com
 - Examples: https://logo.clearbit.com/apple.com, https://logo.clearbit.com/microsoft.com, https://logo.clearbit.com/tesla.com
-- Fallback for any company: https://placehold.co/30x30/005F90/ffffff?text=[TICKER]
+- Fallback for any company: https://placehold.co/20x20/005F90/ffffff?text=[TICKER]
 - Use actual company name (not placeholder) and determine rating based on your analysis
 -->
 <div class="slide report-prose" id="slide-financial-income-statement">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
@@ -2509,7 +2631,7 @@ WRITING STANDARDS:
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2531,8 +2653,8 @@ WRITING STANDARDS:
 </div>
 
 <div class="slide report-prose" id="slide-financial-balance-sheet">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
@@ -2541,7 +2663,7 @@ WRITING STANDARDS:
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2563,17 +2685,17 @@ WRITING STANDARDS:
 </div>
 
 <div class="slide report-prose" id="slide-financial-cash-flow-statement">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
             <div class="company-header">
-                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with actual for {company_name} domain (e.g., apple.com, microsoft.com) -->
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2581,31 +2703,31 @@ WRITING STANDARDS:
         </div>
     </header>
     <main>
-        <h3>[Create a title highlighting the key cash flow insight that validates your investment thesis. Think like a PM focused on cash generation quality and sustainability. Examples: "EXCEPTIONAL FCF CONVERSION: 95% OF NET INCOME TO FREE CASH FLOW" or "CAPEX EFFICIENCY: GROWTH WITH MINIMAL CAPITAL INTENSITY" or "CASH GENERATION ACCELERATION: WORKING CAPITAL IMPROVEMENTS"]</h3>
+        <h3>[Create a title highlighting the key cash flow insight that validates your investment thesis for {company_name} as of {datetime.now().strftime("%B %Y")}. Think like a PM focused on cash generation quality and sustainability. Examples: "EXCEPTIONAL FCF CONVERSION: 95% OF NET INCOME TO FREE CASH FLOW" or "CAPEX EFFICIENCY: GROWTH WITH MINIMAL CAPITAL INTENSITY" or "CASH GENERATION ACCELERATION: WORKING CAPITAL IMPROVEMENTS"]</h3>
         
         [COPY THE COMPLETE CASH FLOW TABLE FROM ABOVE - DON'T GENERATE NEW TABLES]
         
         <p><strong>[Write a section header that identifies the quality and sustainability of operating cash flow generation]</strong></p>
-        <p>[Write 400-500 words like a PM evaluating cash flow quality for investment decision-making. Focus on: 1) Operating cash flow quality - cash vs non-cash earnings, working capital impacts, seasonality patterns, collection efficiency 2) Free cash flow analysis - capex requirements, maintenance vs growth capex, asset intensity, cash conversion cycles 3) Cash flow sustainability - predictability, cyclicality, margin of safety, through-cycle analysis 4) Capital allocation analysis - reinvestment needs, dividend coverage, buyback capacity, acquisition funding 5) Investment implications - how cash generation supports valuation models, dividend growth, balance sheet strength. Reference specific numbers from the table and analyze cash flow trends vs peers. Show understanding of what separates high-quality cash generators from earnings manipulators.]</p>
+        <p>[Write 600-800 words like a top-tier PM evaluating cash flow quality for investment decision-making that incrope the for {company_name}' specifc business model and fundemntal and link to the financial statements result. Focus on: 1) Operating cash flow quality - cash vs non-cash earnings, working capital impacts, seasonality patterns, collection efficiency 2) Free cash flow analysis - capex requirements, maintenance vs growth capex, asset intensity, cash conversion cycles 3) Cash flow sustainability - predictability, cyclicality, margin of safety, through-cycle analysis 4) Capital allocation analysis - reinvestment needs, dividend coverage, buyback capacity, acquisition funding 5) Investment implications - how cash generation supports valuation models, dividend growth, balance sheet strength. Reference specific numbers from the table and analyze cash flow trends vs peers. Show understanding of what separates high-quality cash generators from earnings manipulators.]</p>
         
-        <p><strong>[Write a section header on capital efficiency and free cash flow yield analysis]</strong></p>
-        <p>[Write 400-500 words demonstrating advanced understanding of cash flow-based valuation, capital intensity analysis, and how cash generation patterns support your investment thesis.]</p>
+        <p><strong>[Write a section header on capital efficiency and free cash flow yield analysi for {company_name}]</strong></p>
+        <p>[Write 400-500 words demonstrating advanced understanding of cash flow-based valuation, capital intensity analysis, and how cash generation patterns support your investment thesis, must link to the financial statements result and the company fundmental and specifc events/news that happened that related to the cash flow and the investment thesis]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 10 / 15</p></footer>
 </div>
 
 <div class="slide report-prose" id="slide-financial-ratios">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
             <div class="company-header">
-                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with actual for {company_name} domain (e.g., apple.com, microsoft.com) -->
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2613,9 +2735,9 @@ WRITING STANDARDS:
         </div>
     </header>
     <main>
-        <h3>[Create a title that shows sophisticated ratio analysis and competitive benchmarking. Think like a PM demonstrating superior analytical insight. Examples: "SUPERIOR CAPITAL EFFICIENCY: 25% ROE VS INDUSTRY 12% AVERAGE" or "MARGIN EXPANSION OPPORTUNITY: PATH TO INDUSTRY-LEADING PROFITABILITY" or "ASSET TURNOVER LEADERSHIP: OPERATIONAL EFFICIENCY DRIVES RETURNS"]</h3>
+        <h3>[Create a title that shows sophisticated ratio analysis and competitive benchmarking for {company_name} as of {datetime.now().strftime("%B %Y")}. Think like a PM demonstrating superior analytical insight. Examples: "SUPERIOR CAPITAL EFFICIENCY: 25% ROE VS INDUSTRY 12% AVERAGE" or "MARGIN EXPANSION OPPORTUNITY: PATH TO INDUSTRY-LEADING PROFITABILITY" or "ASSET TURNOVER LEADERSHIP: OPERATIONAL EFFICIENCY DRIVES RETURNS"]</h3>
         
-        <p><strong>[Write a section header focusing on profitability ratios and peer comparison analysis]</strong></p>
+        <p><strong>[Write a section header focusing on profitability ratios and peer comparison analysis for {company_name}]</strong></p>
         <p>[Write 400-500 words like a PM conducting sophisticated ratio analysis for portfolio construction. Focus on: 1) Profitability analysis - ROE decomposition (margin x turnover x leverage), ROI trends, ROIC vs WACC analysis, peer benchmarking 2) Quality metrics - gross margin stability, EBITDA margin expansion, operating leverage measurement 3) Efficiency ratios - asset turnover, working capital management, inventory turnover, receivables quality 4) Trend analysis - 3-5 year ratio evolution, cyclical adjustments, normalized earnings power 5) Investment implications - how ratio analysis supports valuation premium/discount, identifies operational improvements, predicts mean reversion. Use industry-specific ratios and benchmarks. Show understanding of what ratios matter most for this business model and industry.]</p>
         
         <p><strong>[Write a section header on capital allocation efficiency and shareholder return metrics]</strong></p>
@@ -2625,17 +2747,17 @@ WRITING STANDARDS:
 </div>
 
 <div class="slide report-prose" id="slide-valuation">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
             <div class="company-header">
-                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with actual for {company_name} domain (e.g., apple.com, microsoft.com) -->
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2643,7 +2765,7 @@ WRITING STANDARDS:
         </div>
     </header>
     <main>
-        <h3>[Create a title that demonstrates sophisticated valuation analysis and shows specific upside potential. Think like a PM presenting a compelling valuation case. Examples: "SIGNIFICANT UNDERVALUATION: DCF SHOWS 40% UPSIDE TO FAIR VALUE" or "GROWTH AT REASONABLE PRICE: 1.2 PEG RATIO SUPPORTS PREMIUM" or "SUM-OF-PARTS ANALYSIS: HIDDEN VALUE IN UNDERVALUED SEGMENTS"]</h3>
+        <h3>[Create a title that demonstrates sophisticated valuation analysis and shows specific upside potential for {company_name} as of {datetime.now().strftime("%B %Y")}. Think like a PM presenting a compelling valuation case. Examples: "SIGNIFICANT UNDERVALUATION: DCF SHOWS 40% UPSIDE TO FAIR VALUE" or "GROWTH AT REASONABLE PRICE: 1.2 PEG RATIO SUPPORTS PREMIUM" or "SUM-OF-PARTS ANALYSIS: HIDDEN VALUE IN UNDERVALUED SEGMENTS"]</h3>
         
         <p><strong>[Write a section header on DCF analysis and intrinsic value calculation]</strong></p>
         <p>[Write 500-600 words with PROPRIETARY VALUATION INSIGHTS that demonstrate sophisticated modeling. ⚠️ GOOGLE SEARCH REQUIREMENT: Use Google Search to verify all consensus estimates, peer multiples, recent transactions, and industry benchmarks mentioned. MANDATORY ANALYTICAL STRUCTURE: 1) CONSENSUS VALUATION ERROR: Identify specific flaws in street models with evidence (search for latest analyst reports and consensus estimates) 2) YOUR DIFFERENTIATED MODEL: Present contrarian DCF assumptions with research backing (search for company guidance, industry reports, and management commentary) 3) HISTORICAL VALUATION CONTEXT: Connect current multiple to past trading ranges with fundamental attribution (search for historical valuation data and peer comparisons) 4) PEER VALUATION ARBITRAGE: Identify specific mispricing vs comparables with adjustment factors (search for current peer multiples and financial metrics) 5) CATALYST-DRIVEN RERATING: Map specific events to valuation inflection points (search for upcoming catalysts, regulatory approvals, product launches) 6) SCENARIO-WEIGHTED TARGET: Present probability-weighted price targets with specific triggers (search for recent price target updates and analyst methodology). Include DCF sensitivity tables, reference recent comparable transactions, cite specific research reports, and connect every assumption to business fundamentals. Each valuation component must include investment implications and timing catalysts.]</p>
@@ -2658,8 +2780,8 @@ WRITING STANDARDS:
 **SLIDES 13-15 - COMPREHENSIVE ANALYSIS & CONCLUSION:**
 ```html
 <div class="slide report-prose" id="slide-bull-bear-analysis">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
@@ -2668,7 +2790,7 @@ WRITING STANDARDS:
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2676,7 +2798,7 @@ WRITING STANDARDS:
         </div>
     </header>
     <main>
-        <h3>[Create a title that demonstrates sophisticated risk assessment and asymmetric return analysis. Think like a PM presenting risk/reward to investment committee. Examples: "AI LEADERSHIP VS COMPETITION THREAT: ASYMMETRIC RISK/REWARD" or "MARKET EXPANSION VS REGULATORY RISK: PROBABILITY-WEIGHTED OUTCOMES" or "MARGIN EXPANSION VS CYCLICAL HEADWINDS: DEFENSIVE GROWTH PROFILE"]</h3>
+        <h3>[Create a title that demonstrates sophisticated risk assessment and asymmetric return analysis for {company_name} as of {datetime.now().strftime("%B %Y")}. Think like a PM presenting risk/reward to investment committee. Examples: "AI LEADERSHIP VS COMPETITION THREAT: ASYMMETRIC RISK/REWARD" or "MARKET EXPANSION VS REGULATORY RISK: PROBABILITY-WEIGHTED OUTCOMES" or "MARGIN EXPANSION VS CYCLICAL HEADWINDS: DEFENSIVE GROWTH PROFILE"]</h3>
         
         <h4>[Write a bull case section title that identifies the primary upside driver with quantified potential. Example: "Bull Case: AI Platform Dominance Drives 40% Revenue CAGR"]</h4>
         <p>[Write 500-600 words like a PM building the bull case for investment committee approval. Focus on: 1) Primary upside catalyst with specific timeline and probability assessment 2) Quantified financial impact - revenue growth, margin expansion, market share gains with supporting analysis 3) Market opportunity size and company's ability to capture value with competitive advantages 4) Multiple expansion potential and valuation re-rating catalysts 5) Risk mitigation factors that protect downside even if bull case doesn't fully materialize. Use specific data, industry research, and competitive intelligence. Show sophisticated understanding of what could drive exceptional returns and why this outcome is achievable.]</p>
@@ -2684,15 +2806,15 @@ WRITING STANDARDS:
         <h4>[Write a bear case section title that identifies the primary downside risk with specific threat. Example: "Bear Case: Regulatory Headwinds + Competition Pressure Margin Compression"]</h4> 
         <p>[Write 500-600 words like a PM conducting rigorous risk analysis for downside protection. Focus on: 1) Primary downside risk with timeline and probability assessment 2) Quantified negative impact - revenue headwinds, margin compression, market share loss with supporting analysis 3) Competitive threats, regulatory risks, or macro headwinds that could derail thesis 4) Valuation compression scenarios and multiple contraction risks 5) Risk mitigation strategies, hedging opportunities, and downside protection measures. Show understanding of base rates, historical precedents, and what has gone wrong in similar situations. Demonstrate sophisticated risk management thinking.]</p>
         
-        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation</h4>
+        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation for {company_name} as of {datetime.now().strftime("%B %Y")}</h4>
         <p>[Write 400-500 words like a PM conducting rigorous expected value analysis for portfolio construction. Include probability-weighted scenario analysis, Sharpe ratio calculations, maximum drawdown assessment, and correlation analysis vs portfolio holdings. Show sophisticated risk-adjusted return thinking that goes beyond simple upside/downside scenarios.]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 13 / 15</p></footer>
 </div>
 
 <div class="slide report-prose" id="slide-scenario-analysis">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
@@ -2701,7 +2823,7 @@ WRITING STANDARDS:
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2727,17 +2849,17 @@ WRITING STANDARDS:
 </div>
 
 <div class="slide report-prose" id="slide-investment-conclusion">
-    <div class="slide-logo" style="top: 85px;">
-        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 1.5rem;">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
     </div>
     <header class="report-header-container">
         <div class="header-blue-border">
             <div class="company-header">
-                <!-- INSTRUCTION: Replace with actual company domain (e.g., apple.com, microsoft.com) -->
+                <!-- INSTRUCTION: Replace with actual company {company_name} domain (e.g., apple.com, microsoft.com) -->
                 <!-- INSTRUCTION: Replace with company's main domain for logo. Use https://logo.clearbit.com/[COMPANY-DOMAIN].com format
                 Examples: apple.com, microsoft.com, tesla.com, frasersproperty.com, etc. 
                 Research the actual company domain from stock_data['company_name'] and use appropriate domain -->
-                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/30x30/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon">
+                <img src="https://logo.clearbit.com/[COMPANY-DOMAIN].com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text={ticker}';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
                 <h1 class="name"><!-- INSTRUCTION: Use the FULL OFFICIAL company name from stock_data['company_name'] NOT the user input. Example: "Daikin Industries, Ltd." not "DAKIN" --></h1>
                 <!-- INSTRUCTION: Use CONSISTENT rating across ALL slides. Choose ONE: OVERWEIGHT (green #2E7D32), NEUTRAL (orange #FF8C00), or UNDERWEIGHT (red #C62828) -->
                 <div class="rating" style="color: [RATING-COLOR];">[INVESTMENT-RATING]</div>
@@ -2763,7 +2885,7 @@ WRITING STANDARDS:
 </div>
 ```
 
-### 🚨 CRITICAL: NO TABLE GENERATION REQUIRED!
+### CRITICAL: NO TABLE GENERATION REQUIRED!
 
 **SLIDES 8-10 - JUST COPY THE PRE-MADE TABLES:**
 - **Tables**: Ready-made HTML tables are provided above - COPY THEM EXACTLY
@@ -2771,77 +2893,78 @@ WRITING STANDARDS:
 - **Analysis**: Write analysis paragraphs referencing the specific numbers in the tables
 - **ZERO COMPLEXITY**: This eliminates the HTML generation complexity that caused failures
 
-### 🎯 SIMPLIFIED CALL 2 CONTENT SPECIFICATIONS:
+### SIMPLIFIED CALL 2 CONTENT SPECIFICATIONS:
 
 **SLIDES 11-12 (RATIOS & VALUATION) - STREAMLINED:**
 - **Slide 11**: Clean text-based ratio analysis with simple paragraphs
-- **Slide 12**: Straightforward valuation with DCF and multiples (no complex tables)
-- **Format**: Simple paragraph structure with clear section headers
-- **Focus**: Quality over complexity - concise but comprehensive analysis
-
-**SLIDES 13-15 (RISK & CONCLUSION) - SIMPLIFIED:**
-- **Slide 13**: Simple bull/bear lists with clean HTML structure
-- **Slide 14**: Scenario analysis in paragraph format (no complex styling)
-- **Slide 15**: Investment conclusion with 4 clear sections
+- **Slide 12**: Straightforwa
 - **Approach**: Eliminate ALL complex CSS - use only basic HTML elements
 
-### 🚨 CRITICAL SIMPLIFICATION MANDATE:
+### CRITICAL SIMPLIFICATION MANDATE:
 - **80% complexity reduction** - Remove all nested inline styles
 - **Focus on content quality** over visual complexity
 - **Use ONLY basic HTML** - `<p>`, `<ul>`, `<li>`, `<strong>`, `<table class="financial-table">`
 - **This prevents AI cognitive overload** that caused slide 9-10 failures
 
-### 🎯 CRITICAL TITLE GENERATION PRINCIPLES FOR CALL 2:
+### CRITICAL TITLE GENERATION PRINCIPLES FOR CALL 2:
 - **FINANCIAL INSIGHT FOCUS**: Every title must capture the key financial insight (e.g., "EXCEPTIONAL FCF CONVERSION: 95% OF NET INCOME TO FREE CASH FLOW")
 - **QUANTIFY THE STORY**: Include specific metrics that show financial strength/weakness (e.g., "25% ROE VS INDUSTRY 12% AVERAGE")
 - **COMPARATIVE ADVANTAGE**: Show how {company_name}'s financials compare to peers/industry (e.g., "SUPERIOR CAPITAL EFFICIENCY")
 - **VALUE DRIVER IDENTIFICATION**: Highlight what drives financial performance (e.g., "SUBSCRIPTION MODEL TRANSFORMATION")
 - **INVESTMENT IMPLICATION**: Make clear why this financial insight matters for investment returns
 - **NO GENERIC FINANCIAL TITLES**: Avoid "Income Statement Analysis" - use "REVENUE ACCELERATION & MARGIN EXPANSION"
+rd valuation with DCF and multiples (no complex tables)
+- **Format**: Simple paragraph structure with clear section headers
+- **Focus**: Quality over complexity - concise but comprehensive analysis
 
-### ELITE PM QUANTITATIVE FRAMEWORK FOR CALL 2:
+**SLIDES 13-15 (RISK & CONCLUSION):**
+- **Slide 13**: Simple bull/bear lists with clean HTML structure for {company_name} as of {datetime.now().strftime("%B %Y")}
+- **Slide 14**: Scenario analysis in paragraph format (no complex styling)
+- **Slide 15**: Investment conclusion with 4 clear sections
+### CRITICAL SIMPLIFICATION MANDATE FOR CALL 2:
+- **80% complexity reduction** - Remove all nested inline styles that cause AI cognitive overload
+- **Focus on analytical content quality** over visual complexity  
+- **Use ONLY basic HTML** - `<p>`, `<ul>`, `<li>`, `<strong>`, `<h3>`, `<h4>`, `<table class="financial-table">`
+- **This prevents AI cognitive overload** that historically caused slide 9-10 generation failures
 
-**🔬 FINANCIAL FORENSICS & QUALITY ANALYSIS:**
-- **Earnings Quality Decomposition**: Separate recurring vs. non-recurring, cash vs. non-cash components to assess sustainability of reported performance
-- **Working Capital Forensics**: Analyze changes in DSO, DIO, DPO to uncover management efficiency, competitive pressure, or accounting manipulation
-- **Capital Allocation Effectiveness**: Assess ROIC trends, incremental returns on invested capital, and management's track record of value creation
-- **Hidden Value Discovery**: Identify understated assets, off-balance sheet value, or optionality not reflected in current valuation
+### 🎯 CRITICAL TITLE GENERATION FOR CALL 2:
+- **FINANCIAL INSIGHT FOCUS**: Every title must capture the key financial insight (e.g., "EXCEPTIONAL FCF CONVERSION: 95% OF NET INCOME TO FREE CASH FLOW")
+- **QUANTIFY THE STORY**: Include specific metrics showing strength/weakness (e.g., "25% ROE VS INDUSTRY 12% AVERAGE")  
+- **COMPARATIVE ADVANTAGE**: Show {company_name}'s financials vs peers (e.g., "SUPERIOR CAPITAL EFFICIENCY: 25% ROIC VS PEER 15%")
+- **VALUE DRIVER IDENTIFICATION**: Highlight what drives performance (e.g., "SUBSCRIPTION MODEL: 70% GROSS MARGINS")
+- **INVESTMENT IMPLICATION**: Connect financial insight to stock price impact and investment returns
+- **NO GENERIC TITLES**: Avoid "Income Statement Analysis" - use "REVENUE ACCELERATION & MARGIN EXPANSION CYCLE"
 
-**⚡ PREDICTIVE FINANCIAL MODELING:**
-- **Leading Indicator Analysis**: Identify financial metrics that predict future performance 2-3 quarters ahead (e.g., deferred revenue growth, R&D productivity, customer acquisition trends)
-- **Inflection Point Detection**: Use ratio analysis and trend decomposition to predict when margin expansion/compression, revenue acceleration/deceleration will occur
-- **Cash Flow Predictability**: Assess quality and sustainability of free cash flow generation through cycle analysis and working capital management
-- **Capital Efficiency Trajectory**: Predict future ROIC, ROE evolution based on current investment patterns and competitive positioning
+### ELITE PM FINANCIAL ANALYSIS FRAMEWORK for {company_name} as of {datetime.now().strftime("%B %Y")}:
 
-**🎯 NON-CONSENSUS FINANCIAL INSIGHTS:**
-- **Segment Profitability Analysis**: Uncover hidden value in business segments that consensus treats as commoditized or declining
-- **Competitive Margin Analysis**: Predict how pricing power, cost structure advantages will evolve relative to peers
-- **Capital Cycle Positioning**: Determine where company is in investment cycle and predict future cash generation vs. capital needs
-- **Quality of Growth Assessment**: Distinguish between growth that destroys vs. creates value based on incremental returns and capital requirements
+** FINANCIAL FORENSICS & QUALITY ANALYSIS:**
+- **Earnings Quality Dissection**: Separate recurring vs. non-recurring, cash vs. non-cash components; assess sustainability of reported margins; identify accounting choices that enhance/mask true performance specific to {company_name} as of {datetime.now().strftime("%B %Y")}
+- **Capital Allocation Mastery**: Assess ROIC trends by segment, incremental returns on new investments, M&A track record, and value creation vs. destruction patterns
+- **Hidden Value Discovery**: Identify understated assets, off-balance sheet value, real estate/IP portfolios, and embedded optionality not reflected in current valuation
 
-**📊 SOPHISTICATED VALUATION FRAMEWORKS:**
-- **Dynamic DCF with Optionality**: Model non-linear growth trajectories, competitive response functions, and real options value
-- **Sum-of-Parts with Synergies**: Value business segments independently while capturing cross-segment value creation
-- **Through-the-Cycle Normalization**: Adjust for cyclical factors to assess sustainable earning power and appropriate valuation multiples
-- **Behavioral Finance Valuation**: Exploit sentiment-driven valuation gaps by comparing fundamental value to market perceptions
+**⚡ FORWARD-LOOKING FINANCIAL INSIGHTS:**
+- **Leading Indicator Analysis**: Identify metrics that predict earnings 2-3 quarters ahead (deferred revenue growth, customer acquisition trends, inventory patterns)
+- **Margin Inflection Prediction**: Analyze when margin expansion/compression accelerates; assess pricing power sustainability and cost structure evolution
+- **Cash Flow Predictability**: Evaluate free cash flow conversion consistency, working capital seasonality, and cash generation through cycles
+- **Capital Efficiency Evolution**: Predict future ROIC/ROE trajectory based on investment patterns, competitive positioning, and industry dynamics
 
-**🧮 QUANTITATIVE RISK ASSESSMENT:**
-- **Scenario Probability Weighting**: Use Bayesian inference and base rates to assign probabilities to bull/base/bear outcomes
-- **Factor Decomposition**: Understand style, sector, quality, and company-specific drivers of returns for portfolio construction
-- **Stress Testing**: Model performance under various macro scenarios, competitive threats, and operational challenges
-- **Correlation Analysis**: Assess how returns correlate with market factors, sector peers, and macroeconomic variables
+**🎯 NON-CONSENSUS INSIGHTS & ALPHA GENERATION:**
+- **Segment Profitability Deep Dive**: Uncover hidden value in segments consensus treats as commoditized; identify cross-subsidization and standalone opportunities
+- **Competitive Financial Edge**: Predict how {company_name}'s unit economics and cost advantages evolve vs peers; assess pricing power sustainability
+- **Capital Cycle Positioning**: Determine where company sits in investment/harvest cycle; predict future cash generation vs. capital needs
+- **Quality of Growth Assessment**: Distinguish growth that creates vs. destroys value using incremental returns and customer economics analysis
 
-**💡 ALPHA SOURCE IDENTIFICATION:**
-- **Information Asymmetry Quantification**: Measure how much the market understands vs. misses about financial trajectory
-- **Complexity Premium Assessment**: Quantify valuation discount due to business model complexity or accounting complexity
-- **Time Horizon Arbitrage**: Identify when short-term volatility creates opportunities in long-term value creation stories
-- **Management Quality Premium**: Assess whether market properly values management's capital allocation and operational excellence
+**PRACTICAL VALUATION & RISK ASSESSMENT:**
+- **Multiple Valuation Methods**: DCF with realistic assumptions, sum-of-parts analysis, peer comparisons with quality adjustments
+- **Scenario Analysis**: Bull/base/bear cases with specific assumptions and probability assessments based on fundamentals
+- **Through-Cycle Normalization**: Adjust for cyclical factors to assess sustainable earning power and appropriate multiples
+- **Risk Factor Identification**: Company-specific, sector, and macro risks with impact quantification and mitigation assessment
 
 {financial_context}
 
 {analyst_insights}
 
-**🚀 ULTRA-SOPHISTICATED EXECUTION MANDATE as of {datetime.now().strftime("%B %Y")}**: 
+**ULTRA-SOPHISTICATED EXECUTION MANDATE as of {datetime.now().strftime("%B %Y")}**: 
 Generate ALL 8 slides that demonstrate **differentiated financial insights, predictive analytics, and quantitative edge** that validates your investment thesis through analysis that others systematically miss. Each slide must answer: **"What do the financials reveal about {company_name}'s future that consensus analysis overlooks?"**
 
 **CRITICAL ANALYTICAL REQUIREMENTS:**
@@ -2871,7 +2994,7 @@ Generate ALL 8 slides that demonstrate **differentiated financial insights, pred
 - **RESOURCE ALLOCATION INTELLIGENCE**: Capital efficiency insights. "$500M capex generates $2.1B revenue capacity at 28% incremental margins = 84% IRR vs 15% cost of capital"
 - **COMPRESSED INSIGHT DELIVERY**: Maximum insights per sentence. "Q3 beat (+8% vs consensus) driven by pricing (+5%), volume (+2%), and mix (+1%) validates our 3-factor expansion thesis"
 
-**FINANCIAL INSIGHT REQUIREMENTS:**
+**FINANCIAL INSIGHT REQUIREMENTS for {company_name} as of {datetime.now().strftime("%B %Y")}:
 - **Slide 8**: Identify hidden earnings quality issues or sustainable competitive advantages buried in income statement
 - **Slide 9**: Reveal balance sheet strengths/weaknesses that create option value or hidden risks consensus misses
 - **Slide 10**: Uncover cash flow generation patterns that predict future capital allocation effectiveness
@@ -2910,7 +3033,7 @@ Generate ALL 8 slides that demonstrate **differentiated financial insights, pred
 - Be punchy, direct, and impactful - eliminate unnecessary words
 - Every sentence must add specific value or data points
 
-**🚨 CRITICAL COMPLETION ENFORCEMENT:**
+**CRITICAL COMPLETION ENFORCEMENT:**
 YOU MUST COMPLETE ALL 8 SLIDES (8, 9, 10, 11, 12, 13, 14, 15). 
 - Do NOT stop at slide 10 or any intermediate slide
 - Each slide must have complete content and proper footer with page numbers

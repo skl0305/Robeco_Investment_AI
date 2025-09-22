@@ -333,11 +333,11 @@ class RobecoWordReportGenerator:
         content = slide_soup.find('div', class_='slide-content')
         if content:
             logger.info("✅ Found slide-content")
-            self._process_slide_content(doc, content)
+            self._process_slide_content(doc, content, slide_classes)
         else:
             logger.info("ℹ️ No slide-content found, processing slide directly")
             # If no slide-content wrapper, process the slide itself
-            self._process_slide_content(doc, slide_soup)
+            self._process_slide_content(doc, slide_soup, slide_classes)
         
         # Process report footer if exists
         footer = slide_soup.find('div', class_='report-footer')
@@ -372,9 +372,13 @@ class RobecoWordReportGenerator:
             run.font.color.rgb = self.robeco_colors['text_dark']
             p.space_after = Pt(22)
     
-    def _process_slide_content(self, doc: Document, content_soup):
+    def _process_slide_content(self, doc: Document, content_soup, slide_classes=None):
         """Process main slide content"""
         logger.info(f"🔍 Processing slide content, type: {type(content_soup)}")
+        
+        # Initialize slide_classes if not provided
+        if slide_classes is None:
+            slide_classes = []
         
         # Check if content_soup has children (BeautifulSoup element) or needs different processing
         if hasattr(content_soup, 'children'):
@@ -1867,6 +1871,13 @@ class RobecoWordReportGenerator:
             all_images = slide_soup.find_all('img')
             logger.info(f"📸 ENHANCED: Found {len(all_images)} images in slide")
             
+            # Also look for chart containers with canvas/svg elements or chart data
+            chart_containers = slide_soup.find_all(['canvas', 'svg']) + slide_soup.find_all(['div'], class_=lambda x: x and any(chart_class in ' '.join(x) for chart_class in ['chart', 'graph', 'visualization']))
+            if chart_containers:
+                logger.info(f"📊 Found {len(chart_containers)} chart containers (canvas/svg/chart-divs)")
+                for container in chart_containers:
+                    self._process_chart_container(doc, container, slide_soup)
+            
             # 📍 CREATE IMAGE POSITION MAP: Analyze HTML structure for precise positioning
             image_position_map = self._create_image_position_map(slide_soup, all_images)
             
@@ -1886,11 +1897,11 @@ class RobecoWordReportGenerator:
                 image_type = self._determine_image_type(img, img_src, img_alt, img_classes)
                 
                 if image_type == 'robeco_logo':
-                    logger.info("🏢 Robeco logo - processed in header section")
-                    continue
+                    logger.info("🏢 Robeco logo - inserting into header section")
+                    self._insert_logo_image(doc, img, img_src, img_alt, 'robeco_logo')
                 elif image_type == 'company_icon':
-                    logger.info("🏢 Company icon - processed in company header section")
-                    continue
+                    logger.info("🏢 Company icon - inserting into company header section")
+                    self._insert_logo_image(doc, img, img_src, img_alt, 'company_icon')
                 elif image_type == 'chart':
                     logger.info("📊 Chart image - inserting with chart-specific positioning")
                     self._insert_chart_image_with_context(doc, img, img_src, img_alt, image_position_map.get(i, {}))
@@ -2215,6 +2226,152 @@ class RobecoWordReportGenerator:
         except Exception as e:
             logger.error(f"❌ Error adding company icon: {e}")
             return False
+    
+    def _insert_logo_image(self, doc: Document, img_element, img_src: str, img_alt: str, logo_type: str):
+        """Insert logo images (Robeco logo or company icon) into Word document"""
+        try:
+            logger.info(f"🖼️ Inserting {logo_type}: {img_alt}")
+            
+            # Create paragraph for the logo
+            p = doc.add_paragraph()
+            
+            # Configure alignment and size based on logo type
+            if logo_type == 'robeco_logo':
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                target_width = Inches(1.2)  # Robeco logo size
+                logger.info("🏢 Robeco logo - left aligned")
+            elif logo_type == 'company_icon':
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  
+                target_width = Inches(0.4)  # Company icon size
+                logger.info("🏢 Company icon - center aligned")
+            else:
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                target_width = Inches(0.5)  # Default size
+            
+            # Download and insert the image
+            success = self._download_and_insert_image_inline(p, img_src, img_alt, target_width)
+            
+            if success:
+                logger.info(f"✅ Successfully inserted {logo_type}: {img_alt}")
+            else:
+                # Remove empty paragraph if image failed
+                doc.paragraphs.pop()
+                logger.warning(f"⚠️ Failed to insert {logo_type}, paragraph removed: {img_src}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error inserting {logo_type}: {e}")
+    
+    def _process_chart_container(self, doc: Document, container, slide_soup):
+        """Process chart containers (canvas/svg/chart divs) and extract chart data"""
+        try:
+            logger.info(f"📊 Processing chart container: {container.name}, classes: {container.get('class', [])}")
+            
+            # Look for stock data in nearby script tags
+            script_tags = slide_soup.find_all('script')
+            chart_data = None
+            
+            for script in script_tags:
+                script_text = script.get_text()
+                if 'stockData' in script_text or 'chartData' in script_text:
+                    chart_data = self._extract_chart_data_from_script(script_text)
+                    break
+            
+            if chart_data:
+                logger.info(f"📈 Extracted chart data: {len(chart_data.get('prices', []))} price points")
+                self._insert_chart_summary(doc, chart_data)
+            else:
+                # Fallback: Create placeholder for chart
+                logger.info("📊 No chart data found, creating chart placeholder")
+                self._insert_chart_placeholder(doc, container)
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing chart container: {e}")
+    
+    def _extract_chart_data_from_script(self, script_text: str) -> dict:
+        """Extract chart data from JavaScript code"""
+        try:
+            import re
+            
+            # Extract price data
+            price_matches = re.findall(r"'price':\s*([\d.]+)", script_text)
+            date_matches = re.findall(r"'date':\s*'([\d-]+)'", script_text)
+            
+            # Extract ticker or company name
+            ticker_match = re.search(r"'ticker':\s*'([^']+)'", script_text)
+            company_match = re.search(r"'company':\s*'([^']+)'", script_text)
+            
+            if price_matches and date_matches:
+                prices = [float(p) for p in price_matches]
+                current_price = prices[-1]
+                start_price = prices[0]
+                price_change = current_price - start_price
+                price_change_pct = (price_change / start_price) * 100
+                
+                return {
+                    'prices': prices,
+                    'dates': date_matches,
+                    'current_price': current_price,
+                    'start_price': start_price,
+                    'price_change': price_change,
+                    'price_change_pct': price_change_pct,
+                    'ticker': ticker_match.group(1) if ticker_match else 'Unknown',
+                    'company': company_match.group(1) if company_match else 'Company'
+                }
+            
+            return {}
+            
+        except Exception as e:
+            logger.error(f"❌ Error extracting chart data: {e}")
+            return {}
+    
+    def _insert_chart_summary(self, doc: Document, chart_data: dict):
+        """Insert a text-based chart summary"""
+        try:
+            # Chart title
+            p = doc.add_paragraph()
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            title_run = p.add_run(f"📈 {chart_data.get('ticker', 'Stock')} Price Chart")
+            title_run.font.size = Pt(14)
+            title_run.font.bold = True
+            title_run.font.color.rgb = self.robeco_colors['brown_black']
+            
+            # Price summary
+            p = doc.add_paragraph()
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            current_price = chart_data.get('current_price', 0)
+            price_change = chart_data.get('price_change', 0)
+            price_change_pct = chart_data.get('price_change_pct', 0)
+            
+            # Color based on performance
+            color = self.robeco_colors['success'] if price_change >= 0 else self.robeco_colors['error']
+            arrow = "▲" if price_change >= 0 else "▼"
+            
+            summary_text = f"Current: ${current_price:.2f} {arrow} ${abs(price_change):.2f} ({price_change_pct:+.1f}%)"
+            summary_run = p.add_run(summary_text)
+            summary_run.font.size = Pt(12)
+            summary_run.font.color.rgb = color
+            
+            logger.info(f"✅ Inserted chart summary for {chart_data.get('ticker', 'Unknown')}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error inserting chart summary: {e}")
+    
+    def _insert_chart_placeholder(self, doc: Document, container):
+        """Insert a placeholder for missing charts"""
+        try:
+            p = doc.add_paragraph()
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            placeholder_run = p.add_run("📊 [Chart - Data visualization]")
+            placeholder_run.font.size = Pt(12)
+            placeholder_run.font.italic = True
+            placeholder_run.font.color.rgb = self.robeco_colors['text_secondary']
+            
+            logger.info("✅ Inserted chart placeholder")
+            
+        except Exception as e:
+            logger.error(f"❌ Error inserting chart placeholder: {e}")
     
     def _download_and_insert_image_inline(self, paragraph, img_url: str, alt_text: str, target_width: object) -> bool:
         """Download image from URL and insert into Word document"""

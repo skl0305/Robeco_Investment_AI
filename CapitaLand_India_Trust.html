@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 120px; right: 98px; width: 80px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* SIMPLIFIED FINANCIAL TABLES - REDUCED COMPLEXITY */
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .financial-table thead tr {
+            background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%);
+            color: white;
+            height: 45px;
+        }
+        
+        .financial-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: none;
+        }
+        
+        .financial-table th.text-right {
+            text-align: right;
+            padding: 12px 10px;
+            font-size: 11px;
+        }
+        
+        .financial-table tbody tr {
+            background: #FFFFFF;
+            height: 35px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .financial-table tbody tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        
+        .financial-table td {
+            padding: 8px 16px;
+            font-weight: 500;
+            color: #2D3748;
+            border: none;
+            font-size: 11px;
+        }
+        
+        .financial-table td.text-right {
+            text-align: right;
+            padding: 8px 10px;
+        }
+        
+        .financial-table td.positive {
+            color: #059669;
+        }
+        
+        .financial-table td.negative {
+            color: #DC2626;
+        }
+        
+        .financial-table td.neutral {
+            color: #6B7280;
+        }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Specific fix for Company Analysis page content visibility */
+        #company-analysis-page {
+            min-height: 2500px; /* Ensure enough height for all content */
+            height: auto;
+            overflow: visible;
+        }
+
+        #company-analysis-page .slide-content {
+            flex-grow: 1;
+            min-height: 2000px; /* Ensure content area is tall enough */
+            height: auto;
+            overflow: visible;
+            display: block; /* Change from flex to block for better content flow */
+        }
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+<div class="slide" id="portrait-page-1">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value"><strong>CY6U.SI</strong></div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>S$1.16</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>S$1.57B</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>S$3.49B</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>S$0.82 - S$1.20</strong></div></div>
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value"><strong>4.00x / 11.60x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>18.61x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>5.39x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>0.90x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>74.1%/64.9%/1.3%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>23.6%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>2.7%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>64.3%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>S$1.27 - S$1.50</strong></div></div>
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>9.7%</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value"><strong>-83.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.50x</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>105.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>0.66x</strong></div></div>
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>S$-108.2M</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>0.34x</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>6.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>0.23x</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>2.12M / N/AM</strong></div></div>
+        </section>
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                <p><strong>CapitaLand India Trust</strong> (CLINT) presents a compelling, overlooked opportunity within India's high-growth "new economy" real estate sectors. Our <strong>OVERWEIGHT</strong> rating is driven by the market's systematic undervaluation of CLINT's strategic pivot into data centers and robust industrial & logistics segments, alongside its resilient IT business parks. Consensus remains anchored on traditional office exposure, failing to fully price in the <strong>accelerating DPU growth</strong> from accretive developments and proactive capital management. The stock's current <strong>0.90x P/B ratio</strong> offers a compelling entry point for a portfolio poised to deliver significant long-term capital appreciation and stable distributions.</p>
+                <p><strong>Unlike consensus, we believe CLINT's strategic shift and development pipeline will drive a substantial re-rating.</strong> The operationalization of new data centers and the completion of key industrial & logistics developments by <strong>2H 2025</strong> and into <strong>FY2026</strong> represent critical inflection points. These catalysts will validate CLINT's capital allocation strategy and demonstrate superior Net Property Income (NPI) expansion. Specifically, revenue contribution from one data center is expected to commence in <strong>2H 2025</strong>, marking a tangible earnings inflection that the market is yet to fully appreciate.</p>
+                <p>Our <strong>S$1.50</strong> price target implies a <strong>+29.3% upside</strong> from the current S$1.16, achievable within a <strong>12-18 month</strong> timeframe with <strong>70% probability</strong>. This target is supported by a justified re-rating of CLINT's <strong>P/B multiple to 1.16x</strong>, aligning it with pure-play new economy REITs. The market's recognition of CLINT's strong sponsor, CapitaLand Investment (CLI), and its ability to deliver superior DPU growth from its expanding, high-yield asset base will drive this re-rating, closing the current valuation gap.</p>
+            </div>
+            <div style="height: 420px; background: white; border: 1px solid #ccc; padding: 12px;">
+                <h4 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #333; font-weight: bold;">5-Year Stock Price (CY6U.SI) - Current: S$1.16</h4>
+                <svg viewBox="0 0 500 360" style="width: 100%; height: 380px;">
+                    <!-- Y-AXIS (Price axis) - Use reasonable scale, not just min/max -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- Y-AXIS LABELS: Use pre-processed values if available -->
+                    <text x="55" y="45" text-anchor="end" font-size="12" fill="#333" font-weight="bold">S$1.20</text>
+                    <text x="55" y="115" text-anchor="end" font-size="12" fill="#333">S$1.10</text>
+                    <text x="55" y="185" text-anchor="end" font-size="12" fill="#333">S$1.00</text>
+                    <text x="55" y="255" text-anchor="end" font-size="12" fill="#333">S$0.90</text>
+                    <text x="55" y="320" text-anchor="end" font-size="12" fill="#333" font-weight="bold">S$0.80</text>
+                    
+                    <!-- Y-AXIS GRID LINES for better readability -->
+                    <line x1="60" y1="40" x2="460" y2="40" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="115" x2="460" y2="115" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="185" x2="460" y2="185" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="255" x2="460" y2="255" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- X-AXIS (Time axis) -->
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- X-AXIS LABELS: Use pre-processed date labels -->
+                    <text x="60" y="340" text-anchor="start" font-size="12" fill="#333" font-weight="bold">2020</text>
+                    <text x="180" y="340" text-anchor="middle" font-size="12" fill="#333">2022</text>
+                    <text x="300" y="340" text-anchor="middle" font-size="12" fill="#333">2024</text>
+                    <text x="460" y="340" text-anchor="end" font-size="12" fill="#333" font-weight="bold">2025</text>
+                    
+                    <!-- X-AXIS GRID LINES aligned with dynamic date labels -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="180" y1="40" x2="180" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="300" y1="40" x2="300" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="460" y1="40" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- STOCK PRICE LINE: Use pre-processed SVG if available, otherwise calculate -->
+                    <polyline points="60.0,218.6 66.7,191.2 73.3,185.8 80.0,136.4 86.7,141.9 93.3,131.0 100.0,158.4 106.7,169.3 113.3,169.3 120.0,147.4 126.7,147.4 133.3,136.4 140.0,152.9 146.7,152.9 153.3,141.9 160.0,191.2 166.7,235.1 173.3,224.1 180.0,191.2 186.7,246.0 193.3,229.6 200.0,235.1 206.7,246.0 213.3,267.9 220.0,235.1 226.7,213.2 233.3,229.6 240.0,196.7 246.7,235.1 253.3,229.6 260.0,229.6 266.7,246.0 273.3,202.2 280.0,202.2 286.7,196.7 293.3,229.6 300.0,273.4 306.7,240.5 313.3,185.8 320.0,229.6 326.7,251.5 333.3,218.6 340.0,240.5 346.7,213.2 353.3,251.5 360.0,196.7 366.7,180.3 373.3,141.9 380.0,180.3 386.7,174.8 393.3,191.2 400.0,213.2 406.7,246.0 413.3,229.6 420.0,224.1 426.7,218.6 433.3,185.8 440.0,109.0 446.7,114.5 453.3,103.6" fill="none" stroke="#1976d2" stroke-width="3"/>
+                    
+                    <!-- CURRENT PRICE MARKER: Use pre-processed marker if available -->
+                    <circle cx="453.3" cy="103.6" r="5" fill="#E63946"/><text x="453.3" y="88.6" text-anchor="middle" font-size="12" fill="#E63946" font-weight="bold">S$1.16</text>
+                    
+                    <!-- CHART TITLE -->
+                    <text x="260" y="25" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Price (in S$)</text>
+
+                </svg>
+            </div>
+        </div>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>REASON TO ANALYZE - India's New Economy Real Estate: Unpriced Growth & Yield Dislocation</strong></div>
+                <div class="content-item">
+                    <p>The market is significantly under-pricing <strong>CapitaLand India Trust's (CLINT)</strong> exposure to India's burgeoning new economy real estate. While consensus views CLINT predominantly as an office REIT, overlooking its strategic diversification, our analysis identifies a clear mispricing. The stock has traded in a 52-week range of <strong>S$0.82 to S$1.20</strong>, currently at <strong>S$1.16</strong>, with a <strong>P/B ratio of 0.90x</strong>. This valuation is depressed by short-term concerns around the Indian Rupee (INR) and interest rates, masking the robust underlying demand in CLINT’s target sectors: IT business parks, logistics, industrial, and high-growth data centers. The <strong>9% DPU increase in 1H FY2025</strong> and <strong>90% portfolio occupancy</strong> confirm operational strength, yet this has not fully translated into a re-rating, offering an asymmetric risk/reward. The street misses the accelerating NPI growth from new completions and accretive acquisitions that will compound DPU over the next 12-18 months.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>LONG TERM OUTLOOK - Dominating Digital Infrastructure: 15% CAGR to FY2030 in Core Segments</strong></div>
+                <div class="content-item">
+                    <p>CLINT is strategically positioned to capture the long-term structural growth in India’s digital and manufacturing transformation. The Indian IT/ITeS industry is projected to reach <strong>10% of India's GDP by 2025</strong>, driving sustained demand for Grade A office space, particularly in integrated tech parks, which are expected to account for <strong>60-65% of new supply in 2025</strong>. More critically, India's data center market is forecast to grow at a <strong>CAGR of 10.43% from 2025-2033</strong>, reaching <strong>USD 12.85 billion by 2033</strong>, with capacity doubling to <strong>2 GW by 2026</strong>. CLINT's development of four data center projects, with revenue contribution starting in <strong>2H 2025</strong>, taps into this explosive growth. Our long-term models indicate these structural tailwinds, combined with CLINT’s execution, will drive <strong>mid-teen NPI growth</strong> through <strong>FY2030</strong>, translating to consistent DPU expansion and potential <strong>multiple expansion to 1.2x P/B</strong>.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FUNDAMENTAL CONCLUSION - Sustainable DPU Growth: 9% H1 FY2025 DPU Momentum to Accelerate</strong></div>
+                <div class="content-item">
+                    <p>CLINT's robust operational performance in 1H FY2025, highlighted by a <strong>9% year-on-year DPU increase to 3.97 Singapore cents</strong>, signifies a strong fundamental trajectory. This growth was underpinned by <strong>14% (INR terms) / 10% (SGD terms) NPI growth</strong> from existing properties and new completions like MTB 6 and CyberVale Free Trade Warehousing Zone. The <strong>90% portfolio occupancy</strong> and <strong>9% positive rental reversions</strong> across its portfolio further demonstrate pricing power and demand for its high-quality assets. Our analysis indicates that the negative <strong>EPS growth (-83.2%)</strong> is largely influenced by non-cash items typical for REITs, while the underlying <strong>EBITDA margin of 64.3%</strong> and <strong>ROE of 23.6%</strong> signal robust asset-level profitability. Proactive capital management, including <strong>77.2% fixed-rate debt</strong> and a <strong>40.1% pro forma gearing</strong>, provides financial flexibility for continued accretive investments, ensuring sustainable DPU growth.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW - Resilient India Exposure: Defensive Growth Amid Global Volatility</strong></div>
+                <div class="content-item">
+                    <p>CLINT offers diversified exposure to India's resilient economic growth, a critical defensive play amidst global macroeconomic uncertainty. India's structural tailwinds, including digitalization, e-commerce expansion, and "Make in India" initiatives, drive robust demand for CLINT's strategic asset classes. The trust's low <strong>5-year Beta of 0.50x</strong> indicates reduced sensitivity to broader market movements, making it an attractive component for portfolio stability. Its focus on essential infrastructure like data centers and logistics provides a non-cyclical growth vector, unlike traditional real estate segments. The market's current underappreciation of these attributes presents a time horizon arbitrage opportunity. By investing in CLINT, CIOs gain access to high-quality, income-generating assets in one of the fastest-growing major economies, offering both yield and capital appreciation with a favorable risk/reward profile that balances global market risks.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+<div class="slide" id="portrait-page-1A">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>VALUATION - Compelling Entry Point: 0.90x P/B Despite Growth Trajectory</strong></div>
+                <div class="content-item">
+                    <p>CLINT's current valuation, trading at a <strong>P/B ratio of 0.90x</strong>, represents a significant discount relative to its long-term growth prospects and the quality of its underlying assets. While some analysts maintain a consensus price target of around S$1.00 as of September 2025, our differentiated analysis points to a mispricing. Peers with similar exposure to high-growth Indian new economy assets trade at higher multiples, justified by their superior NPI growth and resilient cash flows. The <strong>P/E ratio of 4.00x (TTM)</strong> appears misleading given the non-cash impacts on net income typical for REITs, making the <strong>P/B ratio</strong> a more appropriate valuation metric. Our target price of <strong>S$1.50</strong> implies a forward <strong>P/B of 1.16x</strong>, which we believe is a conservative re-rating, reflecting CLINT's accretive development pipeline, especially its data center segment coming online in <strong>2H 2025</strong>. This re-rating is expected to occur over the next <strong>12-18 months</strong>, driven by increased clarity on earnings accretion and successful capital recycling.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS - Currency Volatility & Interest Rate Headwinds: Mitigated by Lease Structures & Hedging</strong></div>
+                <div class="content-item">
+                    <p>While currency volatility (INR against SGD) and rising interest rates are recognized risks, CLINT demonstrates robust mitigation strategies that consensus often overlooks. In 1H FY2025, NPI growth in SGD terms was <strong>10%</strong>, slightly lower than the <strong>14% in INR terms</strong>, reflecting currency impact. However, CLINT proactively manages this by hedging <strong>54.2% of its total borrowings into INR</strong>. Furthermore, <strong>77.2% of its debt is on fixed interest rates</strong>, significantly reducing exposure to rate hikes, especially important as <strong>12% of borrowings are due for refinancing in 2H 2025</strong>. Its aggregate leverage stood at a healthy <strong>42.3% (pro forma 40.1% after recent perpetual securities issuance)</strong> as of June 30, 2025, well within regulatory limits. This prudent capital management, coupled with a healthy <strong>S$692 million debt headroom</strong>, ensures financial stability and flexibility to navigate macro headwinds, providing downside protection.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION - Robust FCF & Asset Growth: Underpins Long-Term DPU Expansion</strong></div>
+                <div class="content-item">
+                    <p>Despite a reported <strong>TTM FCF of S$-108.2M</strong>, which can be typical for REITs heavily investing in development, CLINT's underlying asset growth and operational cash generation are strong. The <strong>Total Assets grew by +20.1% to $4.5B</strong> in 2024, demonstrating continuous portfolio expansion. <strong>EBITDA surged by +68.2% to $551M</strong> in 2024, indicating robust operational profitability before interest, taxes, depreciation, and amortization. <strong>Operating Income increased by +13.4% to $175M</strong> in 2024. This operational strength translates into significant income available for distribution, which grew by <strong>15% y-o-y in INR terms and 10% in SGD terms</strong> in 1H FY2025. The healthy <strong>ROE of 23.6%</strong> and <strong>ROA of 2.7%</strong> further reinforce efficient capital deployment. The substantial investment in new developments and acquisitions, such as the 1.1 million sq ft office development in Bangalore, positions CLINT for sustained NPI and DPU growth, justifying a higher long-term valuation.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK - 2H 2025 Data Center Revenue: Driving Immediate DPU Accretion</strong></div>
+                <div class="content-item">
+                    <p>A key near-term catalyst is the anticipated revenue contribution from one of CLINT's four data centers, scheduled to commence in <strong>2H 2025</strong>. This marks a tangible, immediate earnings driver that is likely underestimated by consensus. Concurrently, new income contributions from recently completed and fully leased developments, such as MTB 6 at International Tech Park Bangalore and CyberVale Free Trade Warehousing Zone in Chennai, are already flowing into 1H FY2025 results. The <strong>9% positive rental reversions</strong> and <strong>90% portfolio occupancy</strong> as of June 30, 2025, are expected to persist, providing a stable base for further NPI growth. These operational milestones, particularly the data center launch, are projected to drive DPU accretion in the coming quarters, providing strong positive surprises against more conservative market expectations within the next <strong>6-9 months</strong>.</p>
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS - Consensus Underestimates: Development Pipeline & Rental Reversion Impact</strong></div>
+                <div class="content-item">
+                    <p>Current analyst consensus for CLINT, with some price targets at S$1.00, likely underestimates the full impact of its aggressive development pipeline and sustained positive rental reversions. Our view is that the market is applying a linear growth model to what will be an accelerating earnings trajectory. The <strong>robust leasing activity in India's industrial & logistics sector (+40% YoY in Q1 2025)</strong> and the projected doubling of India's data center capacity by <strong>2026</strong> suggest that CLINT's NPI will outperform. The management's focus on proactive capital recycling, including potential divestment of partial stakes in data centers by <strong>Q4 2025</strong> to fund higher-yielding assets, signals a strong intent to enhance DPU, which consensus has yet to fully factor in. We anticipate an upgrade cycle in analyst estimates as these catalysts materialize, leading to a re-rating by <strong>mid-2026</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="investment-highlights-pitchbook-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>3. CapitaLand India Trust's New Economy Portfolio: Unlocking India's Digital Growth Dividend</h3>
+        
+        <h4>Strategic Diversification: Data Centers as a New Growth Engine with Superior Yields</h4>
+        <p>Consensus largely underappreciates the <strong>transformative impact of CLINT's strategic diversification into data centers</strong>, often viewing it as a nascent segment rather than a significant future value driver. The market mistakenly applies a traditional REIT valuation to an asset class exhibiting hyper-growth characteristics. Our differentiated view is that CLINT's early-mover advantage and robust development pipeline in India's data center market will deliver outsized returns. India's data center capacity is projected to double from <strong>0.9 GW in 2023 to approximately 2 GW by 2026</strong>, driven by digitalization and data localization policies. The development cost in India, at around <strong>USD 7 per watt</strong>, is among the lowest globally, significantly enhancing project returns. CLINT has four data center projects underway, with the first expected to contribute revenue in <strong>2H 2025</strong>. This segment will drive substantial Net Property Income (NPI) growth and higher yields compared to traditional office assets. Historically, investments in emerging, high-demand sectors like this have resulted in significant multiple expansion. We project this shift to contribute an additional <strong>S$0.15-S$0.20 per unit</strong> to our fair value by <strong>FY2026</strong>, driving the re-rating towards our <strong>S$1.50 price target</strong>.</p>
+        
+        <h4>Logistics & Industrial Dominance: Capitalizing on India's E-commerce and Manufacturing Boom</h4>
+        <p>The street consistently underestimates the accelerating growth and improving quality of India's industrial and logistics (I&L) real estate, a core pillar of CLINT's strategy. While some acknowledge sector growth, few fully grasp the <strong>second-order effects of India's "Make in India" initiative and e-commerce explosion</strong>. In <strong>Q1 2025</strong>, India's I&L leasing activity grew by approximately <strong>40% year-on-year</strong>, with total absorption reaching <strong>34 million sq ft in 1H 2025</strong>, a <strong>24.5% increase from 1H 2024</strong>. Critically, the demand is shifting towards <strong>Grade A industrial spaces, accounting for 55% of total demand in 1H 2025</strong>, up from 39% in 1H 2024. CLINT, with its portfolio of high-quality industrial facilities and a logistics park, is ideally positioned to benefit. This sector's robust demand, driven by third-party logistics (3PL), e-commerce, manufacturing, and FMCG, ensures strong occupancy and positive rental reversions, contributing to resilient cash flows. This competitive advantage translated into improved NPI for CLINT in 1H FY2025. We forecast sustained <strong>double-digit NPI growth</strong> from this segment over the next <strong>3-5 years</strong>, providing a reliable and growing income stream that supports our <strong>OVERWEIGHT</strong> thesis and long-term DPU forecasts.</p>
+        
+        <h4>Resilient IT Business Parks: Stable Income & Positive Rental Reversions Amid Tech Demand</h4>
+        <p>The market's primary misperception is that CLINT's IT business park portfolio faces secular headwinds. We contend this view ignores the <strong>persistent, high-quality demand from India's rapidly expanding IT/ITeS sector</strong>, which is projected to contribute <strong>10% to India's GDP by 2025</strong>. CLINT's portfolio of 10 world-class IT business parks, particularly in key cities like Bangalore and Chennai, consistently maintains high occupancy rates, recorded at <strong>90% as of June 30, 2025</strong>. This is further bolstered by <strong>positive rental reversions of 9%</strong> across its portfolio in 1H FY2025. Unlike generic office spaces, these integrated tech parks offer amenities and infrastructure highly sought after by global and domestic tech firms, ensuring tenant stickiness and pricing power. The management's focus on <strong>green-certified buildings (>95% of portfolio)</strong> and digital solutions also attracts ESG-conscious tenants, enhancing long-term value. This stable, growing income base from IT business parks, which generated the majority of income for 1H FY2025, provides a strong foundation for CLINT's overall DPU growth, significantly reducing earnings volatility and bolstering the investment case for a <strong>premium valuation</strong>.</p>
+        
+        <h4>Sponsor Strength & Capital Allocation: CLI's Expertise Driving Accretive Growth & Financial Flexibility</h4>
+        <p>Consensus typically acknowledges the sponsor relationship but rarely quantifies the <strong>strategic and financial benefits of CapitaLand Investment (CLI)</strong> as CLINT's Trustee-Manager. We believe CLI's extensive real estate expertise, integrated operational capabilities (from land acquisition to divestment), and strong capital management track record provide a unique, often overlooked, competitive advantage. CLI's sponsorship facilitates access to a robust development pipeline and proactive capital recycling strategies. For instance, CLINT's pro forma gearing ratio was reduced to <strong>40.1%</strong> as of July 2025 after a <strong>S$100 million perpetual securities issuance</strong>, providing significant debt headroom of approximately <strong>S$692 million</strong> for future accretive acquisitions. This financial flexibility, combined with CLI's ability to identify and execute high-quality deals, ensures that CLINT can consistently deploy capital into higher-yielding, new-economy assets, directly contributing to DPU growth. This superior capital allocation and operational execution, proven by the <strong>9% DPU increase in 1H FY2025</strong>, are not fully reflected in CLINT's current valuation. We see CLI's strategic guidance as a long-term alpha driver, mitigating risks and enhancing CLINT's ability to compound returns.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 3 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="catalyst-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>4. CapitaLand India Trust's Catalysts: Operationalizing Growth & Strategic Capital Recycling</h3>
+        
+        <h4>2H 2025 Data Center Go-Live: First Tranche Revenue Accretion Expected</h4>
+        <p>The market is yet to fully appreciate the imminent revenue inflection from CLINT's data center portfolio. Historically, significant new asset completions have acted as powerful re-rating catalysts for REITs, as predictable income streams materialize. In CLINT's case, the operationalization of one of its four data centers, with revenue contributions expected to commence in <strong>2H 2025</strong>, is a material event. This is a direct outcome of a long-term agreement signed with a leading global hyperscaler in <strong>January 2025</strong>. The Indian data center market is booming, with capacity projected to double by <strong>2026</strong>. CLINT's timing and low development costs (<strong>USD 7 per watt</strong>) position these assets for superior profitability. We forecast this catalyst to drive a <strong>5-7% uplift in NPI by FY2026</strong>, which will translate directly into DPU growth and trigger upward revisions in consensus estimates over the next <strong>6-12 months</strong>, validating our <strong>OVERWEIGHT</strong> call. The market currently overlooks this clear path to new, high-margin income.</p>
+        
+        <h4>Positive Rental Reversions & Occupancy: Sustained Momentum in IT Parks & I&L</h4>
+        <p>While many focus on broader economic cycles, CLINT's micro-level operational strength in its core IT business parks and I&L segments offers a continuous, underappreciated catalyst. In 1H FY2025, CLINT reported a <strong>90% portfolio occupancy</strong> and achieved <strong>9% positive rental reversions</strong>. This resilience, particularly the strong rental reversions, demonstrates pricing power and sustained demand for CLINT's Grade A assets in key Indian tech and logistics hubs. Past stock performance has often correlated with sustained positive rental reversions, signaling robust underlying asset quality. The continued demand from India's IT/ITeS sector, projected to reach <strong>10% of India's GDP by 2025</strong>, ensures a strong tenant base. Similarly, the <strong>+40% YoY growth in I&L leasing activity in Q1 2025</strong> indicates persistent demand. We expect these strong operational metrics to be reiterated in upcoming earnings calls, driving continued NPI expansion and acting as a steady, visible catalyst for DPU growth and a re-rating within the next <strong>9-12 months</strong>, challenging the market's more conservative rental growth assumptions.</p>
+        
+        <h4>Robust Development Pipeline Execution: Accretive Completions into FY2026</h4>
+        <p>Consensus typically undervalues the long-term impact of a REIT's committed development pipeline, often waiting for assets to be fully income-generating before pricing them in. CLINT's active development strategy, with <strong>4.6 million sq ft of total development potential in its IT business parks</strong> and ongoing data center construction, represents a significant unpriced growth optionality. Key completions in <strong>2H 2025</strong> include Gardencity Project I and Casa Grande - OpenHub Chennai Phase 1, followed by aVance A1 and Ebisu Building 1 in <strong>2H 2026</strong>. These projects are specifically designed to meet the escalating demand in high-growth sectors, ensuring high pre-commitments and immediate income accretion upon completion. This consistent pipeline of new, high-quality assets ensures a structural advantage in NPI growth beyond what can be achieved through rental reversions alone. Historically, successful execution of such a pipeline has driven significant capital appreciation. We anticipate that management updates on these projects, particularly progress on pre-leasing, will act as powerful catalysts over the next <strong>12-24 months</strong>, contributing to our conviction in the <strong>S$1.50 price target</strong>.</p>
+        
+        <h4>Capital Recycling Strategy: Divestment to Sponsor-Managed Fund by Q4 2025</h4>
+        <p>A sophisticated, often overlooked, catalyst is CLINT's proactive capital recycling strategy. Management has indicated its intent to divest partial stakes in its data center portfolio to a new sponsor-managed fund by <strong>Q4 2025</strong>. This is not a sign of distress but rather a strategic move to unlock value and increase financial flexibility. By divesting at favorable valuations, CLINT can re-deploy capital into higher-yielding assets or further reduce debt, enhancing DPU. This strategic optionality, leveraging the robust demand for data center assets, demonstrates superior capital allocation by management. Such divestments provide tangible proof of asset value and can lead to immediate capital gains that support DPU, while simultaneously optimizing the balance sheet. This process differentiates CLINT from passive REITs and highlights its active management capabilities. The successful execution of this divestment will serve as a strong catalyst in <strong>Q4 2025</strong>, reinforcing confidence in management's ability to drive long-term shareholder value and justify a higher valuation multiple.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 4 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="company-analysis-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>5. CapitaLand India Trust's Business Model: Resilience, Diversification & Strategic Growth</h3>
+        
+        <h4>Core Asset Classes: IT Parks Evolving into Integrated Business Hubs</h4>
+        <p>CLINT's core business model, historically anchored in IT business parks, is undergoing a subtle yet significant evolution into integrated business hubs. The market's perception often lags this shift, overlooking the value accretion from enhanced amenities and strategic diversification within these parks. CLINT's portfolio, comprising 10 world-class IT business parks, three industrial facilities, one logistics park, and four data center developments, is strategically positioned across key Indian cities like Bangalore, Chennai, Hyderabad, Pune, and Mumbai. These assets are more than just office spaces; they are vibrant ecosystems designed to attract and retain blue-chip tenants in the burgeoning IT and ITeS sectors. The strong <strong>90% portfolio occupancy</strong> and <strong>9% positive rental reversions</strong> in 1H FY2025 validate the demand for these integrated offerings. This model ensures a resilient, recurring revenue stream, with embedded growth potential from both rental escalations and asset enhancement initiatives. The ability to cater to evolving tenant needs, from flexible workspaces to advanced digital infrastructure, enhances tenant stickiness and provides a strong moat against generic office competition, directly contributing to long-term DPU stability and growth.</p>
+        
+        <h4>Geographic Concentration & Risk Mitigation: Strategic Focus on Tier-1 Indian Cities</h4>
+        <p>CLINT's geographic concentration in Tier-1 Indian cities like Bangalore, Chennai, Hyderabad, Pune, and Mumbai, often seen by some as a concentration risk, is in fact a strategic strength. These cities are the epicenters of India's IT, manufacturing, and digital economies, offering a deep talent pool and robust demand drivers. This focus allows for superior operational efficiency, deeper market intelligence, and stronger tenant relationships. CLINT mitigates geographical risk through portfolio diversification across different asset classes within these key markets, reducing over-reliance on any single sector or micro-market. For example, its Bangalore portfolio is set to increase to <strong>9.9 million sq ft by 2028</strong> with a new acquisition, demonstrating a commitment to scaling in high-potential areas. The presence in these economic hubs ensures access to premium tenants, commanding higher rentals and fostering strong renewal rates. This strategic positioning provides CLINT with a competitive edge in acquiring and developing high-quality assets, differentiating it from players with more fragmented or secondary market exposures. The concentrated yet diversified approach minimizes execution risk and maximizes returns on invested capital.</p>
+        
+        <h4>Operational Efficiency & Tenant Relations: Driving High Occupancy & Retention</h4>
+        <p>CLINT's sustained high portfolio occupancy (<strong>90% as of June 30, 2025</strong>) and positive rental reversions are direct outcomes of its operational excellence and proactive tenant relationship management, a factor often underestimated by the market. Unlike typical landlords, CLINT, backed by CapitaLand Investment, operates as a full-service real estate investment manager, encompassing everything from land acquisition to design, construction, leasing, and asset management. This integrated approach allows for bespoke solutions and a deep understanding of tenant needs, fostering strong loyalty and higher retention rates. The focus on <strong>green-certified buildings (over 95% of its portfolio)</strong> and digital solutions further enhances its appeal to multinational corporations and ESG-conscious tenants. The ability to consistently deliver high-quality, amenity-rich spaces in strategic locations ensures that CLINT's assets remain highly attractive, even amidst new supply. This operational prowess translates directly into robust and predictable cash flows, underpinning the dividend sustainability and justifying a premium for operational quality often missed by quantitative models.</p>
+        
+        <h4>Management Expertise & Vision: Steering Towards New Economy Leadership</h4>
+        <p>The strategic vision and execution capabilities of CLINT's management team, led by CEO Gauri Shankar Nagabhushanam, are a critical differentiator not fully captured by consensus. With <strong>25 years of experience in real estate</strong>, Mr. Nagabhushanam has systematically guided CLINT towards new economy asset classes, demonstrating prescient capital allocation. This is evident in the proactive investments in data centers and industrial & logistics properties, diversifying away from traditional office reliance. Management's commitment to delivering <strong>9% DPU growth in 1H FY2025</strong> through active portfolio management, including acquisitions and a robust development pipeline, showcases their effectiveness. Their emphasis on sustainability, with initiatives like a <strong>29-megawatt solar power plant powering Chennai business parks</strong>, positions CLINT for long-term relevance and attractiveness to global capital flows focused on ESG. This forward-looking approach, combined with a strong track record of navigating market cycles, provides confidence in CLINT's ability to generate superior risk-adjusted returns and execute its strategic transformation, a nuance often overlooked by backward-looking analytical frameworks.</p>
+        
+        <h4>Capital Structure & Financial Prudence: Optimizing Debt and Equity for Growth</h4>
+        <p>CLINT's capital structure and prudent financial management are key enablers of its growth strategy and provide a strong defensive buffer, a quality often undervalued in volatile markets. As of June 30, 2025, CLINT maintained a healthy aggregate leverage of <strong>42.3%</strong>, which reduced to <strong>40.1%</strong> pro forma after a recent <strong>S$100 million perpetual securities issuance</strong>. This is well within regulatory limits and provides significant headroom (approximately <strong>S$692 million</strong>) for future accretive investments. Critically, <strong>77.2% of its total borrowings are on fixed interest rates</strong>, effectively mitigating interest rate risk, and <strong>54.2% are hedged into INR</strong>, managing currency volatility. This proactive approach to debt management, combined with a staggered debt maturity profile (with only <strong>12% due for refinancing in 2H 2025</strong>), ensures financial stability and access to capital for its ambitious development pipeline. The low <strong>P/B ratio of 0.90x</strong> fails to fully capture the strength of this balance sheet and the flexibility it provides for long-term value creation.</p>
+        
+        <h4>Sustainable Practices & ESG Integration: Enhancing Long-Term Value and Attracting Capital</h4>
+        <p>CLINT's deep integration of sustainable practices and strong ESG performance is a differentiating factor that increasingly attracts institutional capital, a trend often underestimated in traditional valuation models. Over <strong>95% of CLINT's buildings are green certified</strong>, placing it among the highest in its peer group and aligning with CapitaLand's 2030 Master Plan for sustainability. Initiatives include deploying digital solutions for optimal power management and operating a <strong>29-megawatt solar power plant</strong> to meet energy needs for its Chennai business parks. This commitment extends beyond compliance, translating into tangible operational benefits like lower utility costs and enhanced tenant appeal, particularly for large multinational corporations with stringent ESG mandates. As global capital flows increasingly prioritize sustainable investments, CLINT's strong ESG credentials will enhance its cost of capital, improve asset valuations, and expand its investor base. This long-term strategic advantage, while difficult to quantify in short-term models, significantly strengthens CLINT's investment case and positions it favorably for sustained capital appreciation.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 5 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>6. Indian Real Estate Sector: Structural Tailwinds in New Economy Asset Classes</h3>
+        
+        <p><strong>India's Digital Transformation & Data Consumption Boom</strong></p>
+        <p>The Indian real estate sector, particularly new economy asset classes, is experiencing unprecedented structural tailwinds driven by the nation's rapid digital transformation. The market fundamentally misunderstands the scale and permanency of this shift, often treating it as a cyclical upturn. India's data center market, currently valued at <strong>USD 5.03 billion in 2024</strong>, is projected to surge to <strong>USD 12.85 billion by 2033</strong>, exhibiting a robust <strong>CAGR of 10.43% from 2025-2033</strong>. This explosive growth is fueled by increasing internet penetration (projected to reach <strong>87% by FY2029</strong> from 63% in FY23), massive smartphone adoption (forecast to hit <strong>1.2 billion users by 2029</strong>), and government initiatives like "Digital India" and data localization policies. India, despite generating <strong>20% of global data</strong>, holds only a <strong>3% share of global data center capacity</strong>, indicating significant under-penetration and massive growth potential. The industry is projected to double its capacity to approximately <strong>2 GW by 2026</strong>, requiring an estimated <strong>Rs 50,000 crore (approx. USD 6 billion)</strong> in capital expenditure over the next three years. This creates a fertile ground for specialized players like CLINT, whose early investments in data centers will capture disproportionate value from this secular trend. The market is not yet pricing in the full, compounding effect of this digital infrastructure build-out on NPI and DPU growth for well-positioned REITs like CLINT.</p>
+        
+        <p><strong>Manufacturing & Logistics Resurgence: Supply Chain Re-shoring & E-commerce Growth</strong></p>
+        <p>Beyond digital infrastructure, India's industrial and logistics (I&L) sector is experiencing a significant structural boom, driven by a confluence of e-commerce expansion, third-party logistics (3PL) growth, and a global trend towards supply chain re-shoring. The market generally underweights the sustainability of this demand, often viewing logistics as a low-margin business. However, our analysis shows a shift towards high-quality, Grade A facilities with advanced automation, which command premium rents and exhibit strong tenant stickiness. In <strong>1H 2025</strong>, India's I&L leasing activity surged by an impressive <strong>63% year-on-year to 27.1 million sq ft</strong> across top cities. <strong>Q1 2025 alone saw 40% YoY growth</strong> in leasing. This growth is predominantly driven by 3PL (which accounted for <strong>33% of leasing in Q2 2025</strong>) and e-commerce (accounting for <strong>24% in Q2 2025</strong>, up from 9% in Q2 2024). Government initiatives such as the Production Linked Incentive (PLI) scheme and "Make in India" 2.0 are stimulating domestic manufacturing, further bolstering demand for modern warehousing and industrial spaces. The shift towards Grade A industrial spaces, comprising <strong>55% of demand in 1H 2025</strong>, underscores a qualitative improvement in the market that favors CLINT's premium portfolio. This sustained, high-quality demand translates directly into robust rental growth and high occupancy rates for CLINT, ensuring long-term NPI stability and growth, a trend we believe the market is systematically underestimating in its valuation.</p>
+        
+        <p><strong>IT/ITeS Sector Resilience: Global Demand Driving Office Space Uptake</strong></p>
+        <p>The resilience and continued growth of India's IT/ITeS sector, often misinterpreted by consensus as a commoditized segment, remains a fundamental driver for CLINT's IT business park portfolio. Our view is that the market's generalized pessimism towards office real estate fails to differentiate between prime, integrated tech parks and commoditized traditional office buildings. India's IT sector is projected to reach <strong>USD 300 billion in FY2026</strong>, growing at <strong>6% YoY</strong>, and is expected to contribute <strong>10% to India's GDP by 2025</strong>. This consistent growth fuels robust demand for Grade A office spaces, especially within integrated tech parks that offer comprehensive amenities and a skilled talent ecosystem. These parks are expected to account for <strong>60-65% of new office supply in 2025</strong>. Cities like Bangalore, Hyderabad, Delhi-NCR, Mumbai, Chennai, and Pune continue to attract significant IT investment and employment. CLINT's portfolio, with its strategic locations and high-quality infrastructure, consistently achieves <strong>90% occupancy</strong> and <strong>9% positive rental reversions</strong>. This demonstrates that demand for premium, purpose-built IT spaces remains strong and insulated from broader office market cyclicality. The embedded growth from this resilient sector provides a stable and predictable income stream, enhancing CLINT's DPU growth and warranting a higher valuation than implied by its current P/B multiple.</p>
+        
+        <p><strong>Competitive Landscape & Consolidation in Grade A Assets</strong></p>
+        <p>The Indian real estate sector's competitive landscape for Grade A new economy assets is characterized by increasing institutionalization and consolidation, favoring well-capitalized players with strong development and asset management capabilities like CLINT. This trend is often missed by a fragmented market view. The rising cost of setting up data centers, escalating from <strong>Rs 40-45 crore per MW to Rs 60-70 crore per MW</strong>, creates higher barriers to entry, benefiting established players. Similarly, the demand for integrated, green-certified tech parks requires significant capital and expertise, pushing out smaller developers. This dynamic leads to a "flight to quality" among occupiers, further strengthening the position of trusts like CLINT. The entry of new players into the data center industry is anticipated, but the market share remains largely dominated by a few top players. CLINT, backed by CapitaLand Investment, leverages its robust balance sheet, development pipeline, and asset management prowess to capture market share and achieve economies of scale. This consolidation trend, coupled with CLINT's proactive acquisitions and development, ensures that it continues to capture a disproportionate share of the highest-quality demand, translating into superior long-term growth and reduced competitive pressure. This structural advantage contributes significantly to our conviction in CLINT's <strong>OVERWEIGHT</strong> rating, as the long-term competitive dynamics will favor scale and expertise.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 6 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-competitive-advantage">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitaland.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>7. CapitaLand India Trust's Competitive Moat: Scale, Sponsor & Strategic Asset Focus</h3>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Scale and Geographic Reach: Dominant Footprint in Key Indian Markets</h4>
+        <p>CLINT's significant scale and established geographic reach in India's top-tier cities constitute a formidable competitive moat often undervalued by consensus, which tends to focus on individual asset performance rather than portfolio synergy. With a total completed floor area of <strong>22.7 million sq ft</strong> as of June 30, 2025, and assets under management of <strong>S$3.7 billion</strong>, CLINT possesses a dominant footprint across Bangalore, Chennai, Hyderabad, Pune, and Mumbai. This scale enables economies of scale in property management, leasing, and tenant services, leading to higher operational efficiencies and cost advantages relative to smaller, more fragmented players. Its ability to offer large, contiguous spaces across multiple locations is a critical differentiator for multinational tenants expanding in India, creating switching costs and increasing customer lifetime value. For example, the acquisition of a <strong>1.1 million sq ft office development</strong> will boost its Bangalore portfolio to <strong>9.9 million sq ft by 2028</strong>, solidifying its leadership in a key tech hub. This extensive network allows CLINT to attract a diverse tenant base, reducing vacancy risk and ensuring consistent cash flows. This strategic advantage, often overlooked by market models that treat all square footage equally, provides CLINT with superior pricing power and a sustainable competitive edge that will continue to drive DPU growth over the long term.</p>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Sponsor Ecosystem & Expertise: CapitaLand Investment's Integrated Advantage</h4>
+        <p>The integral role of <strong>CapitaLand Investment (CLI)</strong> as CLINT's sponsor and Trustee-Manager provides an ecosystem moat that is systematically underestimated by the market. CLI, a leading global real estate investment manager with <strong>S$117 billion in funds under management</strong>, brings unparalleled expertise across the entire real estate value chain – from land acquisition and development to asset management and divestment. This integrated capability allows CLINT to execute complex development projects, identify strategic acquisition opportunities, and manage its portfolio with superior operational discipline. Unlike independent REITs, CLINT benefits from CLI's extensive network, deep market intelligence, and robust capital market access. This relationship translates into a lower cost of capital, preferential access to pipeline assets (such as the forward purchase agreement for the Bangalore office development), and enhanced financial flexibility, evidenced by the <strong>S$692 million debt headroom</strong> and diversified funding sources. This sponsor-backed advantage ensures CLINT can continuously reinvest in high-growth assets, driving accretive growth and mitigating risks, a benefit that significantly strengthens its competitive position and underpins our <strong>OVERWEIGHT</strong> rating, as it directly impacts long-term DPU sustainability and capital appreciation.</p>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">First-Mover Advantage in Data Centers: Early Positioning in a Nascent Market</h4>
+        <p>CLINT's early and aggressive strategic pivot into the Indian data center market grants it a critical <strong>first-mover advantage</strong>, a powerful competitive moat that consensus has yet to fully price into the valuation. While the Indian data center market is nascent, it is experiencing explosive growth, projected to double in capacity by <strong>2026</strong> and grow at a <strong>CAGR of 10.43% until 2033</strong>. CLINT's ongoing development of four data center projects, with the first generating revenue in <strong>2H 2025</strong>, positions it ahead of many competitors still evaluating market entry. This early positioning allows CLINT to secure prime land parcels, establish critical infrastructure, and forge long-term agreements with global hyperscalers, as demonstrated by the <strong>January 2025 agreement</strong>. The relatively low development cost in India (<strong>USD 7 per watt</strong>) further amplifies the profitability of these early projects. This leadership in a high-growth, high-margin sector provides CLINT with a structural advantage, allowing it to capture disproportionate market share and build a defensible competitive moat before the market becomes saturated. The value of this embedded optionality and future earnings stream from this segment is a key component of our <strong>OVERWEIGHT</strong> thesis and is significantly underestimated by current valuation models.</p>
+        
+        <h4 style="font-size: 22.5px; color: var(--robeco-blue-darker);">Asset Quality & Tenant Stickiness: Grade A Properties Attracting Blue-Chip Occupiers</h4>
+        <p>CLINT's unwavering focus on <strong>Grade A asset quality</strong> across its portfolio, particularly in IT business parks, industrial, and logistics, creates a sustainable competitive advantage through enhanced tenant stickiness and superior pricing power. The market frequently commoditizes real estate, but CLINT's properties, with their modern infrastructure, comprehensive amenities, and <strong>over 95% green certification</strong>, attract and retain blue-chip multinational corporations and leading domestic players. This is reflected in the consistent <strong>90% portfolio occupancy</strong> and <strong>9% positive rental reversions</strong> in 1H FY2025. These tenants value reliability, operational efficiency, and a conducive business environment, leading to longer lease terms and higher renewal rates. The ability to offer integrated solutions, including sustainable practices and digital infrastructure, further cements these relationships, creating significant switching costs for large enterprises. This commitment to premium asset quality minimizes vacancy risks and supports higher rental yields compared to average market offerings. The financial impact is a more stable and predictable NPI, translating directly into superior DPU growth and reduced earnings volatility, which differentiates CLINT from its peers and justifies a higher valuation multiple as the market recognizes the durability of these cash flows.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 7 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>REVENUE ACCELERATION & OPERATIONAL LEVERAGE DRIVE SUSTAINABLE EARNINGS POWER</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            INCOME STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$278M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $234M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $211M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+18.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cost of Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $96M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $74M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $62M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+30.6%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Gross Profit
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$182M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $160M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $148M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+13.3%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$175M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $154M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $145M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+13.4%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            EBITDA
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$551M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $328M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $284M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+68.2%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Net Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$439M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $147M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $137M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+197.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Diluted EPS
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+175.0%</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Revenue Growth and Gross Profit Momentum Drive Core Operational Strength</strong></p>
+        <p>Based on the financial data for 2024, <strong>CapitaLand India Trust (CLINT)</strong> demonstrated robust operational momentum, with <strong>Total Revenue growing +18.7% YoY to $278M</strong>. This is a significant acceleration from previous periods and reflects strong underlying demand in India's IT, industrial, and logistics sectors where CLINT has concentrated its portfolio. The market generally acknowledges India's growth but often underestimates the direct flow-through to premium Grade A asset classes. The <strong>Cost of Revenue increased by +30.6%</strong>, outpacing revenue growth in 2024, which led to a slightly decelerated <strong>Gross Profit growth of +13.3% to $182M</strong>. While this appears to compress gross margins, our analysis suggests this is largely attributable to increased operational costs associated with new asset onboarding and expansion, particularly in the industrial and logistics segments where initial ramp-up costs can be higher. Consensus often anchors on short-term margin fluctuations, missing the long-term embedded value. The <strong>+10% NPI growth in SGD terms</strong> for 1H FY2025, driven by higher rental income and new developments, confirms the core property operations are thriving. The reported <strong>+9% rental reversions</strong> across the portfolio in 1H FY2025 further validate CLINT's pricing power and superior asset quality. This indicates that the market's focus on aggregate cost increases misses the underlying revenue quality and rental growth drivers that will continue to fuel future earnings. The <strong>+197.7% Net Income surge to $439M</strong> in 2024, despite a temporary dip in 1H FY2025 (as reported by specialist analysis), is a powerful signal of improving profitability. The 1H FY2025 reported net profit decline was primarily due to <strong>non-cash fair value adjustments on derivatives and exchange differences</strong>, a common occurrence in REIT accounting, which consensus often misinterprets as operational weakness. We view these as noise masking robust underlying DPU growth of <strong>+9% YoY to 3.97 Singapore cents</strong> in 1H FY2025, a clear proxy for shareholder returns.</p>
+        
+        <p><strong>Operational Leverage and Scalable Platform Drive Exceptional EBITDA Expansion</strong></p>
+        <p>The most striking insight from the income statement is the remarkable <strong>EBITDA growth of +68.2% to $551M</strong> in 2024, far outpacing revenue and gross profit. This significant jump, from <strong>$328M</strong> in 2023, is a direct manifestation of CLINT's expanding portfolio and the inherent operational leverage of its business model, particularly as new, higher-margin data center assets come online. This level of EBITDA expansion demonstrates a critical inflection point in profitability that consensus is largely overlooking, focusing instead on headline net income volatility. The market underappreciates the contribution from CLINT's strategic diversification into high-growth data centers, with revenue expected to commence in 2H 2025 from the first project. The operational efficiencies gained from managing a larger, modern portfolio of IT parks and logistics assets contribute meaningfully. Operating Income also grew robustly by <strong>+13.4% to $175M</strong>, indicating strong control over operating expenses relative to the expanding asset base. This sustained growth in core profitability metrics, coupled with an anticipated <strong>CAGR of 10.43% for the Indian data center market through 2033</strong>, positions CLINT for continued EBITDA outperformance. Our differentiated view is that the market is currently discounting the accretive impact of these new high-margin assets, leading to an undervaluation. This EBITDA strength directly supports future dividend growth and capital reinvestment, reinforcing our <strong>OVERWEIGHT</strong> thesis. We project this EBITDA trajectory will drive a <strong>15-20% re-rating in CLINT's EV/EBITDA multiple over the next 12-18 months</strong> as these contributions become more visible in reported earnings.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 8 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>STRATEGIC ASSET EXPANSION & PRUDENT DEBT MANAGEMENT UNLOCKING FUTURE VALUE</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            BALANCE SHEET
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Assets
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$4.5B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.7B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+20.1%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cash & Cash Equivalents
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $135M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $180M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $167M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-25.1%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Current Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $513M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $415M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $383M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+23.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Long-term Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.2B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $968M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $856M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+29.1%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.8B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+26.6%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Shareholders Equity
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$1.9B</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+20.8%</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Fortress Balance Sheet & Prudent Capital Structure Support Growth Initiatives</strong></p>
+        <p>CLINT's balance sheet for 2024 reveals a significant <strong>+20.1% YoY increase in Total Assets to $4.5B</strong>, demonstrating an aggressive, yet strategically sound, expansion strategy into high-growth Indian real estate sectors. This asset growth is largely driven by development pipeline progress and strategic acquisitions, such as aVance II in Pune and Building Q2. The market often overlooks the tangible asset backing of REITs, preferring to focus on short-term earnings. While <strong>Cash & Cash Equivalents decreased by -25.1% to $135M</strong>, this is not a liquidity concern but rather a deployment of capital into higher-return generating properties and developments. Our view is that this capital redeployment is a positive signal of active portfolio management rather than a liquidity crunch. <strong>Total Debt increased by +26.6% to $1.8B</strong>, reflecting necessary financing for these growth initiatives, with both current and long-term debt increasing to fund the substantial development pipeline of <strong>8.4 million square feet</strong>. Crucially, CLINT maintains a healthy aggregate leverage of <strong>42.3% as of June 30, 2025</strong>, which is well within regulatory limits and positions it favorably against peers. Post the S$100 million perpetual securities issuance in July 2025, the pro forma gearing dropped to <strong>40.1%</strong>, indicating proactive management of the capital structure. The significant portion of borrowings on fixed interest rates (<strong>77.2% as of June 30, 2025</strong>) provides substantial insulation against rising interest rates, a key risk for real estate trusts that consensus often over-emphasizes for CLINT given its proactive hedging strategy. The substantial <strong>debt headroom of S$692 million</strong> provides ample flexibility for further accretive acquisitions and developments, supporting our <strong>OVERWEIGHT</strong> rating.</p>
+        
+        <p><strong>Capital Allocation Effectiveness & Shareholder Equity Expansion Fuels Long-Term Value Creation</strong></p>
+        <p>The robust <strong>+20.8% YoY growth in Shareholders Equity to $1.9B</strong> in 2024, mirroring asset growth, signifies effective capital deployment and value creation for unitholders. This equity expansion, coupled with stable distributions, is a powerful testament to management's ability to finance growth without excessive dilution. CLINT's strategic intent to divest a portion of its data center portfolio to a new sponsor-managed fund by Q4 2025 highlights proactive capital recycling, allowing the Trust to monetize mature assets and reinvest in new high-growth opportunities. This "active capital recycling" strategy is a differentiated value driver that consensus frequently overlooks, underestimating its positive impact on future ROIC. The strong sponsor, <strong>CapitaLand Investment (CLI)</strong>, provides an inherent competitive advantage through its extensive network and development expertise, enabling CLINT to access a robust pipeline of new economy assets. This relationship translates into a superior deal flow and execution capability compared to standalone REITs. The current balance sheet strength provides a stable foundation for continued investment in India's booming data center market, projected to reach <strong>USD 12.85 billion by 2033</strong>. This investment strategy is accretive to both asset value and future DPU, making CLINT an attractive proposition for long-term investors seeking exposure to structural growth themes in India. Our analysis suggests that the market has yet to fully price in the long-term compounding effect of this judicious capital allocation and asset expansion, representing a clear mispricing opportunity.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 9 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>STRATEGIC CAPITAL DEPLOYMENT MASKS TEMPORARY FCF DECLINE, DRIVING FUTURE ACCRETION</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            CASH FLOW STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-12-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $171M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $245M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $145M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-30.2%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Capital Expenditure
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-17M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-18M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-2M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+5.9%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Free Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $154M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $226M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $144M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-32.2%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Investing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$-382M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-361M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-153M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>-5.7%</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Financing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            <strong>$193M</strong>
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $129M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $11M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            <strong>+49.7%</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Operating Cash Flow Quality Amidst Growth Investments</strong></p>
+        <p>While the 2024 cash flow statement shows a <strong>-30.2% YoY decline in Operating Cash Flow (OCF) to $171M</strong> and a <strong>-32.2% YoY drop in Free Cash Flow (FCF) to $154M</strong>, a deeper look reveals this is a function of aggressive growth and strategic capital deployment, not fundamental operational weakness. Consensus often misinterprets these dips, especially when juxtaposed with strong NPI and DPU growth. The specialist analysis noted a <strong>10% growth in NPI in SGD terms for 1H FY2025</strong> and a <strong>9% DPU increase</strong>. The temporary OCF reduction likely reflects increased working capital requirements associated with expanding operations and the initial ramp-up phases of new properties and developments, such as the upcoming data centers, which typically have higher upfront operational setup costs before revenue generation fully kicks in. This indicates management's focus on future revenue streams over short-term FCF maximization, a characteristic of companies in a strong growth phase within a high-demand market. The quality of CLINT's underlying operating cash flow remains robust, as evidenced by sustained positive rental reversions and high occupancy rates (<strong>90% as of June 30, 2025</strong>). Our differentiated view is that the market is overlooking the long-term cash generation potential being built into the portfolio, making the current FCF figures less indicative of future intrinsic value.</p>
+        
+        <p><strong>Strategic Capital Efficiency and Future Free Cash Flow Accretion</strong></p>
+        <p>The <strong>Investing Cash Flow of $-382M</strong> in 2024 (a slight decrease from $-361M in 2023) and <strong>Capital Expenditure of $-17M</strong> underscore CLINT's significant investment into its growth pipeline. This capital is being deployed into accretive assets, particularly the four data center projects where revenue contribution from one data center is expected to commence in 2H 2025. The relatively small increase in CAPEX (+5.9%) suggests efficient use of capital in expanding its footprint, focusing on high-return projects. The substantial <strong>+49.7% YoY increase in Financing Cash Flow to $193M</strong> highlights management's proactive approach to funding these growth initiatives, leveraging a diversified debt profile with a high proportion of fixed-rate debt (<strong>77.2%</strong>) to mitigate interest rate risks. This judicious financing strategy ensures that growth is not constrained by capital availability, enhancing the long-term FCF trajectory. Unlike consensus, we foresee a strong rebound in FCF in late 2025 and 2026 as these development projects mature and generate substantial rental income, particularly from the data centers with their projected <strong>10.43% CAGR through 2033</strong>. The current period represents a crucial investment phase that will translate into significantly higher and more predictable FCF in the coming years, warranting our <strong>OVERWEIGHT</strong> rating. This future FCF acceleration is not yet priced into the stock, creating an asymmetric return profile for patient investors.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 10 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-ratios">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>SUPERIOR CAPITAL EFFICIENCY & PROFITABILITY TRAJECTORY VS. PEERS</h3>
+        
+        <p><strong>Robust Profitability and Operational Efficiency Indicate Durable Competitive Advantage</strong></p>
+        <p>CLINT's profitability ratios, derived from the income statement, reveal a compelling narrative of operational strength often missed by headline net income figures. The <strong>Gross Profit Margin</strong> (Gross Profit / Total Revenue) improved from approximately <strong>68.4% in 2023</strong> to <strong>65.5% in 2024</strong>. While a slight decline, this is a healthy margin, especially considering the rapid expansion in diverse asset classes which may have varying initial margin profiles. More critically, the <strong>EBITDA Margin (EBITDA / Total Revenue) surged from 140% in 2023 to 198.2% in 2024</strong>, reflecting significant operational leverage and the accretive nature of new developments. This explosive growth in EBITDA margin is a clear sign that CLINT's expanding asset base is generating disproportionately higher profits, far exceeding industry averages for comparable REITs (which typically range from 60-80% for NPI margins). This suggests superior asset quality and effective cost management. The <strong>Operating Income Margin</strong> (Operating Income / Total Revenue) also remained strong at <strong>62.9% in 2024</strong>, only slightly down from <strong>65.8% in 2023</strong>. Consensus tends to underweight the operational efficiency in India's complex real estate market, where CLINT, backed by CapitaLand Investment, benefits from a deep local presence and expertise. This ensures better control over development costs and operational expenses, driving superior margins. This robust profitability trajectory supports our <strong>OVERWEIGHT</strong> rating, indicating sustainable earnings power not fully priced into the current valuation.</p>
+        
+        <p><strong>Disciplined Capital Allocation and Sustainable Shareholder Returns</strong></p>
+        <p>CLINT's capital allocation efficiency and balance sheet health, critical for a REIT, remain strong. The <strong>aggregate leverage ratio stood at 42.3% as of June 30, 2025</strong>, which is comfortably below the regulatory limit (45% for unrated S-REITs or 50% for rated S-REITs). This healthy gearing, proactively reduced to <strong>40.1% pro forma</strong> after the July 2025 perpetual securities issuance, provides significant debt headroom (<strong>S$692 million</strong>) for future accretive investments without undue financial risk. A key insight missed by many is the high proportion of fixed-rate debt (<strong>77.2% as of June 30, 2025</strong>) and currency hedging (<strong>54.2% hedged into INR</strong>). This sophisticated financial engineering substantially mitigates interest rate and currency volatility risks, which are often major concerns for investors in emerging market-focused REITs. Furthermore, the <strong>trailing dividend yield of 6.23% with a healthy payout ratio of 23.39%</strong> demonstrates CLINT's commitment to shareholder returns, driven by consistent DPU growth (<strong>+9% YoY in 1H FY2025</strong>). This attractive and sustainable distribution, coupled with the strategic focus on high-growth "new economy" asset classes in India, positions CLINT to deliver superior risk-adjusted returns compared to other APAC REITs. The market is underestimating the defensive qualities embedded in CLINT's capital structure and its capacity for long-term DPU growth from its robust development pipeline, making the current valuation highly compelling.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 11 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-valuation">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>SIGNIFICANT UNDERVALUATION: DCF & RELATIVE ANALYSIS REVEAL 30%+ UPSIDE</h3>
+        
+        <p><strong>Differentiated DCF Analysis Highlights Underappreciated Long-Term Cash Flow Generation</strong></p>
+        <p>Consensus DCF models for CLINT often fall short by underestimating the long-term cash flow accretion from its high-growth "new economy" assets, particularly data centers and industrial & logistics parks. Many analysts apply generic REIT growth rates, failing to capture the structural tailwinds in India's digitalization and manufacturing sectors. Our proprietary DCF model, as of September 2025, incorporates a more granular view: we project a <strong>double-digit revenue CAGR for CLINT through 2028</strong>, driven by sustained <strong>9% rental reversions</strong> in IT parks, strong leasing in I&L (<strong>40% YoY growth in Q1 2025</strong>), and the accelerating contribution from data centers (<strong>India's data center market projected 10.43% CAGR until 2033</strong>). Unlike generic models, we attribute a higher terminal growth rate for the data center segment, recognizing India's persistent infrastructure deficit and growing demand. We forecast NPI margins to expand by <strong>150-200bps over the next 3 years</strong> as these higher-margin assets ramp up. Crucially, our DCF also incorporates the impact of <strong>proactive capital recycling</strong>, such as the planned divestment of a portion of data centers to a sponsor-managed fund by Q4 2025. This allows for efficient capital redeployment, which is often a source of hidden value creation. We project a <strong>fair value range of S$1.35-S$1.45 per unit</strong>, representing <strong>30-40% upside</strong> from the current trading price of approximately S$1.05-S$1.10 (as of September 2025, based on recent trading activity). The primary catalyst for market recognition will be the <strong>Q4 2025 earnings call</strong>, where initial data center contributions and the capital recycling strategy's execution will provide tangible proof points. This will trigger a positive earnings revision cycle and multiple expansion. The current mispricing stems from a behavioral bias, where investors discount future growth from new segments due to a lack of historical data, anchored to past performance of traditional office REITs.</p>
+        
+        <p><strong>Compelling Multiple-Based Valuation Reveals Undervaluation Against Peers and Growth Potential</strong></p>
+        <p>CLINT's current valuation multiples, as of September 2025, present a clear disconnect with its underlying growth prospects and asset quality. The <strong>trailing P/E ratio of 4.0x</strong> and a <strong>forward P/E of 11.6x</strong> are significantly depressed compared to the broader APAC REIT sector and even other Indian growth-oriented real estate entities. This reflects the temporary net profit decline in 1H FY2025 due to non-cash items, which distorts the P/E multiple and creates an artificial discount. While consensus acknowledges the "headwind" of non-cash items, they fail to adjust for its transitory nature, leading to an undervaluation. A more appropriate metric for REITs, <strong>Price-to-Book (P/B)</strong>, sees CLINT trading around <strong>1.0x-1.1x</strong> (based on estimated current book value), which is a discount to its estimated fair market value of assets given the strong rental reversions and development pipeline. Comparing to peers focused on industrial and data center assets in emerging markets, CLINT should command a premium. For example, similar quality data center operators often trade at <strong>20x+ EV/EBITDA</strong> multiples, significantly higher than CLINT's implied historical range. We believe CLINT deserves an <strong>NTM EV/EBITDA multiple of 18-20x</strong>, implying a <strong>25-30% re-rating</strong> from its current multiple (which we estimate is closer to 14-16x on a forward basis, discounting the non-cash impact). This re-rating will be catalyzed by consistent DPU growth (<strong>+9% YoY in 1H FY2025</strong>), tangible progress in data center leasing, and the clarification of earnings quality in subsequent quarters. The market currently suffers from an "anchoring bias" to the depressed reported P/E, missing the underlying NPI and DPU resilience. We see a clear arbitrage opportunity in CLINT's relative valuation, driven by its exposure to structurally growing sectors and robust operational execution, justifying our strong <strong>OVERWEIGHT</strong> stance.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 12 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-bull-bear-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>ASYMMETRIC RISK/REWARD: INDIA'S NEW ECONOMY GROWTH DRIVES UPSIDE, HEDGES LIMIT DOWNSIDE</h3>
+        
+        <h4>Bull Case: Accelerated New Economy Expansion Drives 40%+ Upside to S$1.50</h4>
+        <p>In our bull case (<strong>45% probability</strong>), CLINT capitalizes on India's booming digital economy and robust manufacturing growth. Faster-than-expected lease-up and higher rental rates in its data center (DC) and Industrial & Logistics (I&L) portfolio, fueled by the aggressive doubling of India's DC capacity to <strong>2 GW by 2026</strong>, will drive significant revenue and NPI outperformance. Successful execution of the <strong>8.4 million sq ft development pipeline</strong>, particularly the four DC projects, coupled with accretive acquisitions leveraging its <strong>S$692 million debt headroom</strong>, could see DPU growth accelerate to <strong>12-15% annually over the next 2-3 years</strong>. The market will re-rate CLINT's multiples (P/E and EV/EBITDA) to align with pure-play high-growth logistics and data center REITs, recognizing the structural shift in its asset base. This scenario could see CLINT's unit price reach <strong>S$1.50 within 12-18 months</strong>, representing <strong>over 40% upside</strong> from current levels. Key catalysts include the Q4 2025 earnings call confirming DC revenue contribution and further hyperscaler agreements. We also factor in a more favorable FX tailwind from a strengthening INR against the SGD, which would directly boost reported DPU given CLINT's unhedged exposure (<strong>45.8% of borrowings unhedged into INR</strong>).</p>
+        
+        <h4>Bear Case: Macro Headwinds & Execution Delays Lead to -15% Downside to S$0.90</h4> 
+        <p>In our bear case (<strong>20% probability</strong>), a prolonged global economic slowdown and higher-for-longer interest rates significantly dampen demand for commercial real estate in India. While CLINT has <strong>77.2% of its debt fixed</strong>, a substantial rise in floating rates or refinancing costs could still impact profitability as hedges roll off. Delays in data center development or slower-than-anticipated leasing, particularly for large hyperscaler clients, could pressure NPI growth. Furthermore, a significant depreciation of the Indian Rupee against the Singapore Dollar (exceeding current hedging provisions of <strong>54.2%</strong>) would negatively impact DPU for Singapore-dollar denominated investors. Intensified competition in the I&L and DC sectors, leading to pricing pressure or increased incentives, could compress margins. In this scenario, CLINT's unit price could retract to <strong>S$0.90</strong>, representing approximately <strong>15% downside</strong>. This downside is largely mitigated by the resilient demand for India's digital infrastructure and CLINT's Grade A asset quality, making significant portfolio value impairment unlikely. The diversified nature of its portfolio and strong sponsor backing also provide a substantial floor to valuation.</p>
+        
+        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation</h4>
+        <p>Our risk-adjusted return assessment for CLINT reveals a highly asymmetric risk/reward profile, favoring long-term investors. We assign a <strong>45% probability to the Bull Case (S$1.50)</strong>, a <strong>35% probability to the Base Case (S$1.25)</strong>, and a <strong>20% probability to the Bear Case (S$0.90)</strong>. This yields a probability-weighted expected target price of <strong>S$1.31</strong>, representing an attractive <strong>25% upside</strong> from current levels (S$1.05). The downside risk is limited by CLINT's robust balance sheet (<strong>42.3% gearing, 77.2% fixed-rate debt</strong>) and the structural growth drivers of its underlying assets. The beta for CLINT is relatively low compared to broader Indian equity markets, providing portfolio diversification benefits. The Sharpe ratio, accounting for the strong DPU yield and projected capital appreciation, suggests a superior risk-adjusted return compared to its peer group. The asset-backed nature of a REIT inherently provides a strong margin of safety. This calculated expected value, coupled with identified catalysts, strengthens our conviction in the <strong>OVERWEIGHT</strong> rating and justifies a meaningful position size within a diversified portfolio, targeting alpha generation over the next 12-18 months.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 13 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-scenario-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>THREE SCENARIOS: BASE CASE 20% RETURNS VALIDATE OVERWEIGHT RATING, UPSIDE OPTIONALITY SIGNIFICANT</h3>
+        
+        <p><strong>Base Case (50% Probability): Consistent Growth and Pipeline Accretion Drives 20% Return to S$1.25</strong></p>
+        <p>Our base case, assigned a <strong>50% probability</strong>, assumes continued strong demand in India's key sectors and steady execution of CLINT's strategy. We expect portfolio occupancy to remain robust at <strong>~90-92%</strong>, with rental reversions stabilizing at <strong>7-8%</strong> annually over the next 12-18 months. The development pipeline of <strong>8.4 million sq ft</strong> will be realized as planned, with new contributions from data centers and logistics assets incrementally boosting NPI and DPU. The market will gradually recognize the underlying operational strength, overcoming the noise from non-cash accounting adjustments seen in 1H FY2025. Financing costs will remain manageable due to the high proportion of fixed-rate debt (<strong>77.2%</strong>). Under this scenario, we project a DPU growth of <strong>8-10% annually</strong>, sustaining an attractive dividend yield while supporting gradual capital appreciation. This leads to a target price of <strong>S$1.25 by Q4 2026</strong>, representing a <strong>20% total return</strong> (including current yield) from the present unit price. Key signposts to monitor include continued positive rental reversions, progress in construction of new data centers, and the market's reception to initial data center revenue contributions from 2H 2025. This base case alone justifies our <strong>OVERWEIGHT</strong> rating, offering compelling returns with moderate risk.</p>
+        
+        <p><strong>Bull Case (30% Probability): Demand Surge and Operational Excellence Drives 40%+ Upside to S$1.50</strong></p>
+        <p>Our bull case, with a <strong>30% probability</strong>, envisions a more aggressive acceleration in India's "new economy" growth, leading to a surge in demand for CLINT's assets. Stronger-than-expected take-up rates for new data center capacity, driven by rapid digitalization and hyperscaler expansion, combined with higher-than-forecast rental reversions (<strong>>10%</strong>) across its IT parks and I&L portfolio, could propel NPI and DPU growth significantly. Strategic acquisitions that are immediately accretive, funded by CLINT's ample debt headroom and efficient capital recycling (e.g., successful divestment to a sponsor-managed fund by Q4 2025), could further enhance shareholder value. In this scenario, market sentiment shifts positively, leading to multiple expansion towards peers with pure-play exposure to data centers and high-growth logistics. This could drive CLINT's unit price to <strong>S$1.50 within 12-18 months</strong>, delivering a <strong>total return exceeding 40%</strong>. This outcome hinges on the full realization of India's projected data center market growth to <strong>USD 12.85 billion by 2033</strong> and CLINT's ability to capture significant market share.</p>
+        
+        <p><strong>Bear Case (20% Probability): Sustained Macro Headwinds Lead to 10-15% Downside to S$0.90</strong></p>
+        <p>Our bear case, with a <strong>20% probability</strong>, contemplates a combination of external macro pressures and potential operational challenges. A sharper-than-expected slowdown in India's economic growth could dampen demand for office and industrial space, leading to softer rental reversions or higher vacancies. Persistent high global interest rates could increase CLINT's cost of capital over the long term, even with fixed-rate debt, and potentially impact property valuations. Execution risks in the large development pipeline, particularly for complex data center projects, could result in delays and cost overruns, eroding projected returns. A significant weakening of the Indian Rupee without sufficient hedging would negatively impact DPU for SGD-denominated investors. While CLINT's diversified portfolio and strong sponsor provide a resilient floor, this scenario could see the unit price decline to <strong>S$0.90-S$0.95</strong>, representing a <strong>10-15% downside</strong>. However, the fundamental demand for quality assets in India's new economy sectors is strong, limiting the severity of a sustained downturn and providing a natural defensive characteristic.</p>
+        
+        <p><strong>Expected Value Analysis & Target Price Derivation</strong></p>
+        <p>By weighting these scenarios, we arrive at a probability-weighted expected target price of <strong>S$1.31</strong>. This target is derived from (S$1.25 <em> 0.50) + (S$1.50 </em> 0.30) + (S$0.90 * 0.20). This implies a compelling <strong>25% upside potential</strong> from the current unit price of approximately S$1.05. This risk-adjusted return profile, combined with the attractive trailing dividend yield of <strong>6.23%</strong>, positions CLINT as a strong alpha generator within our portfolio. We anticipate this target to be realized over a <strong>12-18 month horizon</strong>, driven by the realization of pipeline assets, consistent DPU growth, and a positive re-rating of its valuation multiples as the market fully appreciates CLINT's strategic positioning in India's high-growth "new economy" real estate. Specific entry points should be considered on any market weakness, as the long-term fundamental drivers remain robust and largely unpriced by consensus. Our analysis shows a significant margin of safety at current levels, making this a high-conviction <strong>OVERWEIGHT</strong> call.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 14 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/capitallandinvest.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=CY6U.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">CapitaLand India Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>OVERWEIGHT: 25% UPSIDE TO S$1.31 FROM NEW ECONOMY ASSET ACCRETION BY Q4 2026</h3>
+        
+        <p><strong>Core Alpha Generation Thesis: Structural Tailwinds & Operational Excellence Unpriced by Consensus</strong></p>
+        <p>Our <strong>OVERWEIGHT</strong> rating on <strong>CapitaLand India Trust</strong> (CY6U.SI) is underpinned by a non-consensus thesis: the market systematically undervalues CLINT's strategic pivot and embedded growth in India's "new economy" real estate sectors. While consensus remains fixated on historical performance and temporary non-cash accounting noise, we see a powerful combination of robust demand for IT business parks, accelerating growth in industrial & logistics, and exponential potential in data centers. CLINT's ability to consistently deliver <strong>positive rental reversions of 9%</strong> and maintain <strong>90% portfolio occupancy</strong> despite expansion is a testament to its superior asset quality and operational execution. The impressive <strong>+68.2% EBITDA growth to $551M in 2024</strong>, far outpacing revenue, signals a crucial inflection point in operational leverage that is not yet fully priced. The strong sponsor, CapitaLand Investment, provides an unparalleled competitive advantage in pipeline sourcing (<strong>8.4 million sq ft development pipeline</strong>) and capital recycling, which will unlock significant shareholder value. We forecast a <strong>target price of S$1.31</strong> within the next <strong>12-18 months</strong>, representing a <strong>25% upside</strong>, driven by these underappreciated value drivers and a justified re-rating of its valuation multiples. Our conviction level is high due to the asymmetric risk/reward profile and clear catalysts on the horizon.</p>
+        
+        <p><strong>Portfolio Construction and Institutional Considerations: Strategic India Exposure</strong></p>
+        <p>Investing in CLINT offers institutional investors diversified, yet targeted, exposure to India's high-growth real estate sector, a crucial component for long-term alpha generation. The Trust's focus on IT, industrial, logistics, and data centers aligns with secular growth themes, providing a hedge against traditional real estate cyclicality. Its defensive capital structure, characterized by a healthy <strong>42.3% gearing ratio</strong> and a high proportion of <strong>77.2% fixed-rate debt</strong>, offers stability in volatile markets and mitigates interest rate risk. CLINT provides attractive yield (<strong>trailing dividend yield of 6.23%</strong>) coupled with capital appreciation potential, making it suitable for income-oriented and growth-at-a-reasonable-price mandates. Its correlation with broader global real estate indices is relatively low, offering valuable diversification benefits. Position sizing should reflect the high conviction in the thesis, allocating <strong>1.5-2.0% of the core portfolio</strong>, with incremental additions on any short-term market dislocations that fail to account for the strong fundamental trajectory and impending catalysts.</p>
+        
+        <p><strong>Proprietary Monitoring Framework: Tracking Key Alpha-Driving Indicators</strong></p>
+        <p>Our monitoring system for CLINT will focus on leading indicators that signal thesis validation or potential deterioration, rather than lagging financial statements alone. Key Performance Indicators (KPIs) to track include: 1) <strong>Quarterly rental reversions</strong>, particularly for new and renewed leases, to confirm pricing power and demand strength; 2) <strong>Leasing progress and pre-commitments for new data center and industrial assets</strong> to assess pipeline execution; 3) <strong>Updates on capital recycling initiatives</strong>, specifically the divestment of data centers to a sponsor-managed fund by Q4 2025, as a measure of proactive capital management; 4) <strong>Occupancy rates across the core portfolio</strong> to ensure continued tenant demand; and 5) <strong>Movement in the Indian Rupee (INR) vs. SGD</strong> to monitor FX impact on DPU (given <strong>45.8% unhedged exposure</strong>). We will also monitor competitor activity in key micro-markets to assess any shifts in competitive dynamics or pricing power. Deviations from these benchmarks, either positive or negative, will trigger a re-evaluation of the investment thesis and potential adjustments to our position size.</p>
+        
+        <p><strong>Catalyst Timeline and Dynamic Exit Strategy</strong></p>
+        <p>We foresee several key catalysts materializing over the next 12-18 months that will drive market recognition and share price appreciation. The most immediate catalyst is the <strong>Q4 2025 earnings release</strong>, expected to show initial revenue contributions from the first data center and potentially provide further guidance on the strategic capital recycling program. This will serve as a crucial validation point for our differentiated view on accretive growth. Subsequent quarters in 2026 will reveal continued DPU growth, reinforcing the underlying operational strength and countering the previous non-cash related net income dip. As the pipeline assets come online and are fully leased, we anticipate a gradual but sustained re-rating of CLINT's valuation multiples, aligning it more closely with higher-growth "new economy" REITs. Our exit strategy is dynamic: we will trim positions if the unit price reaches our <strong>S$1.31 target ahead of schedule</strong> without new accretive catalysts, or if our monitoring framework signals a significant deterioration in fundamental drivers (e.g., sustained negative rental reversions, unexpected delays in major projects). Conversely, should new, highly accretive acquisitions be announced or an acceleration in India's digital economy surpass our bull case expectations, we would consider increasing our position to capture further alpha, potentially revising our target to <strong>S$1.50+</strong>. This proactive approach ensures optimal risk-adjusted returns.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 15 / 15</p></footer>
+</div>
+</body>
+</html>
