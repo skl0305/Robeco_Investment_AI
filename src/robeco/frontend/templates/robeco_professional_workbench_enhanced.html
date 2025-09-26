@@ -2113,11 +2113,27 @@
                         <label class="input-label">Investment Objective</label>
                         <input type="text" id="queryInput" class="professional-input" placeholder="e.g., Evaluate for core equity position">
                     </div>
+                    
+                    <!-- Context fields integrated into main form -->
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label">Data Sources</label>
+                        <textarea id="dataSourcesInput" class="professional-input" placeholder="e.g., Bloomberg data, annual reports, recent earnings call..." style="min-height: 45px; resize: vertical;"></textarea>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label">Key Information</label>
+                        <textarea id="keyInformationInput" class="professional-input" placeholder="e.g., Recent management changes, upcoming earnings, industry trends..." style="min-height: 45px; resize: vertical;"></textarea>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label class="input-label">Investment Context</label>
+                        <textarea id="investmentContextInput" class="professional-input" placeholder="e.g., Growth vs value focus, portfolio allocation goals, risk tolerance..." style="min-height: 45px; resize: vertical;"></textarea>
+                    </div>
+                    
                     <button class="setup-button" onclick="setupInvestmentProject()">
                         <i class="fas fa-rocket"></i> Initialize Analysis
                     </button>
                 </div>
             </div>
+
 
             <!-- Bulk File Upload Section -->
             <div class="sidebar-section bulk-upload-section">
@@ -2672,6 +2688,7 @@
                 console.log('DEBUG: WebSocket initialization completed');
                 setupEventListeners();
                 console.log('DEBUG: Event listeners setup completed');
+                console.log('DEBUG: Initialization completed');
             } catch (error) {
                 console.error('DEBUG: Error during initialization:', error);
                 console.error('DEBUG: Error stack:', error.stack);
@@ -2760,15 +2777,30 @@
                 const response = await fetch('/api/stock/' + ticker);
                 const stockData = await response.json();
                 
+                // Collect simplified context data
+                const dataSources = {
+                    dataSources: document.getElementById('dataSourcesInput').value.trim(),
+                    keyInformation: document.getElementById('keyInformationInput').value.trim(),
+                    investmentContext: document.getElementById('investmentContextInput').value.trim()
+                };
+                
+                console.log('🔍 FRONTEND DEBUG: Context collected from form:', dataSources);
+
+                // Check if context was already saved
+                const existingContext = localStorage.getItem('robecoDataSources_' + ticker);
+                const savedContext = existingContext ? JSON.parse(existingContext) : dataSources;
+                
                 currentProject = {
                     company: company,
                     ticker: ticker,
                     query: query,
                     stockData: stockData,
+                    dataSources: savedContext,
                     timestamp: new Date().toISOString()
                 };
-
-                console.log('✅ Investment project initialized with stock data:', currentProject);
+                
+                console.log('🔥 FRONTEND DEBUG: PROJECT CREATED WITH CONTEXT:', savedContext);
+                console.log('🔍 FRONTEND DEBUG: Full currentProject:', currentProject);
                 
                 // Enable analyst cards
                 document.querySelectorAll('.analyst-card').forEach(card => {
@@ -2786,13 +2818,24 @@
             } catch (error) {
                 console.error('Error fetching stock data:', error);
                 
-                // Fallback without stock data
+                // Check if context was already saved (fallback case)
+                const existingContext = localStorage.getItem('robecoDataSources_' + ticker);
+                const dataSources = {
+                    dataSources: document.getElementById('dataSourcesInput').value.trim(),
+                    keyInformation: document.getElementById('keyInformationInput').value.trim(),
+                    investmentContext: document.getElementById('investmentContextInput').value.trim()
+                };
+                const savedContext = existingContext ? JSON.parse(existingContext) : dataSources;
+
                 currentProject = {
                     company: company,
                     ticker: ticker,
                     query: query,
+                    dataSources: savedContext,
                     timestamp: new Date().toISOString()
                 };
+                
+                console.log('🔥 FALLBACK PROJECT WITH CONTEXT:', savedContext);
                 
                 displayBasicProjectInitialization(currentProject);
             } finally {
@@ -2801,6 +2844,8 @@
                 setupButton.disabled = false;
             }
         }
+
+
 
         function displayEnhancedProjectInitialization(project) {
             console.log('DEBUG: displayEnhancedProjectInitialization called');
@@ -3973,14 +4018,17 @@ stockInfoHtml += (stockData.business_summary ?
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('analysisDisplay').style.display = 'block';
             
-            // Send analysis request
+            // Send analysis request with data sources
             const analysisRequest = {
                 type: 'start_analysis',
                 analyst: specialistType,
                 company: currentProject.company,
                 ticker: currentProject.ticker,
-                user_query: enhancedQuery
+                user_query: enhancedQuery,
+                data_sources: currentProject.dataSources || {}
             };
+            
+            console.log('🔍 FRONTEND DEBUG: Sending analyst request with context:', analysisRequest.data_sources);
             
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(analysisRequest));
@@ -6262,9 +6310,12 @@ stockInfoHtml += (stockData.business_summary ?
                         analyses_data: analysesData,
                         report_focus: 'comprehensive',
                         investment_objective: currentProject.query || 'Comprehensive investment analysis',
-                        user_query: currentProject.query || 'Perform comprehensive investment analysis'
+                        user_query: currentProject.query || 'Perform comprehensive investment analysis',
+                        data_sources: currentProject.dataSources || {}
                     }
                 };
+                
+                console.log('🔍 FRONTEND DEBUG: Sending report request with context:', reportRequest.data.data_sources);
                 
                 console.log('📤 Sending report generation request:', reportRequest);
                 ws.send(JSON.stringify(reportRequest));

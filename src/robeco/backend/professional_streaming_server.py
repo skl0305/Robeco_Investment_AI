@@ -531,6 +531,7 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
         company = message.get('company', 'Unknown Company')
         ticker = message.get('ticker', 'N/A')
         user_query = message.get('user_query', '')
+        data_sources = message.get('data_sources', {})
         
         logger.info(f"🧠 Starting ultra-sophisticated sequential multi-agent analysis for {company} ({ticker})")
         
@@ -566,7 +567,8 @@ async def handle_streaming_analysis(websocket: WebSocket, connection_id: str, me
             user_query=user_query,
             session_id=f"{connection_id}_{int(datetime.now().timestamp())}",
             start_time=datetime.now(),
-            stock_data=stock_data  # Feed complete yfinance data to all agents
+            stock_data=stock_data,  # Feed complete yfinance data to all agents
+            data_sources=data_sources  # Pass user context data to all agents
         )
         
         # Stream single specialist analysis in real-time with Google Search
@@ -2050,6 +2052,7 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
         analyses_data = data.get('analyses_data', {})
         investment_objective = data.get('investment_objective', '')
         user_query = data.get('user_query', '')
+        data_sources = data.get('data_sources', {})
         
         logger.info(f"📊 Starting report generation for {company} ({ticker}) - Focus: {report_focus}")
         logger.info(f"📋 Received analyses data: {list(analyses_data.keys()) if analyses_data else 'NONE'}")
@@ -2110,7 +2113,8 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 analyses_data=analyses_data,
                 report_focus=report_focus,
                 investment_objective=investment_objective,
-                user_query=user_query
+                user_query=user_query,
+                data_sources=data_sources
             )
             
         else:
@@ -2293,7 +2297,8 @@ async def generate_report_with_streaming(
     analyses_data: Dict[str, Any],
     report_focus: str = "comprehensive",
     investment_objective: str = None,
-    user_query: str = None
+    user_query: str = None,
+    data_sources: Dict = None
 ) -> str:
     """Generate report with real-time streaming updates to frontend"""
     
@@ -2406,7 +2411,8 @@ async def generate_report_with_streaming(
             connection_id=connection_id,
             financial_data=financial_data,
             investment_objective=investment_objective,
-            user_query=user_query
+            user_query=user_query,
+            data_sources=data_sources
         )
         
         # Send final processing status

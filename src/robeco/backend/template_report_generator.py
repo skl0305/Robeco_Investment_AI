@@ -55,7 +55,8 @@ class RobecoTemplateReportGenerator:
         connection_id: str = None,
         financial_data: Dict = None,
         investment_objective: str = None,
-        user_query: str = None
+        user_query: str = None,
+        data_sources: Dict = None
     ) -> str:
         """
         Generate comprehensive report from collected agent analyses
@@ -130,7 +131,7 @@ class RobecoTemplateReportGenerator:
             
             # CALL 1: Generate slides 1-7 (Overview, Company, Industry Analysis)
             call1_content = await self._generate_combined_overview_and_analysis_section(
-                company_name, ticker, analyses_data, financial_data, websocket, connection_id
+                company_name, ticker, analyses_data, financial_data, websocket, connection_id, data_sources
             )
             
             if not call1_content:
@@ -194,7 +195,7 @@ class RobecoTemplateReportGenerator:
             
             # CALL 2: Generate slides 8-15 (Financial Analysis & Valuation)
             call2_content = await self._generate_industry_and_financial_section(
-                company_name, ticker, analyses_data, financial_data, call1_context, websocket, connection_id
+                company_name, ticker, analyses_data, financial_data, call1_context, websocket, connection_id, data_sources
             )
             
             if not call2_content:
@@ -269,7 +270,8 @@ class RobecoTemplateReportGenerator:
         analyses_data: Dict[str, Any],
         financial_data: Dict = None,
         websocket=None,
-        connection_id: str = None
+        connection_id: str = None,
+        data_sources: Dict = None
     ) -> str:
         """
         2-CALL ARCHITECTURE - CALL 1: Generate slides 1-7 (Overview, Company, Industry Analysis)
@@ -285,8 +287,8 @@ class RobecoTemplateReportGenerator:
         """
         logger.info(f"📊 CALL 1: Generating overview and analysis section (slides 1-7) for {ticker}")
         
-        # Build Call 1 specific prompt
-        call1_prompt = await self._build_call1_prompt(company_name, ticker, analyses_data, financial_data, self.investment_objective)
+        # Build Call 1 specific prompt with user context
+        call1_prompt = await self._build_call1_prompt(company_name, ticker, analyses_data, financial_data, self.investment_objective, data_sources)
         
         # Generate Call 1 content (slides 1-7 only)
         call1_content = await self._generate_ai_report(call1_prompt, websocket, connection_id, "call1")
@@ -361,7 +363,8 @@ class RobecoTemplateReportGenerator:
         financial_data: Dict = None,
         call1_context: Dict = None,
         websocket=None,
-        connection_id: str = None
+        connection_id: str = None,
+        data_sources: Dict = None
     ) -> str:
         """
         2-CALL ARCHITECTURE - CALL 2: Generate slides 8-15 (Financial Analysis & Valuation)
@@ -378,9 +381,9 @@ class RobecoTemplateReportGenerator:
         """
         logger.info(f"📊 CALL 2: Generating industry and financial section (slides 8-15) for {ticker}")
         
-        # Build Call 2 specific prompt with Call 1 context
+        # Build Call 2 specific prompt with Call 1 context and user context
         call2_prompt = await self._build_call2_prompt(
-            company_name, ticker, analyses_data, financial_data, call1_context, self.investment_objective
+            company_name, ticker, analyses_data, financial_data, call1_context, self.investment_objective, data_sources
         )
         
         # Generate Call 2 content (slides 8-15 only) with completion validation
@@ -1347,6 +1350,60 @@ Every analysis must include:
             logger.warning(f"⚠️ Error building cash flow HTML: {e}")
             return '<p>Error processing cash flow data</p>'
 
+    def _build_user_context(self, data_sources: Dict = None) -> str:
+        """
+        Build user-provided context section for AI prompts with all three user inputs.
+        
+        Args:
+            data_sources: Dictionary containing dataSources, keyInformation, investmentContext
+            
+        Returns:
+            Formatted user context string for prompt injection
+        """
+        logger.info(f"🔍 DEBUG: _build_user_context called with data_sources: {data_sources}")
+        if not data_sources:
+            logger.info(f"🔍 DEBUG: No data_sources provided, returning empty string")
+            return ""
+        
+        context_sections = []
+        context_sections.append("🚨🚨🚨 **SUPREME PRIORITY: USER-PROVIDED CONTEXT** 🚨🚨🚨")
+        context_sections.append("=" * 100)
+        context_sections.append("**THIS CONTEXT OVERRIDES ALL OTHER CONSIDERATIONS - MAXIMUM WEIGHTING**")
+        context_sections.append("=" * 100)
+        
+        # Data Sources section - check both possible field names
+        data_sources_text = data_sources.get('dataSources') or data_sources.get('data_sources')
+        logger.info(f"🔍 DEBUG: Extracted data_sources_text: '{data_sources_text}'")
+        if data_sources_text:
+            context_sections.append(f"📊 **PRIMARY DATA SOURCES (EXCLUSIVE PRIORITY):** {data_sources_text}")
+            logger.info(f"🔍 DEBUG: Added data sources section to context")
+        
+        # Key Information section - check both possible field names  
+        key_info_text = data_sources.get('keyInformation') or data_sources.get('key_information')
+        logger.info(f"🔍 DEBUG: Extracted key_info_text: '{key_info_text}'")
+        if key_info_text:
+            context_sections.append(f"🎯 **CRITICAL KEY INFORMATION (ABSOLUTE FOCUS):** {key_info_text}")
+            logger.info(f"🔍 DEBUG: Added key information section to context")
+            
+        # Investment Context section - check both possible field names
+        investment_context_text = data_sources.get('investmentContext') or data_sources.get('investment_context')
+        logger.info(f"🔍 DEBUG: Extracted investment_context_text: '{investment_context_text}'")
+        if investment_context_text:
+            context_sections.append(f"💼 **INVESTMENT CONTEXT (BINDING CONSTRAINTS):** {investment_context_text}")
+            logger.info(f"🔍 DEBUG: Added investment context section to context")
+        
+        # Add simple, high priority instructions for AI
+        if len(context_sections) > 1:  # More than just the header
+            context_sections.append("=" * 100)
+            context_sections.append("")
+            context_sections.append("🚨 **FOLLOW USER CONTEXT EXACTLY - HIGHEST PRIORITY** 🚨")
+            context_sections.append("Base your entire analysis and conclusions on the user's context above")
+            context_sections.append("")
+        
+        final_context = "\n".join(context_sections) if len(context_sections) > 1 else ""
+        logger.info(f"🔍 DEBUG: Built user context ({len(final_context)} chars): {final_context[:500]}...")
+        return final_context
+
     def _build_financial_context(self, company_name: str, financial_data: Dict = None) -> str:
         """
         Build comprehensive financial context section for AI prompts with actual company data.
@@ -1483,7 +1540,8 @@ Focus on qualitative analysis and publicly available information.
         ticker: str,
         analyses_data: Dict[str, Any],
         financial_data: Dict = None,
-        investment_objective: str = None
+        investment_objective: str = None,
+        data_sources: Dict = None
     ) -> str:
         """Build optimized prompt for Call 1 (slides 1-7) using modular base prompt + Call 1 specifics"""
         
@@ -1497,6 +1555,9 @@ Focus on qualitative analysis and publicly available information.
         
         # Get analyst insights using helper method (4000 char limit for Call 1)
         analyst_insights = self._build_analyst_insights(analyses_data, content_limit=4000)
+        
+        # Get user context using helper method
+        user_context = self._build_user_context(data_sources)
         
         # PRIMARY: Use comprehensive pre-processing system
         try:
@@ -2153,6 +2214,8 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 - **Moat Evolution Analysis**: Predict how competitive advantages will strengthen/weaken over time and what management is doing to reinforce them
 - **Quality of Growth Assessment**: Distinguish between revenue growth and profitable, sustainable, capital-efficient growth that creates long-term value
 
+{user_context}
+
 {financial_context}
 
 {analyst_insights}
@@ -2322,14 +2385,27 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
         
         logger.info(f"✅ Metrics placeholders replaced: {len([p for p in replacements.keys() if p not in complete_call1_prompt_with_metrics])} substituted")
         
-        # THEN: Format the prompt with company name
+        # THEN: Format the prompt with company name and context variables
         try:
             # Escape any problematic characters in company name for string formatting
             safe_company_name = str(company_name).replace('{', '{{').replace('}', '}}') if '{' in str(company_name) or '}' in str(company_name) else company_name
-            # Replace {company_name} in the prompt that already has metrics replaced
-            formatted_final = complete_call1_prompt_with_metrics.format(company_name=safe_company_name)
             
-            logger.info(f"✅ Call 1 prompt built: {len(formatted_final):,} characters with real metrics")
+            logger.info(f"🔍 DEBUG: Formatting Call 1 prompt with:")
+            logger.info(f"  - company_name: '{safe_company_name}'")
+            logger.info(f"  - user_context: {len(user_context)} chars")
+            logger.info(f"  - financial_context: {len(financial_context)} chars") 
+            logger.info(f"  - analyst_insights: {len(analyst_insights)} chars")
+            
+            # Replace all template variables in the prompt that already has metrics replaced
+            formatted_final = complete_call1_prompt_with_metrics.format(
+                company_name=safe_company_name,
+                user_context=user_context,
+                financial_context=financial_context,
+                analyst_insights=analyst_insights
+            )
+            
+            logger.info(f"✅ Call 1 prompt built: {len(formatted_final):,} characters with real metrics and context")
+            logger.info(f"🔍 DEBUG: User context in final prompt: {'user_context' not in formatted_final}")
             return formatted_final
             
         except KeyError as e:
@@ -2490,7 +2566,8 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
         analyses_data: Dict[str, Any],
         financial_data: Dict = None,
         call1_context: Dict = None,
-        investment_objective: str = None
+        investment_objective: str = None,
+        data_sources: Dict = None
     ) -> str:
         """Build optimized prompt for Call 2 (slides 8-15) using modular base prompt + Call 2 specifics + Call 1 context"""
         
@@ -2555,6 +2632,9 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
         
         # Get analyst insights using helper method (6000 char limit for Call 2 - more detail)
         analyst_insights = self._build_analyst_insights(analyses_data, content_limit=6000)
+        
+        # Get user context using helper method
+        user_context = self._build_user_context(data_sources)
         
         # Get Call 1 context summary using helper method
         call1_summary = self._build_call1_context_summary(call1_context)
@@ -2960,6 +3040,8 @@ rd valuation with DCF and multiples (no complex tables)
 - **Through-Cycle Normalization**: Adjust for cyclical factors to assess sustainable earning power and appropriate multiples
 - **Risk Factor Identification**: Company-specific, sector, and macro risks with impact quantification and mitigation assessment
 
+{user_context}
+
 {financial_context}
 
 {analyst_insights}
@@ -3053,12 +3135,28 @@ YOU MUST COMPLETE ALL 8 SLIDES (8, 9, 10, 11, 12, 13, 14, 15).
             complete_call2_prompt = base_prompt + css_guidance + call2_specific
         
         
-        # Format the prompt with actual company name
+        # Format the prompt with actual company name and context variables
         try:
             # Escape any problematic characters in company name for string formatting
             safe_company_name = str(company_name).replace('{', '{{').replace('}', '}}') if '{' in str(company_name) or '}' in str(company_name) else company_name
-            formatted_call2_prompt = complete_call2_prompt.format(company_name=safe_company_name)
-            logger.info(f"✅ Call 2 prompt built: {len(formatted_call2_prompt):,} characters with pre-built HTML tables")
+            
+            logger.info(f"🔍 DEBUG: Formatting Call 2 prompt with:")
+            logger.info(f"  - company_name: '{safe_company_name}'")
+            logger.info(f"  - user_context: {len(user_context)} chars")
+            logger.info(f"  - financial_context: {len(financial_context)} chars")
+            logger.info(f"  - analyst_insights: {len(analyst_insights)} chars")
+            logger.info(f"  - call1_summary: {len(call1_summary)} chars")
+            
+            formatted_call2_prompt = complete_call2_prompt.format(
+                company_name=safe_company_name,
+                user_context=user_context,
+                financial_context=financial_context,
+                analyst_insights=analyst_insights,
+                call1_summary=call1_summary
+            )
+            
+            logger.info(f"✅ Call 2 prompt built: {len(formatted_call2_prompt):,} characters with pre-built HTML tables and context")
+            logger.info(f"🔍 DEBUG: User context in Call 2 final prompt: {'user_context' not in formatted_call2_prompt}")
             return formatted_call2_prompt
         except KeyError as e:
             logger.error(f"❌ Formatting error in Call 2 prompt: {e}")

@@ -62,6 +62,7 @@ class AnalysisContext:
     session_id: str
     start_time: datetime
     stock_data: Optional[Dict] = None  # Complete yfinance data
+    data_sources: Optional[Dict] = None  # User-provided context data
 
 @dataclass
 class AgentIntelligence:
@@ -410,7 +411,8 @@ class UltraSophisticatedMultiAgentEngine:
                 company=context.company_name,
                 ticker=context.ticker,
                 user_query=context.user_query or f"Comprehensive {agent_type} analysis",
-                financial_data=context.stock_data  # Feed complete yfinance data
+                financial_data=context.stock_data,  # Feed complete yfinance data
+                data_sources=context.data_sources  # Pass user context data
             )
             
             # Split into system and user parts (if the prompt contains both)
@@ -1556,7 +1558,8 @@ class UltraSophisticatedMultiAgentEngine:
             agent_type,
             context.company_name,
             context.ticker,
-            context.user_query
+            context.user_query,
+            data_sources=context.data_sources
         )
         
         # Add cross-agent intelligence context

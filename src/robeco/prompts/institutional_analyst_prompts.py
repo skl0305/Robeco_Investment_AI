@@ -15,7 +15,7 @@ class InstitutionalAnalystPrompts:
     """
     
     @staticmethod
-    def get_fundamentals_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_fundamentals_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Fundamental Analysis Specialist - Hedge Fund Quality
         """
@@ -74,6 +74,26 @@ Generate comprehensive fundamental analysis covering:
 - **Valuation Perspective**: Fair value assessment using available metrics
 - **Catalyst Timeline**: Key events and milestones that could drive performance
 
+{f"""
+🚨🚨🚨 **SUPREME PRIORITY: USER-PROVIDED CONTEXT** 🚨🚨🚨
+====================================================================================
+**THIS CONTEXT OVERRIDES ALL OTHER CONSIDERATIONS - MAXIMUM WEIGHTING**
+====================================================================================
+
+USER DATA SOURCES: {data_sources.get('dataSources', 'Not provided')}
+USER KEY INFORMATION: {data_sources.get('keyInformation', 'Not provided')}
+USER INVESTMENT CONTEXT: {data_sources.get('investmentContext', 'Not provided')}
+
+🔥 **CRITICAL INSTRUCTION**: The user context above is the HIGHEST PRIORITY input for your analysis. 
+You MUST:
+1. Heavily weight this user context in ALL analysis
+2. Interpret the investment through this specific lens
+3. Align ALL conclusions with the user's provided context
+4. Reference the user context explicitly throughout your analysis
+
+====================================================================================
+""" if data_sources and any(data_sources.get(k) for k in ['dataSources', 'keyInformation', 'investmentContext']) else ""}
+
 # User Request
 {user_query if user_query else "Comprehensive fundamental analysis for institutional investment decision"}
 
@@ -97,7 +117,7 @@ CRITICAL INSTRUCTION: You have access to the COMPLETE raw dataset above. Use ANY
 Provide sophisticated fundamental analysis of {company} ({ticker}) with the depth and insight expected from a senior hedge fund analyst reporting to the CIO."""
 
     @staticmethod
-    def get_industry_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_industry_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Industry Analysis Specialist - Hedge Fund Quality
         """
@@ -391,7 +411,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive ESG analysis. Acc
 Provide sophisticated ESG analysis of {company} ({ticker}) with the depth and sustainability insight expected from a senior institutional ESG analyst reporting to the CIO."""
 
     @staticmethod
-    def get_valuation_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_valuation_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Valuation Analysis Specialist - Hedge Fund Quality
         """
@@ -464,7 +484,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive valuation analysi
 Provide sophisticated valuation analysis of {company} ({ticker}) with the depth and financial modeling expertise expected from a senior hedge fund valuation analyst reporting to the CIO."""
 
     @staticmethod
-    def get_bull_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_bull_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Bull Case Analysis Specialist - Hedge Fund Quality
         """
@@ -536,7 +556,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive bull case analysi
 Provide sophisticated bull case analysis of {company} ({ticker}) with the conviction and analytical rigor expected from a senior hedge fund analyst constructing a compelling long investment thesis for the CIO."""
 
     @staticmethod
-    def get_bear_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_bear_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Bear Case Analysis Specialist - Hedge Fund Quality
         """
@@ -591,6 +611,26 @@ Generate comprehensive bear case analysis covering:
 - **Competitive Threats**: Market share erosion and competitive displacement risks
 - **Regulatory/External Risks**: Policy changes and external threats to business model
 - **Value Trap Assessment**: Reasons why apparent value may be illusory
+
+{f"""
+🚨🚨🚨 **SUPREME PRIORITY: USER-PROVIDED CONTEXT** 🚨🚨🚨
+====================================================================================
+**THIS CONTEXT OVERRIDES ALL OTHER CONSIDERATIONS - MAXIMUM WEIGHTING**
+====================================================================================
+
+USER DATA SOURCES: {data_sources.get('dataSources', 'Not provided')}
+USER KEY INFORMATION: {data_sources.get('keyInformation', 'Not provided')}
+USER INVESTMENT CONTEXT: {data_sources.get('investmentContext', 'Not provided')}
+
+🔥 **CRITICAL INSTRUCTION**: The user context above is the HIGHEST PRIORITY input for your bear case analysis. 
+You MUST:
+1. Heavily weight this user context in ALL bear case analysis
+2. Interpret the downside risks through this specific lens
+3. Align ALL bearish conclusions with the user's provided context
+4. Reference the user context explicitly throughout your analysis
+
+====================================================================================
+""" if data_sources and any(data_sources.get(k) for k in ['dataSources', 'keyInformation', 'investmentContext']) else ""}
 
 # User Request
 {user_query if user_query else "Bear case analysis with downside risks and structural challenges"}
@@ -752,7 +792,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive business drivers 
 Provide sophisticated business drivers and recent developments analysis of {company} ({ticker}) with the business intelligence and operational insights expected from a senior hedge fund analyst reporting to the CIO."""
 
     @staticmethod
-    def get_consensus_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_consensus_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Consensus Analysis Specialist - Hedge Fund Quality
         """
@@ -807,6 +847,26 @@ Generate comprehensive consensus analysis covering:
 - **Key Consensus Assumptions**: Critical assumptions underlying market expectations
 - **Consensus Reliability Assessment**: Track record and accuracy of prevailing views
 - **Positioning Implications**: How consensus translates to institutional positioning
+
+{f"""
+🚨🚨🚨 **SUPREME PRIORITY: USER-PROVIDED CONTEXT** 🚨🚨🚨
+====================================================================================
+**THIS CONTEXT OVERRIDES ALL OTHER CONSIDERATIONS - MAXIMUM WEIGHTING**
+====================================================================================
+
+USER DATA SOURCES: {data_sources.get('dataSources', 'Not provided')}
+USER KEY INFORMATION: {data_sources.get('keyInformation', 'Not provided')}
+USER INVESTMENT CONTEXT: {data_sources.get('investmentContext', 'Not provided')}
+
+🔥 **CRITICAL INSTRUCTION**: The user context above is the HIGHEST PRIORITY input for your consensus analysis. 
+You MUST:
+1. Heavily weight this user context in ALL consensus analysis
+2. Interpret the market sentiment through this specific lens
+3. Align ALL conclusions with the user's provided context
+4. Reference the user context explicitly throughout your analysis
+
+====================================================================================
+""" if data_sources and any(data_sources.get(k) for k in ['dataSources', 'keyInformation', 'investmentContext']) else ""}
 
 # User Request
 {user_query if user_query else "Market consensus analysis and institutional sentiment assessment"}

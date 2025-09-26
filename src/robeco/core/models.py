@@ -33,6 +33,13 @@ class AgentType(Enum):
 
 
 @dataclass
+class DataSources:
+    """Data sources provided by user"""
+    data_sources: str = ""
+    key_information: str = ""
+    investment_context: str = ""
+
+@dataclass
 class AnalysisContext:
     """Context object containing analysis parameters"""
     company_name: str
@@ -42,6 +49,7 @@ class AnalysisContext:
     timestamp: datetime = field(default_factory=datetime.now)
     session_id: str = ""
     priority: int = 1
+    data_sources: Optional[DataSources] = None
     
     def __post_init__(self):
         if not self.session_id:

@@ -554,6 +554,8 @@ Generate a comprehensive investment analysis for {context.company_name} ({contex
 **KEY FOCUS AREAS:**
 {', '.join(config['focus_areas'])}
 
+{self._build_data_sources_section(context)}
+
 **COMPANY DATA:**
 {company_info}
 
@@ -583,6 +585,37 @@ Structure your analysis for optimal streaming delivery:
 Begin comprehensive streaming analysis now:"""
         
         return streaming_prompt
+    
+    def _build_data_sources_section(self, context: AnalysisContext) -> str:
+        """Build data sources section for prompt if available"""
+        if not context.data_sources:
+            return ""
+        
+        data_sources = context.data_sources
+        sections = []
+        
+        # Build HIGH PRIORITY user context section
+        sections.append("🔴 **CRITICAL USER-PROVIDED CONTEXT - HIGHEST PRIORITY** 🔴")
+        sections.append("=" * 80)
+        
+        if data_sources.data_sources:
+            sections.append(f"📊 **PRIMARY DATA SOURCES (MUST USE):** {data_sources.data_sources}")
+            
+        if data_sources.key_information:
+            sections.append(f"🎯 **KEY INFORMATION (MANDATORY FOCUS):** {data_sources.key_information}")
+            
+        if data_sources.investment_context:
+            sections.append(f"💼 **INVESTMENT CONTEXT (BINDING REQUIREMENTS):** {data_sources.investment_context}")
+        
+        # Add high priority instructions - simple and flexible
+        if len(sections) > 1:  # More than just the header
+            sections.append("=" * 80)
+            sections.append("")
+            sections.append("🚨 **FOLLOW USER CONTEXT EXACTLY - HIGHEST PRIORITY** 🚨")
+            sections.append("Base your analysis on the user's context above")
+            sections.append("")
+        
+        return "\n".join(sections) if len(sections) > 1 else ""
     
     def get_analyst_name(self) -> str:
         """Get analyst name"""

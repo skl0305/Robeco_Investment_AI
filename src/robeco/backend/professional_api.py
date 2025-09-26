@@ -18,7 +18,7 @@ from fastapi.requests import Request
 from pydantic import BaseModel
 
 from ..core.memory import EnhancedSharedMemory, APIKeyManager
-from ..core.models import AnalysisContext, WebSocketMessage
+from ..core.models import AnalysisContext, WebSocketMessage, DataSources as CoreDataSources
 from ..agents.streaming_professional_analyst import StreamingInvestmentAnalystTeam
 from ..backend.websocket_manager import WebSocketManager
 from ..backend.word_report_generator import RobecoWordReportGenerator
@@ -27,11 +27,17 @@ from ..backend.pdf_report_generator import RobecoPdfReportGenerator
 logger = logging.getLogger(__name__)
 
 # Request models for unlimited AI analysis
+class DataSources(BaseModel):
+    data_sources: str = ""
+    key_information: str = ""
+    investment_context: str = ""
+
 class AnalysisRequest(BaseModel):
     ticker: str
     company_name: str
     analyst_type: str  # chief, fundamentals, industry, technical, risk, esg
     user_query: str = "Perform unlimited capacity professional investment analysis"
+    data_sources: DataSources = DataSources()
 
 class ReportRequest(BaseModel):
     ticker: str 
@@ -177,12 +183,20 @@ class ProfessionalInvestmentAPI:
         async def start_professional_analysis(request: AnalysisRequest):
             """Start unlimited AI professional investment analysis"""
             try:
-                # Create unlimited AI analysis context
+                # Convert Pydantic DataSources to core DataSources
+                core_data_sources = CoreDataSources(
+                    data_sources=request.data_sources.data_sources,
+                    key_information=request.data_sources.key_information,
+                    investment_context=request.data_sources.investment_context
+                )
+                
+                # Create unlimited AI analysis context with data sources
                 context = AnalysisContext(
                     company_name=request.company_name,
                     ticker=request.ticker,
                     user_query=request.user_query,
-                    analysis_focus=[request.analyst_type]
+                    analysis_focus=[request.analyst_type],
+                    data_sources=core_data_sources
                 )
                 
                 # Execute unlimited AI analysis
@@ -397,13 +411,34 @@ class ProfessionalInvestmentAPI:
                 logger.error(f"❌ Failed to send start message to {client_id}: {e}")
                 return
             
-            # Create analysis context for real AI processing
+            # Extract data sources from message if available
+            logger.info(f"🔍 DEBUG: Checking for data_sources in message: {'data_sources' in message}")
+            data_sources = None
+            if "data_sources" in message:
+                data_sources_dict = message.get("data_sources", {})
+                logger.info(f"🔍 DEBUG: Raw data_sources_dict: {data_sources_dict}")
+                data_sources = CoreDataSources(
+                    data_sources=data_sources_dict.get("dataSources", ""),
+                    key_information=data_sources_dict.get("keyInformation", ""),
+                    investment_context=data_sources_dict.get("investmentContext", "")
+                )
+                logger.info(f"🔍 DEBUG: Created CoreDataSources object:")
+                logger.info(f"  - data_sources: '{data_sources.data_sources}'")
+                logger.info(f"  - key_information: '{data_sources.key_information}'")
+                logger.info(f"  - investment_context: '{data_sources.investment_context}'")
+            else:
+                logger.info(f"🔍 DEBUG: No data_sources found in message")
+            
+            # Create analysis context for real AI processing with data sources
+            logger.info(f"🔍 DEBUG: Creating AnalysisContext with data_sources: {data_sources is not None}")
             context = AnalysisContext(
                 company_name=company,
                 ticker=ticker,
-                user_query=f"Perform comprehensive {analyst_type} investment analysis using real financial data",
-                analysis_focus=[analyst_type]
+                user_query=message.get("user_query", f"Perform comprehensive {analyst_type} investment analysis using real financial data"),
+                analysis_focus=[analyst_type],
+                data_sources=data_sources
             )
+            logger.info(f"🔍 DEBUG: AnalysisContext created - context.data_sources: {context.data_sources}")
             
             # Execute STREAMING AI analysis (real-time)
             logger.info(f"📊 Executing streaming AI analysis with real-time updates...")
@@ -484,13 +519,34 @@ class ProfessionalInvestmentAPI:
             )
             await self.websocket_manager.broadcast_message(start_message.to_dict())
             
-            # Create context for comprehensive AI report
+            # Extract data sources from message if available  
+            logger.info(f"🔍 DEBUG: Checking for data_sources in report message: {'data' in message and 'data_sources' in message.get('data', {})}")
+            data_sources = None
+            if "data" in message and "data_sources" in message["data"]:
+                data_sources_dict = message["data"].get("data_sources", {})
+                logger.info(f"🔍 DEBUG: Report raw data_sources_dict: {data_sources_dict}")
+                data_sources = CoreDataSources(
+                    data_sources=data_sources_dict.get("dataSources", ""),
+                    key_information=data_sources_dict.get("keyInformation", ""),
+                    investment_context=data_sources_dict.get("investmentContext", "")
+                )
+                logger.info(f"🔍 DEBUG: Report created CoreDataSources object:")
+                logger.info(f"  - data_sources: '{data_sources.data_sources}'")
+                logger.info(f"  - key_information: '{data_sources.key_information}'")
+                logger.info(f"  - investment_context: '{data_sources.investment_context}'")
+            else:
+                logger.info(f"🔍 DEBUG: No data_sources found in report message")
+            
+            # Create context for comprehensive AI report with data sources
+            logger.info(f"🔍 DEBUG: Creating report AnalysisContext with data_sources: {data_sources is not None}")
             context = AnalysisContext(
                 company_name=company,
                 ticker=ticker,
                 user_query="Generate comprehensive professional investment analysis report",
-                analysis_focus=["comprehensive_report"]
+                analysis_focus=["comprehensive_report"],
+                data_sources=data_sources
             )
+            logger.info(f"🔍 DEBUG: Report AnalysisContext created - context.data_sources: {context.data_sources}")
             
             # Generate comprehensive AI report
             report = await self.analyst_team.generate_comprehensive_report(context)

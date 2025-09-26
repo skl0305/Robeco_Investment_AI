@@ -1,1195 +1,821 @@
-# Robeco Investment Platform - Technical Documentation
+# Robeco AI Investment Analysis System - Technical Documentation
 
-## Code Architecture & Implementation Details
+## Table of Contents
+1. [System Architecture](#system-architecture)
+2. [Core Components](#core-components)
+3. [API Reference](#api-reference)
+4. [AI Agent System](#ai-agent-system)
+5. [Document Generation](#document-generation)
+6. [Database Schema](#database-schema)
+7. [Configuration](#configuration)
+8. [Deployment](#deployment)
+9. [Performance](#performance)
+10. [Security](#security)
 
-This document provides comprehensive technical documentation for engineers working with the Robeco Professional Investment Analysis Platform. It covers the internal architecture, code structure, function implementations, and technical workflows.
+## System Architecture
 
-## Core Backend Implementation
+### Overview
+The Robeco AI Investment Analysis System is an enterprise-grade platform that combines **AI-powered financial analysis** with **real-time streaming capabilities** and **professional document generation**. Built on a modern FastAPI backend with WebSocket streaming, it delivers institutional-quality investment research through a scalable, multi-agent architecture.
 
-### Main System Launcher - `run_professional_system.py`
-
-**Purpose**: Production-grade system launcher with intelligent environment configuration and network detection
-
-**Implementation Details**:
-
-```python
-#!/usr/bin/env python3
-"""
-Main system launcher for Robeco Professional Investment Analysis Platform
-Handles environment setup, network configuration, and server deployment
-"""
-
-def main():
-    """
-    Primary system initialization and launch sequence
-    
-    Process:
-    1. Environment setup and Python path configuration
-    2. Network detection and URL generation
-    3. Port availability scanning (8005-8007 range)
-    4. Professional streaming server launch
-    5. Real-time status monitoring
-    """
-    
-def setup_environment():
-    """
-    Configures Python environment and project paths
-    
-    Key Operations:
-    - Adds project root to Python path
-    - Validates Python version (3.8+ required)
-    - Initializes logging system with production settings
-    - Sets up working directory context
-    """
-    
-def detect_network_urls():
-    """
-    Intelligent network detection and URL generation
-    
-    Returns:
-    - Local access URL (127.0.0.1)
-    - Primary network URL (172.20.10.2) 
-    - Alternative network URL (10.14.0.2)
-    - Auto-detected available ports
-    """
-    
-def check_port_availability(port):
-    """
-    Port availability verification with socket testing
-    
-    Args:
-        port (int): Port number to test
-        
-    Returns:
-        bool: True if port is available
-    """
+### Architecture Diagram
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Robeco AI Investment Platform                │
+├─────────────────────────────────────────────────────────────────┤
+│  Frontend Layer                                                 │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │  Web Interface  │ │   WebSocket     │ │   Document      │   │
+│  │   (Professional │ │   Streaming     │ │   Export        │   │
+│  │    Workbench)   │ │                 │ │                 │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  API Layer (FastAPI)                                           │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │  Professional   │ │   WebSocket     │ │   Document      │   │
+│  │      API        │ │    Handler      │ │   Conversion    │   │
+│  │  (/api/prof...) │ │     (/ws)       │ │   (Word/PDF)    │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  AI Agent System                                               │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │  12 Specialist  │ │   Google        │ │   Real-time     │   │
+│  │    Analysts     │ │   Research      │ │   Streaming     │   │
+│  │                 │ │   Integration   │ │                 │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  Data Layer                                                     │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │   Financial     │ │   Google        │ │   Document      │   │
+│  │   Data (yf)     │ │   Gemini AI     │ │   Templates     │   │
+│  │                 │ │   (115+ keys)   │ │                 │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Network Configuration**:
-```python
-# Default network endpoints
-LOCAL_ACCESS = "http://127.0.0.1:8005"
-NETWORK_ACCESS = "http://172.20.10.2:8005"  
-ALTERNATIVE_NETWORK = "http://10.14.0.2:8005"
+### Key Design Principles
+- **Real-time Streaming**: Token-by-token content delivery via WebSockets
+- **Multi-Agent Architecture**: 12 specialized AI analysts working in coordination
+- **Enterprise Scalability**: 115+ API key management for high concurrency
+- **Professional Document Generation**: Word and PDF export with exact formatting
+- **Financial Data Integration**: Comprehensive market data with yfinance
+- **Robust Error Handling**: Automatic failover and recovery mechanisms
 
-# Port scanning range with conflict resolution
-PORT_RANGE = [8005, 8006, 8007]
+## Core Components
+
+### 1. Main Application (`/src/robeco/backend/main.py`)
+```python
+# FastAPI application with comprehensive middleware
+app = FastAPI(
+    title="Robeco AI Investment Analysis System",
+    version="2.0.0",
+    description="Professional AI-powered investment research platform"
+)
+
+# Key configurations:
+- CORS middleware for cross-origin requests
+- WebSocket support for real-time streaming
+- Health check endpoints
+- Auto-reload in development mode
+- Port: 8001 (configurable)
 ```
 
-### AI Prompt System - `institutional_analyst_prompts.py`
+### 2. Professional API Layer (`/src/robeco/backend/professional_api.py`)
 
-**Purpose**: Sophisticated AI prompts delivering hedge fund-quality institutional analysis across 12 specialist areas
-
-**Class Architecture**:
-
+#### Analyst Team Structure
 ```python
-class InstitutionalAnalystPrompts:
-    """
-    Static prompt generation for all 12 specialist analysts
-    Each prompt designed for institutional-grade analysis quality
-    """
-    
-    @staticmethod
-    def get_fundamentals_prompt(company: str, ticker: str, user_query: str, financial_data: dict) -> str:
-        """
-        Fundamentals Analysis Specialist Prompt
-        
-        Context: Senior Fundamental Analyst with 20+ years hedge fund experience
-        Focus: Financial statement analysis, business model evaluation, capital allocation
-        Output: Investment thesis, financial performance, growth outlook, risk factors
-        
-        Args:
-            company: Company name for analysis
-            ticker: Stock ticker symbol
-            user_query: Specific analysis focus
-            financial_data: Complete yfinance dataset
-            
-        Returns:
-            str: Complete prompt for fundamentals analysis
-        """
-        
-    @staticmethod
-    def get_industry_prompt(company: str, ticker: str, user_query: str, financial_data: dict) -> str:
-        """
-        Industry Analysis Specialist Prompt
-        
-        Context: Senior Industry Analyst with deep sector expertise
-        Focus: Competitive dynamics, market positioning, regulatory environment
-        Output: Industry overview, competitive analysis, market trends, sector outlook
-        """
-        
-    @staticmethod
-    def get_technical_prompt(company: str, ticker: str, user_query: str, financial_data: dict) -> str:
-        """
-        Technical Analysis Specialist Prompt
-        
-        Context: Senior Technical Analyst with quantitative trading background
-        Focus: Chart patterns, market microstructure, trading strategies
-        Output: Technical summary, price trends, momentum indicators, trading recommendations
-        """
-        
-    # Additional 9 specialist prompts:
-    # - get_risk_prompt(): Risk assessment and mitigation strategies
-    # - get_esg_prompt(): Environmental, social, governance analysis
-    # - get_valuation_prompt(): DCF modeling and relative valuation
-    # - get_bull_prompt(): Upside catalysts and growth scenarios
-    # - get_bear_prompt(): Downside risks and structural headwinds
-    # - get_catalysts_prompt(): Event-driven opportunities and timeline mapping
-    # - get_drivers_prompt(): Key business drivers and operational intelligence
-    # - get_consensus_prompt(): Market sentiment and analyst estimates
-    # - get_anti_consensus_prompt(): Contrarian opportunities and alpha generation
-```
-
-**Prompt Structure Standards**:
-```python
-# Each prompt follows this institutional framework:
-prompt_structure = {
-    "context": "20+ years hedge fund experience background",
-    "skills": "Technical expertise and analytical capabilities",
-    "objective": "Specific analysis goals and deliverables", 
-    "style": "Investment banking writing conventions",
-    "tone": "Authoritative, analytical, CIO-level reporting",
-    "audience": "Chief Investment Officers and portfolio managers",
-    "data_integration": "Complete yfinance dataset access",
-    "citation_requirements": "[1], [2], [3] source format mandatory",
-    "output_structure": "Specific deliverables for each analyst type"
+ANALYST_TEAM = {
+    "chief": "Chief Investment Officer - Strategic oversight and synthesis",
+    "fundamentals": "Fundamental Analyst - Financial health and valuation",
+    "industry": "Industry Analyst - Sector dynamics and competitive position", 
+    "technical": "Technical Analyst - Chart patterns and market momentum",
+    "risk": "Risk Management Analyst - Risk assessment and mitigation",
+    "esg": "ESG Analyst - Environmental, social, and governance factors",
+    "research": "Research Analyst - Market research and data analysis",
+    "sentiment": "Market Sentiment Analyst - Investor psychology and sentiment",
+    "management": "Management Analyst - Leadership and corporate governance",
+    "business": "Business Model Analyst - Revenue streams and business strategy",
+    "valuation": "Valuation Analyst - Asset pricing and valuation models",
+    "macro": "Macro Economist - Economic trends and market conditions"
 }
 ```
 
-### Multi-Agent Intelligence Engine - `ultra_sophisticated_multi_agent_engine.py`
-
-**Purpose**: Core AI orchestration system managing sequential agent deployment with cross-agent intelligence synthesis
-
-**Class Implementation**:
-
+#### Key API Endpoints
 ```python
-class UltraSophisticatedMultiAgentEngine:
-    """
-    Ultra-sophisticated AI agent deployment and intelligence synthesis system
-    Manages 12 specialist analysts with strategic deployment sequencing
-    """
-    
-    def __init__(self):
-        """
-        Initialize multi-agent system
-        
-        Key Components:
-        - Agent sequence configuration
-        - Intelligence sharing protocols  
-        - Cross-agent synthesis capabilities
-        - Performance tracking and optimization
-        """
-        self.agent_sequence = [
-            "fundamentals", "industry", "technical", "risk", "esg", "valuation",
-            "bull", "bear", "catalysts", "drivers", "consensus", "anti_consensus"
-        ]
-        self.intelligence_context = {}
-        self.agent_outputs = {}
-        
-    async def deploy_agent_sequence(self, context: AnalysisContext) -> Dict[str, Any]:
-        """
-        Strategic agent deployment with intelligence sharing
-        
-        Process:
-        1. Sequential agent deployment in optimized order
-        2. Intelligence context sharing between agents
-        3. Progressive analysis building and refinement
-        4. Cross-agent validation and synthesis
-        
-        Args:
-            context: Analysis context with company, ticker, objectives
-            
-        Returns:
-            Dict: Comprehensive analysis from all deployed agents
-        """
-        
-    async def synthesize_agent_outputs(self, agent_results: Dict[str, Any]) -> str:
-        """
-        Cross-agent intelligence synthesis and consolidation
-        
-        Process:
-        1. Extract key insights from each agent
-        2. Identify consensus and contrarian viewpoints
-        3. Synthesize comprehensive investment thesis
-        4. Generate final consolidated analysis
-        
-        Args:
-            agent_results: Dictionary of all agent analysis outputs
-            
-        Returns:
-            str: Synthesized comprehensive analysis
-        """
-        
-    def update_intelligence_context(self, agent_type: str, analysis_output: str):
-        """
-        Updates shared intelligence context for subsequent agents
-        
-        Args:
-            agent_type: Type of analyst providing intelligence
-            analysis_output: Analysis content to share with other agents
-        """
+@app.websocket("/ws/professional")
+async def websocket_professional_endpoint(websocket: WebSocket)
+
+@app.post("/api/professional/analyze")
+async def analyze_with_professional_analyst(request: AnalysisRequest)
+
+@app.post("/api/professional/report")
+async def generate_comprehensive_report(request: ReportRequest)
+
+@app.post("/api/professional/convert")
+async def convert_document(request: ConversionRequest)
 ```
 
-**Agent Deployment Strategy**:
+### 3. AI Agent System (`/src/robeco/agents/streaming_professional_analyst.py`)
+
+#### Streaming Professional Analyst
 ```python
-# Strategic deployment sequence for maximum intelligence
-deployment_strategy = {
-    "phase_1": ["fundamentals", "industry"],  # Foundation analysis
-    "phase_2": ["technical", "risk"],         # Market and risk assessment  
-    "phase_3": ["esg", "valuation"],         # Valuation and sustainability
-    "phase_4": ["bull", "bear"],             # Scenario analysis
-    "phase_5": ["catalysts", "drivers"],     # Catalyst identification
-    "phase_6": ["consensus", "anti_consensus"] # Market positioning
-}
-```
-
-### Professional Report Generator - `template_report_generator.py`
-
-**Purpose**: Institutional-grade investment report generation using Robeco template structure
-
-**Class Implementation**:
-
-```python
-class RobecoTemplateReportGenerator:
-    """
-    Professional investment report generator
-    Combines AI content generation with fixed Robeco template structure
-    """
-    
-    def __init__(self):
-        """
-        Initialize report generator with template configuration
+class StreamingProfessionalAnalyst:
+    def __init__(self, analyst_type: str):
+        self.analyst_type = analyst_type
+        self.websocket = None
+        self.gemini_model = None
         
-        Key Setup:
-        - Template path configuration to Robeco_InvestmentCase_Template.txt
-        - CSS integration path to CSScode.txt
-        - AI generation parameters and retry logic
-        """
-        self.template_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/Robeco_InvestmentCase_Template.txt"
-        
-    async def generate_report_from_analyses(
+    async def analyze_with_streaming(
         self, 
-        company_name: str,
         ticker: str, 
-        analyses_data: Dict[str, Any],
-        report_focus: str = "comprehensive"
-    ) -> str:
-        """
-        Main report generation orchestrator
-        
-        Process:
-        1. Load Robeco template as structural example
-        2. Build comprehensive AI prompt with all analyst outputs
-        3. Generate slide content using Gemini 2.0 Flash
-        4. Combine fixed CSS with AI-generated content
-        5. Produce final professional HTML report
-        
-        Args:
-            company_name: Company name for report header
-            ticker: Stock ticker symbol
-            analyses_data: Dictionary of all completed analyst outputs
-            report_focus: Report type (comprehensive, focused, etc.)
-            
-        Returns:
-            str: Complete HTML report with CSS, content, and JavaScript
-        """
-        
-    async def _build_report_generation_prompt(
-        self, 
         company_name: str, 
-        ticker: str, 
-        analyses_data: Dict[str, Any]
-    ) -> str:
-        """
-        Constructs comprehensive AI prompt for report generation
-        
-        Prompt Components:
-        1. Template structure example from Robeco_InvestmentCase_Template.txt
-        2. All 12 analyst outputs with full content and sources
-        3. Professional formatting requirements
-        4. CSS class specifications
-        5. Institutional writing standards
-        
-        Returns:
-            str: Complete prompt for AI report generation
-        """
-        
-    async def _generate_ai_report(self, prompt: str) -> str:
-        """
-        AI content generation with production-grade reliability
-        
-        Features:
-        - Gemini 2.0 Flash model with 65,536 token limit
-        - Streaming response handling for large content
-        - Automatic API key rotation on failures
-        - Retry logic with exponential backoff
-        - Content validation and error recovery
-        
-        Args:
-            prompt: Complete report generation prompt
-            
-        Returns:
-            str: AI-generated slide content (HTML only, no CSS)
-        """
-        
-    def _combine_css_with_slides(self, company_name: str, ticker: str, slides_content: str) -> str:
-        """
-        Combines fixed CSS styling with AI-generated slide content
-        
-        Process:
-        1. Load fixed CSS header with Robeco branding
-        2. Clean AI-generated content (remove any CSS/HTML headers)
-        3. Extract presentation-container div content
-        4. Combine CSS + slides + JavaScript footer
-        5. Validate final HTML structure
-        
-        Returns:
-            str: Complete professional HTML report
-        """
+        websocket: WebSocket,
+        analysis_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        # Real-time token-by-token streaming analysis
+        # Google research integration
+        # Professional formatting and structure
 ```
 
-**AI Generation Configuration**:
+#### Key Features
+- **Token-by-Token Streaming**: Real-time content delivery as AI generates analysis
+- **Google Research Integration**: Live web research with source credibility scoring
+- **Specialist Expertise**: Each analyst has unique focus areas and analytical frameworks
+- **Professional Output**: Structured investment-grade analysis format
+
+### 4. Financial Data Integration (`/src/robeco/data/yfinance_fetcher.py`)
+
 ```python
-# Gemini API configuration for report generation
-generate_config = types.GenerateContentConfig(
-    temperature=0.1,        # Low for consistent, professional output
-    top_p=0.85,            # Focused sampling for institutional quality
-    max_output_tokens=65536, # Maximum tokens for complete analysis
-    response_mime_type="text/plain",
-    system_instruction="Senior institutional investment analyst generating professional investment slides"
+class YFinanceFetcher:
+    def fetch_comprehensive_data(self, ticker: str) -> Dict[str, Any]:
+        return {
+            "basic_info": self._fetch_basic_info(ticker),
+            "price_data": self._fetch_current_pricing(ticker),
+            "financial_statements": self._fetch_financial_data(ticker),
+            "ratios": self._calculate_financial_ratios(ticker),
+            "analyst_coverage": self._fetch_analyst_estimates(ticker),
+            "technical_indicators": self._calculate_technical_metrics(ticker)
+        }
+```
+
+#### Comprehensive Data Coverage
+- **Real-time Pricing**: Current price, volume, market cap
+- **Financial Statements**: Income statement, balance sheet, cash flow
+- **Financial Ratios**: P/E, P/B, ROE, debt ratios, margin analysis
+- **Analyst Coverage**: Estimates, recommendations, price targets
+- **Technical Analysis**: Moving averages, volatility, momentum indicators
+- **Company Fundamentals**: Business description, sector, industry classification
+
+## API Reference
+
+### WebSocket Streaming Protocol
+
+#### Connection
+```javascript
+const ws = new WebSocket('ws://localhost:8001/ws/professional');
+```
+
+#### Message Types
+
+**Inbound Messages (Client → Server)**
+```javascript
+// Start individual analyst analysis
+{
+  "type": "start_analysis",
+  "data": {
+    "ticker": "AAPL",
+    "company": "Apple Inc.",
+    "analyst": "fundamentals",
+    "data_sources": { /* financial data */ }
+  }
+}
+
+// Generate comprehensive report
+{
+  "type": "generate_report", 
+  "data": {
+    "analyses_data": { /* all completed analyses */ }
+  }
+}
+```
+
+**Outbound Messages (Server → Client)**
+```javascript
+// Analysis started confirmation
+{
+  "type": "streaming_analysis_started",
+  "data": {
+    "analyst": "fundamentals",
+    "status": "Analysis initiated",
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+
+// Real-time AI content streaming
+{
+  "type": "streaming_ai_content",
+  "data": {
+    "content": "Based on Apple's latest quarterly results...",
+    "analyst": "fundamentals",
+    "complete": false
+  }
+}
+
+// Research source found
+{
+  "type": "streaming_research_source",
+  "data": {
+    "title": "Apple Inc. Q3 2024 Earnings Analysis",
+    "url": "https://example.com/apple-q3-analysis",
+    "credibility": "high",
+    "summary": "Detailed quarterly analysis..."
+  }
+}
+
+// Analysis completion
+{
+  "type": "analysis_complete",
+  "data": {
+    "analyst": "fundamentals",
+    "full_analysis": "/* complete analysis text */",
+    "research_sources": [/* array of sources */],
+    "timestamp": "2024-01-01T12:05:00Z"
+  }
+}
+```
+
+### REST API Endpoints
+
+#### Analysis Endpoints
+```http
+POST /api/professional/analyze
+Content-Type: application/json
+
+{
+  "ticker": "AAPL",
+  "company_name": "Apple Inc.",
+  "analyst_type": "fundamentals",
+  "analysis_data": { /* yfinance data */ }
+}
+```
+
+#### Document Conversion
+```http
+POST /api/professional/convert
+Content-Type: application/json
+
+{
+  "html_content": "<html>...</html>",
+  "format": "word",  // or "pdf"
+  "company_name": "Apple Inc.",
+  "ticker": "AAPL"
+}
+```
+
+#### System Status
+```http
+GET /health
+Response: {
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00Z",
+  "version": "2.0.0"
+}
+
+GET /api/professional/analysts
+Response: {
+  "available_analysts": 12,
+  "analyst_types": ["chief", "fundamentals", ...],
+  "system_status": "operational"
+}
+```
+
+## AI Agent System
+
+### Analyst Specializations
+
+#### 1. **Chief Investment Officer**
+- **Focus**: Strategic oversight, portfolio implications, investment recommendations
+- **Output**: Executive summary, key investment thesis, risk-reward assessment
+- **Integration**: Synthesizes insights from all other analysts
+
+#### 2. **Fundamental Analyst**  
+- **Focus**: Financial health, valuation metrics, earnings quality
+- **Output**: DCF models, P/E analysis, financial strength assessment
+- **Data Sources**: Financial statements, ratios, historical performance
+
+#### 3. **Industry Analyst**
+- **Focus**: Sector dynamics, competitive positioning, market trends  
+- **Output**: Industry comparison, competitive advantages, market share analysis
+- **Research**: Industry reports, competitor analysis, market sizing
+
+#### 4. **Technical Analyst**
+- **Focus**: Chart patterns, momentum indicators, trading signals
+- **Output**: Technical outlook, support/resistance levels, trend analysis
+- **Indicators**: Moving averages, RSI, MACD, volume analysis
+
+#### 5. **Risk Management Analyst**
+- **Focus**: Risk assessment, scenario analysis, downside protection
+- **Output**: Risk metrics, stress testing, correlation analysis
+- **Framework**: VaR, beta analysis, drawdown assessment
+
+### Analysis Workflow
+
+```python
+# Sequential analysis flow
+analysis_pipeline = [
+    "fundamentals",  # Financial foundation
+    "industry",      # Market context  
+    "technical",     # Price action
+    "risk",          # Risk assessment
+    "valuation",     # Pricing models
+    "esg",           # Sustainability factors
+    "management",    # Leadership quality
+    "business",      # Business model
+    "sentiment",     # Market psychology
+    "macro",         # Economic environment
+    "research",      # Additional research
+    "chief"          # Strategic synthesis
+]
+```
+
+## Document Generation
+
+### Word Document Export (`/src/robeco/backend/word_report_generator.py`)
+
+#### Features
+- **Exact Layout Preservation**: Maintains HTML formatting in Word
+- **Professional Styling**: Robeco brand colors, fonts, and spacing
+- **Complex Table Handling**: Financial data tables with proper alignment
+- **Chart Integration**: SVG charts converted to high-quality images
+- **Multi-Page Support**: Automatic page breaks and section formatting
+
+#### Technical Implementation
+```python
+class RobecoWordReportGenerator:
+    def __init__(self):
+        self.temp_images_to_cleanup = []
+        self.image_cache = {}
+        
+    async def convert_html_to_word(
+        self, 
+        html_content: str, 
+        company_name: str, 
+        ticker: str,
+        output_path: Optional[str] = None
+    ) -> str:
+        # Parse HTML with BeautifulSoup
+        # Convert SVG charts to PNG images using Puppeteer
+        # Generate Word document with python-docx
+        # Apply Robeco professional styling
+        # Return path to generated document
+```
+
+#### Chart Conversion Pipeline
+```python
+# SVG → Image conversion process
+1. Extract SVG elements from HTML
+2. Create temporary HTML file with isolated SVG
+3. Use Puppeteer to render SVG as PNG
+4. Embed high-quality image in Word document  
+5. Clean up temporary files
+```
+
+### PDF Generation (`/src/robeco/backend/enhanced_pdf_service.py`)
+
+#### Custom A4 Format
+```python
+CUSTOM_A4_SETTINGS = {
+    'width_mm': 426,
+    'height_mm': 603,
+    'dpi': 96,
+    'width_px': 1620,
+    'height_px': 2291
+}
+```
+
+#### Puppeteer Configuration
+```javascript
+// PDF generation script
+const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+
+await page.pdf({
+    path: outputPath,
+    width: '426mm',
+    height: '603mm',
+    printBackground: true,
+    preferCSSPageSize: false
+});
+```
+
+## Database Schema
+
+### Core Tables (SQLite/PostgreSQL)
+
+#### Projects Table
+```sql
+CREATE TABLE projects (
+    id INTEGER PRIMARY KEY,
+    ticker VARCHAR(10) NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'active',
+    retry_count INTEGER DEFAULT 0,
+    last_retry_at TIMESTAMP,
+    error_message TEXT
+);
+```
+
+#### Analyses Table  
+```sql
+CREATE TABLE analyses (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER REFERENCES projects(id),
+    analyst_type VARCHAR(50) NOT NULL,
+    analysis_content TEXT,
+    research_sources JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'completed'
+);
+```
+
+#### API Keys Management
+```sql
+CREATE TABLE api_keys (
+    id INTEGER PRIMARY KEY,
+    key_name VARCHAR(100) NOT NULL,
+    key_value VARCHAR(255) NOT NULL,
+    provider VARCHAR(50) DEFAULT 'gemini',
+    status VARCHAR(50) DEFAULT 'active',
+    usage_count INTEGER DEFAULT 0,
+    last_used_at TIMESTAMP,
+    rate_limit_reset TIMESTAMP
+);
+```
+
+## Configuration
+
+### Environment Configuration (`/src/robeco/core/config.py`)
+
+```python
+class Settings:
+    # Server Configuration
+    HOST: str = "0.0.0.0"
+    PORT: int = 8001
+    DEBUG: bool = True
+    
+    # AI Configuration  
+    MAX_CONCURRENT_AGENTS: int = 12
+    STREAMING_CHUNK_SIZE: int = 50
+    ANALYSIS_TIMEOUT: int = 300
+    
+    # API Rate Limiting
+    API_RATE_LIMIT: int = 60  # requests per minute
+    WEBSOCKET_TIMEOUT: int = 300
+    
+    # Document Generation
+    PDF_FORMAT: str = "A4_CUSTOM"
+    WORD_TEMPLATE: str = "professional"
+    
+    # Network Configuration
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:8001",
+        "http://172.20.10.2:8005"
+    ]
+```
+
+### API Key Management
+
+#### Primary Key Configuration
+```python
+# Primary API key (highest priority)
+PRIMARY_KEY_FILE = "primary_gemini_key.txt"
+
+# Backup key pool (115+ keys)
+BACKUP_KEYS_FILE = "gemini_api_keys.txt" 
+
+# Environment variable support
+GEMINI_API_KEY_1 through GEMINI_API_KEY_12
+```
+
+#### Key Rotation Logic
+```python
+class APIKeyManager:
+    def __init__(self):
+        self.primary_key = self._load_primary_key()
+        self.backup_keys = self._load_backup_keys()
+        self.current_key_index = 0
+        self.failed_keys = set()
+        
+    async def get_active_key(self) -> str:
+        # Try primary key first
+        # Rotate through backup keys on failure
+        # Track failed keys for recovery
+        # Implement exponential backoff
+```
+
+## Deployment
+
+### System Requirements
+
+```yaml
+# Minimum Requirements
+Python: ">=3.8"
+Node.js: ">=16.0"  
+Memory: "4GB RAM"
+Storage: "10GB available space"
+Network: "Stable internet connection"
+
+# Recommended Requirements  
+Python: ">=3.11"
+Node.js: ">=18.0"
+Memory: "8GB RAM"
+Storage: "50GB SSD"
+CPU: "4+ cores"
+```
+
+### Installation Process
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd "Robeco Reporting"
+
+# 2. Python environment setup
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate    # Windows
+
+# 3. Install Python dependencies
+pip install -r requirements.txt
+
+# 4. Install Node.js dependencies  
+npm install
+
+# 5. Install Puppeteer Chrome browser
+npx puppeteer browsers install chrome
+
+# 6. Configure API keys
+# Add Gemini API keys to primary_gemini_key.txt and gemini_api_keys.txt
+
+# 7. Initialize database
+python src/robeco/database/init_db.py
+
+# 8. Start the system
+python run_professional_system.py
+```
+
+### Production Deployment
+
+#### Using Gunicorn
+```bash
+# Install production server
+pip install gunicorn
+
+# Start with multiple workers
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8001 \
+  --timeout 300 \
+  src.robeco.backend.main:app
+```
+
+#### Docker Deployment
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Install Node.js for Puppeteer
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+
+COPY . .
+RUN npm install
+RUN npx puppeteer browsers install chrome
+
+EXPOSE 8001
+CMD ["python", "run_professional_system.py"]
+```
+
+### Environment Variables
+
+```bash
+# Production configuration
+export ROBECO_ENV=production
+export DATABASE_URL=postgresql://user:pass@localhost/robeco
+export SECRET_KEY=your-production-secret-key
+export GEMINI_API_KEY_1=your-primary-api-key
+
+# Scaling configuration  
+export MAX_CONCURRENT_AGENTS=20
+export WEBSOCKET_TIMEOUT=600
+export API_RATE_LIMIT=120
+```
+
+## Performance
+
+### Scalability Features
+
+#### Multi-Key Management
+- **115+ API Keys**: Supports high-volume concurrent analysis
+- **Intelligent Load Balancing**: Optimal key distribution across requests
+- **Automatic Failover**: Seamless switching on key suspension/limits
+- **Usage Tracking**: Monitors key health and performance
+
+#### Real-time Streaming Optimization
+```python
+# Streaming performance settings
+STREAMING_CONFIG = {
+    "chunk_size": 50,           # Tokens per chunk
+    "delay_ms": 100,            # Delay between chunks  
+    "max_concurrent": 12,       # Simultaneous analyses
+    "buffer_size": 1024,        # WebSocket buffer
+    "compression": True         # Gzip compression
+}
+```
+
+#### Caching Strategy
+- **Analysis Results**: localStorage persistence for repeat access
+- **Financial Data**: Intelligent caching with expiration
+- **Document Templates**: Pre-compiled template caching
+- **API Response Caching**: Redis integration for production
+
+### Memory Management
+
+```python
+# Automatic cleanup mechanisms
+class MemoryManager:
+    def __init__(self):
+        self.active_analyses = {}
+        self.temp_files = []
+        
+    async def cleanup_completed_analysis(self, analysis_id: str):
+        # Clear analysis data from memory
+        # Remove temporary files
+        # Update usage metrics
+        
+    def monitor_memory_usage(self):
+        # Track memory consumption
+        # Implement garbage collection triggers
+        # Log performance metrics
+```
+
+### Performance Monitoring
+
+```python
+# Built-in performance tracking
+@app.middleware("http")
+async def performance_middleware(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    
+    logger.info(f"Request {request.url} completed in {process_time:.2f}s")
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+```
+
+## Security
+
+### Authentication & Authorization
+
+```python
+# JWT token-based authentication
+class SecurityManager:
+    def __init__(self):
+        self.secret_key = os.getenv("JWT_SECRET_KEY")
+        self.algorithm = "HS256"
+        self.token_expire_minutes = 60
+        
+    def create_access_token(self, data: dict):
+        # Generate JWT token with expiration
+        
+    def verify_token(self, token: str):
+        # Validate and decode JWT token
+```
+
+### API Key Security
+
+```python
+# Secure API key storage and rotation
+class APIKeyVault:
+    def __init__(self):
+        self.encrypted_keys = self._load_encrypted_keys()
+        self.key_rotation_schedule = 24  # hours
+        
+    def encrypt_api_key(self, key: str) -> str:
+        # Use cryptography library for encryption
+        
+    def decrypt_api_key(self, encrypted_key: str) -> str:
+        # Secure decryption with error handling
+```
+
+### Input Validation
+
+```python
+# Comprehensive input validation
+class InputValidator:
+    @staticmethod
+    def validate_ticker(ticker: str) -> str:
+        # Sanitize ticker symbols
+        # Prevent injection attacks
+        
+    @staticmethod  
+    def validate_html_content(content: str) -> str:
+        # HTML sanitization
+        # Remove malicious scripts
+        # Preserve safe formatting
+```
+
+### Rate Limiting & DDoS Protection
+
+```python
+# Request rate limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.post("/api/professional/analyze")
+@limiter.limit("10/minute")  # 10 requests per minute per IP
+async def analyze_endpoint(request: Request):
+    # Protected endpoint with rate limiting
+```
+
+### Data Protection
+
+```python
+# Sensitive data handling
+class DataProtection:
+    @staticmethod
+    def sanitize_financial_data(data: dict) -> dict:
+        # Remove or encrypt sensitive information
+        # Implement data retention policies
+        
+    @staticmethod
+    def audit_log_access(user_id: str, resource: str):
+        # Log all data access for compliance
+        # Implement GDPR compliance measures
+```
+
+---
+
+## Maintenance & Monitoring
+
+### Health Checks
+```python
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow(),
+        "version": "2.0.0",
+        "active_analyses": len(active_websocket_connections),
+        "api_keys_status": "operational"
+    }
+```
+
+### Logging Configuration
+```python
+import structlog
+
+# Structured logging setup
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.JSONRenderer()
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
 )
 ```
 
-### WebSocket Streaming Server - `professional_streaming_server.py`
-
-**Purpose**: FastAPI server with WebSocket streaming for real-time analysis delivery and report generation
-
-**Key Functions**:
-
+### Error Tracking
 ```python
-@app.websocket("/ws/professional")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    Main WebSocket endpoint for real-time analysis streaming
-    
-    Handles:
-    - Connection establishment and authentication
-    - Message routing to appropriate handlers
-    - Real-time content streaming
-    - Error handling and connection recovery
-    """
-    
-async def handle_analysis_request(websocket: WebSocket, connection_id: str, message: Dict):
-    """
-    Processes analysis requests and coordinates agent deployment
-    
-    Process:
-    1. Extract analysis parameters (company, ticker, analyst_type)
-    2. Validate input data and check API key availability
-    3. Deploy appropriate specialist agent
-    4. Stream real-time analysis content
-    5. Handle citations and source integration
-    6. Send completion notifications
-    
-    WebSocket Messages Sent:
-    - streaming_analysis_started
-    - streaming_status_update
-    - streaming_research_source
-    - streaming_ai_content
-    - streaming_ai_content_final
-    - streaming_analysis_completed
-    """
-    
-async def handle_report_generation(websocket: WebSocket, connection_id: str, message: Dict):
-    """
-    Orchestrates comprehensive report generation workflow
-    
-    Process:
-    1. Extract report parameters and validate analyses_data
-    2. Load Robeco template from Report Example/Robeco_InvestmentCase_Template.txt
-    3. Build comprehensive prompt with all analyst outputs
-    4. Generate report content using template_report_generator
-    5. Stream progress updates to frontend
-    6. Send final HTML report to client
-    
-    WebSocket Messages Sent:
-    - report_generation_started
-    - streaming_ai_content (progress updates)
-    - report_generation_completed
-    """
-    
-async def handle_bulk_analysis_streaming(websocket: WebSocket, connection_id: str, message: Dict):
-    """
-    Manages bulk file analysis with streaming progress updates
-    
-    Features:
-    - Multi-file upload processing
-    - Real-time progress tracking
-    - Chunked content delivery
-    - Error handling for large files
-    """
-```
-
-**WebSocket Message Protocol**:
-```python
-# Message routing system
-message_handlers = {
-    "start_analysis": handle_analysis_request,
-    "generate_report": handle_report_generation,
-    "bulk_analysis": handle_bulk_analysis_streaming,
-    "chat_message": handle_chat_request,
-    "file_upload": handle_file_upload
-}
-
-# Connection management
-active_connections = {}  # {connection_id: WebSocket}
-connection_metadata = {}  # {connection_id: metadata}
-```
-
-### API Key Management - `gemini_api_key.py`
-
-**Purpose**: Intelligent API key rotation and management system
-
-**Implementation**:
-```python
-def get_intelligent_api_key(agent_type: str = "general") -> Tuple[str, dict]:
-    """
-    Intelligent API key selection with rotation and fallback
-    
-    Process:
-    1. Check primary key availability
-    2. Rotate through backup key pool (115+ keys)
-    3. Track key usage and suspension status
-    4. Implement exponential backoff on failures
-    5. Log key rotation events for monitoring
-    
-    Args:
-        agent_type: Type of agent requesting key (for usage tracking)
+# Comprehensive error handling and reporting
+class ErrorTracker:
+    def __init__(self):
+        self.error_counts = defaultdict(int)
+        self.recent_errors = deque(maxlen=100)
         
-    Returns:
-        Tuple[str, dict]: (api_key, key_metadata)
-    """
-    
-def load_api_keys() -> List[str]:
-    """
-    Loads API keys from multiple sources
-    
-    Sources:
-    1. primary_gemini_key.txt (primary key)
-    2. gemini_api_keys.txt (backup pool)
-    3. Environment variables (GEMINI_API_KEY_1 through GEMINI_API_KEY_12)
-    
-    Returns:
-        List[str]: All available API keys
-    """
+    async def log_error(self, error: Exception, context: dict):
+        # Log error with full context
+        # Track error patterns
+        # Implement alerting for critical errors
 ```
 
-## Frontend Implementation
-
-### Main User Interface - `robeco_professional_workbench_enhanced.html`
-
-**Purpose**: Professional workbench interface with real-time streaming, analysis management, and report generation
-
-**Key JavaScript Functions**:
-
-```javascript
-// ========================================
-// PROJECT SETUP AND CONFIGURATION
-// ========================================
-
-function setupInvestmentProject() {
-    /**
-     * Initializes investment project with validation
-     * 
-     * Process:
-     * 1. Extract company name and ticker from input fields
-     * 2. Validate input format and requirements
-     * 3. Configure currentProject global object
-     * 4. Navigate to specialist analysis phase
-     * 5. Initialize analyst status tracking
-     */
-}
-
-function navigateToPhase(phase) {
-    /**
-     * Phase navigation with state management
-     * 
-     * Phases:
-     * - 'project-setup': Initial configuration
-     * - 'specialist-analysis': Analyst selection and execution
-     * - 'report-generation': Professional report creation
-     */
-}
-
-// ========================================
-// ANALYST MANAGEMENT AND EXECUTION
-// ========================================
-
-function handleAnalystClick(analystType) {
-    /**
-     * Specialist analyst selection and analysis initiation
-     * 
-     * Process:
-     * 1. Validate project setup and WebSocket connection
-     * 2. Check for cached analysis results
-     * 3. Update UI to show selected analyst
-     * 4. Initiate analysis or display cached results
-     * 
-     * Args:
-     *     analystType: One of 12 specialist types (fundamentals, industry, etc.)
-     */
-}
-
-function startSpecialistAnalysis(analystType) {
-    /**
-     * Initiates real-time streaming analysis
-     * 
-     * WebSocket Message Sent:
-     * {
-     *   "type": "start_analysis",
-     *   "data": {
-     *     "company": currentProject.company,
-     *     "ticker": currentProject.ticker,
-     *     "analyst_type": analystType,
-     *     "user_query": customQuery || ""
-     *   }
-     * }
-     */
-}
-
-// ========================================
-// REAL-TIME STREAMING HANDLERS
-// ========================================
-
-function handleStreamingContent(data) {
-    /**
-     * Processes real-time streaming analysis content
-     * 
-     * Features:
-     * - Token-by-token content streaming
-     * - Citation processing and link generation
-     * - Source integration and display
-     * - Progress tracking and status updates
-     */
-}
-
-function handleFinalContentWithCitations(data) {
-    /**
-     * Processes final analysis with complete citation integration
-     * 
-     * Process:
-     * 1. Replace streaming content with final version
-     * 2. Process and format citations [1], [2], [3]
-     * 3. Generate clickable citation links
-     * 4. Display research sources with credibility scores
-     * 5. Save to analysis persistence system
-     */
-}
-
-// ========================================
-// REPORT GENERATION SYSTEM
-// ========================================
-
-function generateTemplateReport() {
-    /**
-     * Initiates professional report generation workflow
-     * 
-     * Process:
-     * 1. Validate current project setup
-     * 2. Collect all stored analyses using robecoAnalysisPersistence
-     * 3. Organize analyses by agent type
-     * 4. Send WebSocket report generation request
-     * 5. Display generation progress to user
-     * 
-     * WebSocket Message:
-     * {
-     *   "type": "generate_report",
-     *   "data": {
-     *     "company_name": currentProject.company,
-     *     "ticker": currentProject.ticker,
-     *     "analyses_data": {
-     *       "fundamentals": { content, sources, timestamp },
-     *       "industry": { content, sources, timestamp },
-     *       // ... all other completed analyses
-     *     },
-     *     "report_focus": "comprehensive"
-     *   }
-     * }
-     */
-}
-
-function handleReportGenerationCompleted(data) {
-    /**
-     * Handles completed report generation and display
-     * 
-     * Process:
-     * 1. Display raw HTML code in code viewer
-     * 2. Render final report in embedded viewer
-     * 3. Save report to localStorage for persistence
-     * 4. Show success notification with report details
-     * 
-     * Data Received:
-     * - report_html: Complete formatted report
-     * - raw_content: Full HTML source code
-     * - analyses_count: Number of analyses included
-     * - template_used: Template file used for generation
-     */
-}
-```
-
-**UI State Management**:
-```javascript
-// Global state variables
-let currentProject = null;          // Current company/ticker being analyzed
-let currentAnalysis = null;         // Currently selected analyst type
-let currentAnalystType = null;      // Active analyst for streaming
-let analysisCache = {};            // Cached analysis results
-let ws = null;                     // WebSocket connection
-let isGeneratingReport = false;    // Report generation state
-```
-
-### Analysis Persistence System - `analysis_persistence.js`
-
-**Purpose**: Persistent storage and retrieval system for analysis results, enabling report generation and historical review
-
-**Class Implementation**:
-
-```javascript
-class RobecoAnalysisPersistence {
-    /**
-     * Analysis persistence and retrieval system
-     * Manages localStorage-based storage for all analysis results
-     */
-    
-    constructor() {
-        /**
-         * Initialize persistence system
-         * 
-         * Setup:
-         * - Storage key configuration
-         * - Session ID generation  
-         * - Analysis history UI setup
-         */
-        this.storageKey = 'robeco_professional_analyses';
-        this.currentSession = this.generateSessionId();
-    }
-    
-    saveAnalysis(analysisData) {
-        /**
-         * Saves completed analysis to localStorage
-         * 
-         * Storage Structure:
-         * {
-         *   id: "analysis_timestamp",
-         *   sessionId: "session_id", 
-         *   timestamp: "ISO_timestamp",
-         *   company: "Company Name",
-         *   ticker: "TICKER",
-         *   analystType: "fundamentals|industry|technical|...",
-         *   content: "Full HTML analysis content",
-         *   sources: [{title, url, credibility_score}],
-         *   qualityScore: 0.95,
-         *   processingTime: 45.2,
-         *   status: "completed"
-         * }
-         * 
-         * Args:
-         *     analysisData: Complete analysis data object
-         * 
-         * Returns:
-         *     str: Unique analysis ID for retrieval
-         */
-    }
-    
-    getAnalysesByTicker(ticker) {
-        /**
-         * Retrieves all analyses for a specific ticker
-         * Essential for report generation workflow
-         * 
-         * Args:
-         *     ticker: Stock ticker symbol
-         *     
-         * Returns:
-         *     Array: All analysis records for the ticker
-         */
-    }
-    
-    loadAnalysis(analysisId) {
-        /**
-         * Loads historical analysis and restores UI state
-         * 
-         * Process:
-         * 1. Retrieve analysis from localStorage
-         * 2. Populate project form with company/ticker
-         * 3. Navigate to specialist analysis phase
-         * 4. Display analysis content and sources
-         * 5. Show completion state
-         */
-    }
-}
-```
-
-### Data Visualization System - `professional_data_components.js`
-
-**Purpose**: Professional data visualization and traceability components for financial analysis
-
-**Class Implementation**:
-
-```javascript
-class RobecoDataManager {
-    /**
-     * Professional data visualization and management system
-     * Provides institutional-grade data display and traceability
-     */
-    
-    constructor() {
-        /**
-         * Initialize data management system
-         * 
-         * Components:
-         * - Data cache for performance
-         * - Quality monitoring system
-         * - Data lineage tracking
-         * - Export capabilities
-         */
-        this.dataCache = new Map();
-        this.dataQuality = new Map();
-        this.dataLineage = new Map();
-    }
-    
-    createFinancialMetricsGrid(data, containerId) {
-        /**
-         * Creates professional financial metrics visualization
-         * 
-         * Features:
-         * - Real-time metric cards with change indicators
-         * - Data quality indicators
-         * - Source attribution and timestamps
-         * - Interactive metric details
-         * 
-         * Metrics Displayed:
-         * - Market Cap, P/E Ratio, ROE, Debt/Equity
-         * - Free Cash Flow, Revenue Growth
-         * - Quality scores and data lineage
-         */
-    }
-    
-    createProfessionalDataTable(data, config, containerId) {
-        /**
-         * Generates professional data tables with export capabilities
-         * 
-         * Features:
-         * - Sortable columns with professional styling
-         * - Export to CSV, Excel, JSON formats
-         * - Real-time filtering and search
-         * - Data quality indicators
-         * - Source traceability
-         */
-    }
-}
-```
-
-## Report Template Architecture
-
-### Template Structure - `Robeco_InvestmentCase_Template.txt`
-
-**Purpose**: Complete HTML template defining professional investment report structure and formatting
-
-**Template Components**:
-
-```html
-<!-- CSS Variables and Robeco Branding -->
-:root {
-    --robeco-blue: #005F90;
-    --robeco-blue-darker: #003D5A; 
-    --robeco-brown-black: #3B312A;
-    --robeco-orange: #FF8C00;
-    /* Professional color palette */
-}
-
-<!-- Slide Layout System -->
-.slide {
-    width: 1620px;           /* Professional presentation width */
-    height: 2291px;          /* A4 aspect ratio for print compatibility */
-    padding: 105px 98px;     /* Institutional margin standards */
-    /* Multi-slide presentation format */
-}
-
-<!-- Financial Metrics Grid -->
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);  /* 4-column layout */
-    /* Professional financial data display */
-}
-
-<!-- Analysis Content Structure -->
-.analysis-item {
-    display: flex;
-    /* Structured analysis sections with consistent formatting */
-}
-```
-
-**Slide Structure**:
-1. **Cover Slide**: Company overview, key metrics, investment recommendation
-2. **Executive Summary**: Investment highlights and fundamental conclusion
-3. **Financial Performance**: Income statement, balance sheet, cash flow analysis  
-4. **Industry Analysis**: Market dynamics and competitive positioning
-5. **Technical Analysis**: Price trends and technical indicators
-6. **Risk Assessment**: Comprehensive risk evaluation
-7. **ESG Analysis**: Environmental, social, governance factors
-8. **Valuation Analysis**: DCF modeling and target price derivation
-9. **Bull/Bear Cases**: Upside and downside scenarios
-10. **Catalysts**: Near-term and medium-term value drivers
-
-### CSS Styling System - `CSScode.txt`
-
-**Purpose**: Fixed professional styling providing consistent Robeco branding and institutional-grade visual presentation
-
-**Key Style Categories**:
-
-```css
-/* Professional Typography */
-.report-title { font-size: 57px; font-weight: 700; }
-.report-subtitle { font-size: 27px; color: var(--text-dark); }
-.section-title { 
-    font-size: 25.5px; 
-    border-bottom: 5px solid var(--robeco-blue);
-    /* Professional section headers */
-}
-
-/* Financial Data Display */
-.metrics-grid {
-    /* 4-column responsive grid for financial metrics */
-    border-top: 5px solid var(--robeco-blue);
-    border-bottom: 5px solid var(--robeco-blue);
-}
-
-.compact-table {
-    /* Professional financial data tables */
-    border-collapse: collapse;
-    font-size: 18px;
-}
-
-/* Analysis Content Layout */
-.analysis-item {
-    /* Structured analysis sections */
-    border-bottom: 3.5px solid var(--robeco-blue);
-    display: flex;
-}
-
-/* Professional Branding */
-.robeco-logo-container {
-    /* Consistent logo placement and sizing */
-    position: absolute;
-    top: -75px;
-    right: 0;
-}
-```
-
-## Data Processing and Integration
-
-### Financial Data Integration - `yfinance_fetcher.py`
-
-**Purpose**: Real-time financial data retrieval and processing for analysis integration
-
-**Implementation**:
-```python
-class YFinanceFetcher:
-    """
-    Professional financial data acquisition system
-    Integrates with yfinance for real-time market data
-    """
-    
-    async def fetch_company_data(self, ticker: str) -> Dict[str, Any]:
-        """
-        Comprehensive financial data retrieval
-        
-        Data Points Retrieved:
-        - Real-time pricing and market cap
-        - Financial ratios and performance metrics
-        - Historical price data and volatility
-        - Fundamental data and financial statements
-        - Analyst estimates and consensus data
-        
-        Returns:
-            Dict: Complete financial dataset for AI analysis
-        """
-        
-    def calculate_financial_metrics(self, raw_data: Dict) -> Dict[str, float]:
-        """
-        Advanced financial metrics calculation
-        
-        Calculated Metrics:
-        - Valuation ratios (P/E, EV/EBITDA, P/B)
-        - Profitability metrics (ROE, ROA, ROIC)
-        - Leverage ratios (Debt/Equity, Net Debt/EBITDA)
-        - Efficiency metrics (Asset turnover, Working capital)
-        - Growth rates (Revenue, Earnings, FCF)
-        """
-```
-
-### Configuration Management - `config.py`
-
-**Purpose**: Centralized system configuration with environment-specific settings
-
-**Configuration Classes**:
-```python
-class SystemConfig:
-    """
-    Core system configuration management
-    """
-    
-    # Server Configuration
-    HOST = "0.0.0.0"
-    PORT_RANGE = [8005, 8006, 8007]
-    WEBSOCKET_TIMEOUT = 300
-    
-    # AI Configuration  
-    MAX_TOKENS = 65536
-    TEMPERATURE = 0.1
-    TOP_P = 0.85
-    RETRY_ATTEMPTS = 3
-    
-    # File Paths
-    TEMPLATE_PATH = "Report Example/Robeco_InvestmentCase_Template.txt"
-    CSS_PATH = "Report Example/CSScode.txt"
-    API_KEY_PATH = "src/robeco/backend/api_key/"
-    
-class AnalysisConfig:
-    """
-    Analysis-specific configuration
-    """
-    
-    # Analyst Types
-    AVAILABLE_ANALYSTS = [
-        "fundamentals", "industry", "technical", "risk", "esg", "valuation",
-        "bull", "bear", "catalysts", "drivers", "consensus", "anti_consensus"
-    ]
-    
-    # Analysis Parameters
-    DEFAULT_ANALYSIS_DEPTH = "comprehensive"
-    CITATION_FORMAT = "[1], [2], [3]"
-    SOURCE_CREDIBILITY_THRESHOLD = 0.7
-```
-
-## Error Handling and Monitoring
-
-### Backend Error Management
-
-**API Key Rotation System**:
-```python
-# Automatic failover on API key suspension
-try:
-    response = await gemini_client.generate_content(prompt)
-except Exception as e:
-    if "suspended" in str(e).lower() or "403" in str(e):
-        logger.info(f"🔄 Key suspended, rotating: {api_key[:8]}...")
-        new_key = get_next_available_key()
-        retry_with_new_key(new_key)
-```
-
-**WebSocket Error Recovery**:
-```python
-# Connection management and recovery
-try:
-    await websocket.send_text(json.dumps(message))
-except WebSocketDisconnect:
-    logger.warning(f"🔌 WebSocket disconnected: {connection_id}")
-    cleanup_connection(connection_id)
-except Exception as e:
-    logger.error(f"❌ WebSocket error: {e}")
-    await send_error_message(websocket, str(e))
-```
-
-### Frontend Error Handling
-
-**WebSocket Connection Management**:
-```javascript
-// Automatic reconnection logic
-ws.onerror = function(error) {
-    console.error('❌ WebSocket error:', error);
-    showUserDebugError('Connection Error', 'WebSocket connection failed');
-    
-    // Attempt reconnection after delay
-    setTimeout(() => {
-        initWebSocket();
-    }, 5000);
-};
-
-// Analysis error display
-function handleAnalysisError(data) {
-    updateAnalystStatus(currentAnalysis, 'error', 'Failed');
-    showUserDebugError('Analysis Failed', data.error, [
-        'Check API key availability',
-        'Verify network connection',
-        'Try refreshing page and running analysis again'
-    ]);
-}
-```
-
-**User Notification System**:
-```javascript
-function showUserDebugError(title, message, suggestions = []) {
-    /**
-     * Professional error display with actionable suggestions
-     * 
-     * Features:
-     * - Clear error categorization
-     * - Actionable troubleshooting steps
-     * - Professional styling and positioning
-     * - Auto-dismiss with manual override
-     */
-}
-
-function showUserDebugSuccess(title, message) {
-    /**
-     * Success notification system
-     * Provides positive feedback for completed operations
-     */
-}
-```
-
-## Testing and Validation
-
-### Test Files Structure
-
-```python
-# Testing files/
-├── test_citation_debug.py       # Citation processing validation
-├── test_google_search.py        # Search integration testing  
-└── test_websocket_debug.py      # WebSocket functionality testing
-```
-
-**Citation Testing**:
-```python
-# test_citation_debug.py
-def test_citation_processing():
-    """
-    Validates citation generation and formatting
-    Tests [1], [2], [3] format consistency
-    """
-    
-def test_source_integration():
-    """
-    Validates research source integration
-    Tests credibility scoring and URL validation
-    """
-```
-
-**WebSocket Testing**:
-```python
-# test_websocket_debug.py  
-def test_connection_stability():
-    """
-    Tests WebSocket connection reliability
-    Validates message delivery and error recovery
-    """
-    
-def test_streaming_performance():
-    """
-    Tests real-time streaming performance
-    Validates content delivery speed and accuracy
-    """
-```
-
-## Performance Optimization
-
-### Backend Performance Features
-
-**API Key Pool Management**:
-- **115+ API Keys**: Extensive backup pool for high-volume analysis
-- **Intelligent Rotation**: Automatic failover on key suspension
-- **Load Balancing**: Distributes requests across available keys
-- **Usage Tracking**: Monitors key performance and availability
-
-**Streaming Optimization**:
-- **Chunked Delivery**: Large content split into manageable chunks
-- **Progressive Loading**: Content displayed as it generates
-- **Connection Pooling**: Efficient WebSocket connection management
-- **Memory Management**: Automatic cleanup of completed analyses
-
-### Frontend Performance Features
-
-**Caching System**:
-```javascript
-// Analysis caching for improved performance
-const analysisCache = {};
-const cacheKey = ticker + '_' + analystType;
-
-// Check cache before requesting new analysis
-if (analysisCache[cacheKey]) {
-    displayCachedAnalysis(analysisCache[cacheKey]);
-} else {
-    startNewAnalysis(analystType);
-}
-```
-
-**Lazy Loading**:
-- **Content Streaming**: Progressive content display during generation
-- **Source Loading**: Research sources loaded after main content
-- **Image Optimization**: Lazy loading of company logos and charts
-- **Memory Cleanup**: Automatic disposal of unused analysis data
-
-## Production Deployment
-
-### Environment Setup
-
-**System Requirements**:
-```bash
-# Python Environment
-Python 3.8+ (recommended: 3.11+)
-pip 21.0+
-
-# Network Configuration  
-Port availability: 8005-8007 range
-Network access: 172.20.10.2 or 10.14.0.2
-WebSocket support required
-
-# API Requirements
-115+ Gemini API keys (recommended)
-Google Search API access
-YFinance data access
-```
-
-**Deployment Configuration**:
-```python
-# Production settings in config.py
-PRODUCTION_CONFIG = {
-    "host": "0.0.0.0",
-    "port_range": [8005, 8006, 8007],
-    "api_key_pool_size": 115,
-    "max_concurrent_analyses": 50,
-    "websocket_timeout": 300,
-    "report_generation_timeout": 600
-}
-```
-
-### Monitoring and Logging
-
-**Backend Logging**:
-```python
-# Structured logging with context
-logger.info(f"🚀 Analysis started: {ticker} | Agent: {analyst_type}")
-logger.info(f"📊 Progress: {chunk_count} chunks, {len(content)} chars")
-logger.info(f"✅ Analysis completed: {processing_time:.2f}s")
-logger.error(f"❌ API error: {error} | Key: {api_key[:8]}...")
-```
-
-**Frontend Monitoring**:
-```javascript
-// Performance tracking
-console.log('📊 Analysis metrics:', {
-    processingTime: data.processing_time,
-    contentLength: data.content.length,
-    citationsCount: data.citations_count,
-    sourcesCount: data.sources.length
-});
-
-// Error tracking with context
-console.error('❌ Error context:', {
-    function: 'handleAnalysisError',
-    analyst: currentAnalystType,
-    ticker: currentProject?.ticker,
-    error: error.message
-});
-```
+This technical documentation provides a comprehensive overview of the Robeco AI Investment Analysis System's architecture, implementation, and deployment requirements. The system is designed for enterprise-grade performance with robust error handling, security measures, and scalability features.
