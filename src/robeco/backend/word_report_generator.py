@@ -212,7 +212,7 @@ class RobecoWordReportGenerator:
             logger.info(f"   📋 Slide details: {slide_info}")
             
             # Debug: Log HTML structure summary if we found fewer slides than expected
-            expected_min_slides = 5  # We expect at least 5 slides from 3-call architecture
+            expected_min_slides = 10  # We expect at least 10 slides from 3-call architecture
             if len(slides) < expected_min_slides:
                 logger.warning(f"⚠️ Only found {len(slides)} slides (expected >= {expected_min_slides}), analyzing HTML...")
                 
@@ -220,9 +220,17 @@ class RobecoWordReportGenerator:
                 all_divs = soup.find_all('div')
                 slide_related_divs = [div for div in all_divs if div.get('class') and any('slide' in cls for cls in div.get('class', []))]
                 page_id_divs = [div for div in all_divs if div.get('id') and 'page' in div.get('id', '')]
+                portrait_divs = [div for div in all_divs if div.get('id') and 'portrait' in div.get('id', '')]
                 
                 logger.info(f"🔍 HTML ANALYSIS:")
                 logger.info(f"   📄 Total divs in HTML: {len(all_divs)}")
+                logger.info(f"   📄 Slide-related divs: {len(slide_related_divs)}")
+                logger.info(f"   📄 Page ID divs: {len(page_id_divs)}")
+                logger.info(f"   📄 Portrait divs: {len(portrait_divs)}")
+                
+                # Log the specific IDs found
+                portrait_ids = [div.get('id') for div in portrait_divs]
+                logger.info(f"   📋 Portrait IDs found: {portrait_ids}")
                 logger.info(f"   📄 Divs with 'slide' in class: {len(slide_related_divs)}")
                 logger.info(f"   📄 Divs with 'page' in ID: {len(page_id_divs)}")
                 logger.info(f"   📄 Total HTML length: {len(html_content):,} characters")
@@ -306,7 +314,7 @@ class RobecoWordReportGenerator:
         run.add_break(WD_BREAK.PAGE)
         
     def _process_slide(self, doc: Document, slide_soup, slide_number: int):
-        """Process individual slide content"""
+        """Process individual slide content following exact HTML structure"""
         logger.info(f"🎯 Processing slide {slide_number}")
         
         # Debug: Log slide structure
@@ -314,8 +322,11 @@ class RobecoWordReportGenerator:
         slide_id = slide_soup.get('id', 'no-id')
         logger.info(f"🔍 Slide classes: {slide_classes}, ID: {slide_id}")
         
-        # Extract and process ALL images in this slide
-        self._process_all_images_in_slide(doc, slide_soup)
+        # STEP 1: Process slide-logo FIRST (HTML: first element in slide)
+        slide_logo = slide_soup.find('div', class_='slide-logo')
+        if slide_logo:
+            logger.info("🏢 Processing slide-logo (top-right positioning)")
+            self._add_slide_logo_header(doc, slide_logo)
         
         # Initialize header flag for this instance
         if not hasattr(self, '_header_added'):
@@ -386,15 +397,18 @@ class RobecoWordReportGenerator:
             for element in content_soup.children:
                 if hasattr(element, 'name') and element.name is not None:
                     elements_processed += 1
-                    logger.info(f"🎯 Processing element: {element.name}, classes: {element.get('class', [])}")
+                    element_classes = element.get('class', [])
+                    logger.info(f"🎯 Processing element: {element.name}, classes: {element_classes}")
                     
                     # Section titles (prioritize specific classes)
-                    if 'section-title' in element.get('class', []):
+                    if 'section-title' in element_classes:
+                        logger.info("✅ Processing section-title")
                         self._add_section_title(doc, element)
                     
                     # Report header container (only add once)
-                    elif 'report-header-container' in element.get('class', []):
+                    elif 'report-header-container' in element_classes:
                         if not self._header_added:
+                            logger.info("✅ Processing report-header-container")
                             self._add_report_header(doc, element)
                             self._header_added = True
                             logger.info("✅ Added report header (first slide only)")
@@ -402,19 +416,38 @@ class RobecoWordReportGenerator:
                             logger.info("🔄 Skipping duplicate report header")
                     
                     # Company header with logo and rating
-                    elif 'company-header' in element.get('class', []):
-                        self._add_company_header(doc, element)
+                    elif 'company-header' in element_classes:
+                        logger.info("✅ Processing company-header")
+                        # Check if this company header is inside a header-blue-border
+                        parent = element.parent
+                        parent_classes = parent.get('class', []) if parent else []
+                        if 'header-blue-border' in parent_classes:
+                            logger.info("🔵 Company header is inside header-blue-border, adding with border")
+                            self._add_company_header_with_border(doc, element)
+                        else:
+                            # Check grandparent as well for nested structures
+                            grandparent = parent.parent if parent else None
+                            grandparent_classes = grandparent.get('class', []) if grandparent else []
+                            if 'header-blue-border' in grandparent_classes:
+                                logger.info("🔵 Company header grandparent has header-blue-border, adding with border")
+                                self._add_company_header_with_border(doc, element)
+                            else:
+                                logger.info("🏢 Company header standalone, adding without border")
+                                self._add_company_header(doc, element)
                     
                     # Metrics grid
-                    elif 'metrics-grid' in element.get('class', []):
+                    elif 'metrics-grid' in element_classes:
+                        logger.info("✅ Processing metrics-grid")
                         self._add_metrics_grid(doc, element)
                     
                     # Introduction and chart container
-                    elif 'intro-and-chart-container' in element.get('class', []):
+                    elif 'intro-and-chart-container' in element_classes:
+                        logger.info("✅ Processing intro-and-chart-container")
                         self._add_intro_chart_container(doc, element)
                     
                     # Main content container (contains metrics, text, etc.)
                     elif element.name == 'main':
+                        logger.info("✅ Processing main content container")
                         self._process_main_content(doc, element, slide_classes)
                     
                     # Analysis items  
@@ -428,6 +461,28 @@ class RobecoWordReportGenerator:
                     # Tables
                     elif element.name == 'table':
                         self._add_table(doc, element)
+                    
+                    # Slide logo container (skip - already processed at slide start)
+                    elif 'slide-logo' in element_classes:
+                        logger.info("🔄 Skipping slide-logo container (already processed at slide start)")
+                        pass
+                    
+                    # Header blue border (contains company header)
+                    elif 'header-blue-border' in element_classes:
+                        logger.info("✅ Processing header-blue-border")
+                        company_header = element.find(class_='company-header')
+                        logger.info(f"🔍 DEBUG: Company header found: {bool(company_header)}")
+                        if company_header:
+                            logger.info("🔵 Calling _add_company_header_with_border")
+                            self._add_company_header_with_border(doc, company_header)
+                        else:
+                            # Fallback: Look for any header-like content within
+                            header_content = element.find(['h1', 'h2', 'h3'])
+                            if header_content:
+                                logger.info("🔵 Fallback: Found header content in header-blue-border, adding with border")
+                                self._add_company_header_with_border(doc, element)
+                            else:
+                                logger.warning("⚠️ No company-header found in header-blue-border")
                     
                     # Regular paragraphs and divs (catch-all for content)
                     elif element.name in ['p', 'div', 'span']:
@@ -472,46 +527,73 @@ class RobecoWordReportGenerator:
         p_pr.append(p_bdr)
     
     def _add_metrics_grid(self, doc: Document, grid_soup):
-        """Add metrics grid as a formatted table"""
+        """Add metrics grid as 5×5 table matching HTML CSS Grid structure"""
         metrics_items = grid_soup.find_all(class_='metrics-item')
         if not metrics_items:
             return
         
-        # Create 5-column table (as per CSS grid-template-columns: repeat(5, 1fr))
-        rows_needed = (len(metrics_items) + 4) // 5
-        table = doc.add_table(rows=rows_needed, cols=5)
-        table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        logger.info(f"📊 Creating metrics grid with {len(metrics_items)} items (target: 5×5 structure)")
         
-        # Add top border
+        # Create EXACTLY 5-column table (CSS: grid-template-columns: repeat(5, 1fr))
+        # Calculate rows needed, ensuring we handle exactly 25 items for 5×5 grid
+        rows_needed = max(5, (len(metrics_items) + 4) // 5)  # Ensure at least 5 rows for 5×5
+        table = doc.add_table(rows=rows_needed, cols=5)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        
+        # Set EQUAL column widths (CSS: repeat(5, 1fr) = equal fractions)
+        table.autofit = False
+        col_width = Inches(1.5)  # Each column = 1.5 inches (7.5 / 5 = 1.5)
+        
+        for col in table.columns:
+            col.width = col_width
+        
+        # Set consistent row heights
+        row_height = Inches(0.8)
+        for row in table.rows:
+            row.height = row_height
+        
+        # Add top border (CSS: border-top: 5px solid var(--robeco-blue))
         self._add_table_border(table, 'top')
         
-        # Fill table with metrics
+        # Fill table with metrics in 5×5 grid pattern
         for i, item in enumerate(metrics_items):
-            row = i // 5
-            col = i % 5
-            cell = table.cell(row, col)
+            if i >= 25:  # Prevent overflow beyond 5×5 grid
+                logger.warning(f"⚠️ More than 25 metrics items found, truncating at 25")
+                break
+                
+            row_idx = i // 5
+            col_idx = i % 5
+            cell = table.cell(row_idx, col_idx)
             
-            # Get label and value
+            # Get label and value (HTML structure: .label and .value divs)
             label_elem = item.find(class_='label')
             value_elem = item.find(class_='value') 
             
             if label_elem and value_elem:
-                # Add label
+                # Add label (CSS: font-size: 10pt; font-weight: 700)
                 label_p = cell.paragraphs[0]
+                label_p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                 label_run = label_p.add_run(label_elem.get_text().strip())
                 label_run.font.size = Pt(10)
                 label_run.font.bold = True
                 label_run.font.color.rgb = self.robeco_colors['text_secondary']
                 
-                # Add value
+                # Add value (CSS: font-size: 14pt; font-weight: 400)
                 value_p = cell.add_paragraph()
+                value_p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                 value_run = value_p.add_run(value_elem.get_text().strip())
-                value_run.font.size = Pt(14)  # Matches CSS font-size: 14pt
+                value_run.font.size = Pt(14)
                 value_run.font.name = self.primary_font
                 value_run.font.bold = True
+                value_run.font.color.rgb = self.robeco_colors['text_dark']
+                
+                # Set cell vertical alignment
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
         
-        # Add bottom border
+        # Add bottom border (CSS: border-bottom: 5px solid var(--robeco-blue))
         self._add_table_border(table, 'bottom')
+        
+        logger.info(f"✅ Created {rows_needed}×5 metrics grid table with {min(len(metrics_items), 25)} items")
     
     def _add_analysis_item(self, doc: Document, item_soup):
         """Add analysis item with proper formatting - ENHANCED: Direct two-column processing"""
@@ -852,26 +934,81 @@ class RobecoWordReportGenerator:
             return False
     
     def _add_intro_chart_container(self, doc: Document, container_soup):
-        """Add introduction and chart container with proper 2-column layout (60%/40% split)"""
-        logger.info("🔍 Processing intro-and-chart-container with flex layout preservation")
+        """Add introduction and chart container with exact 50/50 flexbox layout"""
+        logger.info("🔍 Processing intro-and-chart-container (HTML: display: flex, gap: 30px)")
+        logger.info(f"🔍 DEBUG: Container HTML preview: {str(container_soup)[:300]}...")
+        logger.info(f"🔍 DEBUG: Container type: {type(container_soup)}")
+        logger.info(f"🔍 DEBUG: Container tag name: {getattr(container_soup, 'name', 'None')}")
         
-        # Extract content from both columns
+        # Extract content from both columns (HTML structure analysis)
         intro_block = container_soup.find(class_='intro-text-block')
-        chart_area = container_soup.find(class_='chart-area') or container_soup.find(class_='stock-chart-container')
+        chart_area = container_soup.find(class_='stock-chart-container')
+        logger.info(f"🔍 DEBUG: Direct stock-chart-container search result: {bool(chart_area)}")
         
-        # Create 2-column table to replicate CSS flexbox layout
+        # ENHANCED CHART DETECTION: Look for various chart patterns
+        if not chart_area:
+            # Method 1: Inline chart containers with height/background styling
+            chart_divs = container_soup.find_all('div', style=lambda x: x and 'height:' in x and 'background:' in x)
+            logger.info(f"🔍 DEBUG: Found {len(chart_divs)} divs with height/background styling")
+            if chart_divs:
+                chart_area = chart_divs[0]
+                logger.info("📊 Found inline chart container with height/background styling")
+                logger.info(f"🔍 DEBUG: Chart area HTML preview: {str(chart_area)[:200]}...")
+                logger.info(f"🔍 DEBUG: Chart area type: {type(chart_area)}")
+                
+                # Check for SVG in this chart area immediately
+                svg_in_chart = chart_area.find('svg')
+                logger.info(f"🔍 DEBUG: SVG found in chart area: {bool(svg_in_chart)}")
+                if svg_in_chart:
+                    logger.info(f"🔍 DEBUG: SVG details - viewBox: {svg_in_chart.get('viewBox')}, style: {svg_in_chart.get('style')}")
+                    logger.info(f"🔍 DEBUG: SVG has {len(svg_in_chart.find_all('text'))} text elements")
+            
+            # Method 2: Any div containing chart-related keywords
+            if not chart_area:
+                chart_keywords = ['chart', 'stock', 'price', 'graph', 'visualization']
+                for div in container_soup.find_all('div'):
+                    div_classes = div.get('class', [])
+                    div_text = div.get_text().lower()
+                    if (any(keyword in ' '.join(div_classes).lower() for keyword in chart_keywords) or
+                        any(keyword in div_text for keyword in ['stock', 'price', 'chart', 'hkd', '$'])):
+                        chart_area = div
+                        logger.info(f"📊 Found chart area by keyword detection: classes={div_classes}")
+                        break
+            
+            # Method 3: Look for canvas/svg elements
+            if not chart_area:
+                canvas_svg = container_soup.find(['canvas', 'svg'])
+                if canvas_svg:
+                    chart_area = canvas_svg.parent or canvas_svg
+                    logger.info("📊 Found chart area containing canvas/svg")
+        
+        # Method 4: If still no chart area, check if container itself contains chart data
+        if not chart_area:
+            container_text = container_soup.get_text().lower()
+            if any(keyword in container_text for keyword in ['stock', 'price', 'hkd', '$', 'current:', 'range:']):
+                chart_area = container_soup  # Use the whole container as chart area
+                logger.info("📊 Using entire container as chart area (contains price data)")
+        
+        logger.info(f"📝 Found intro-text-block: {bool(intro_block)}")
+        logger.info(f"📊 Found chart area: {bool(chart_area)}")
+        
+        # If neither intro nor chart found, this might not be the expected container
+        if not intro_block and not chart_area:
+            logger.warning("⚠️ Neither intro nor chart found - treating entire container as chart content")
+            chart_area = container_soup
+        
+        # Create 2-column table to replicate CSS flexbox (flex: 1 + flex: 1 = 50/50)
         table = doc.add_table(rows=1, cols=2)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         
-        # Set column widths to match CSS flex layout (50% intro, 50% chart with 30px gap)
-        # Total page width is approximately 9 inches, minus margins = ~7.5 inches usable
-        # Account for 30px gap = ~0.4 inches gap between columns
-        usable_width = Inches(7.1)  # 7.5 - 0.4 for gap
-        intro_width = Inches(3.55)  # 50% of usable width (flex: 1) = 7.1 / 2
-        chart_width = Inches(3.55)  # 50% of usable width (flex: 1) = 7.1 / 2
+        # Set EXACT 50/50 column widths (CSS: both elements have flex: 1)
+        # Account for 30px gap (CSS: gap: 30px) = ~0.4 inches
+        col_width = Inches(3.55)  # Exact 50/50 split = 3.55 inches each (7.5 - 0.4) / 2
         
-        table.columns[0].width = intro_width
-        table.columns[1].width = chart_width
+        table.columns[0].width = col_width  # intro-text-block
+        table.columns[1].width = col_width  # chart container
+        
+        logger.info(f"📐 Set exact 50/50 column widths: {col_width} inches each")
         
         # Configure table borders (hidden to match CSS)
         self._hide_table_borders(table)
@@ -885,13 +1022,21 @@ class RobecoWordReportGenerator:
             # Clear default paragraph
             left_cell.paragraphs[0].clear()
             
-            # Process each paragraph in intro block
-            for para in intro_block.find_all('p'):
+            # Check if there are <p> tags or direct content
+            paragraphs = intro_block.find_all('p')
+            if paragraphs:
+                # Process each paragraph in intro block
+                for para in paragraphs:
+                    cell_para = left_cell.add_paragraph()
+                    self._fix_element_alignment(cell_para, para)
+            else:
+                # Handle direct content in the intro block
+                logger.info("📝 Processing direct content in intro-text-block")
                 cell_para = left_cell.add_paragraph()
-                self._fix_element_alignment(cell_para, para)
+                cell_para.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                 
-                # Process text with proper bold formatting
-                self._process_paragraph_with_formatting(cell_para, para)
+                # Process the HTML content with formatting
+                self._add_html_formatted_text_to_paragraph(cell_para, intro_block)
                 cell_para.space_after = Pt(12)
         
         # RIGHT COLUMN: Process chart area (if exists)
@@ -900,6 +1045,14 @@ class RobecoWordReportGenerator:
         
         if chart_area:
             logger.info("✅ Processing chart area in right column")
+            logger.info(f"🔍 DEBUG: About to call _add_simple_static_chart with chart_area type: {type(chart_area)}")
+            logger.info(f"🔍 DEBUG: Chart area tag: {getattr(chart_area, 'name', 'None')}")
+            logger.info(f"🔍 DEBUG: Chart area classes: {chart_area.get('class', [])}")
+            
+            # Check SVG one more time before calling the chart method
+            final_svg_check = chart_area.find('svg')
+            logger.info(f"🔍 DEBUG: Final SVG check before chart processing: {bool(final_svg_check)}")
+            
             # Clear default paragraph
             right_cell.paragraphs[0].clear()
             
@@ -916,102 +1069,556 @@ class RobecoWordReportGenerator:
         spacing_para.space_after = Pt(20)
     
     def _add_simple_static_chart(self, cell, chart_area):
-        """Add simple static stock chart - just key price data"""
+        """Add stock chart content - converts SVG directly to image for Word"""
+        logger.info("📊 === STARTING CHART PROCESSING ===")
         try:
-            # Extract stock data from JavaScript
-            script_tags = chart_area.find_all('script')
+            logger.info("📊 Processing chart area for stock chart content")
+            logger.info(f"📊 DEBUG: Chart area HTML: {str(chart_area)[:500]}...")
+            logger.info(f"📊 DEBUG: Chart area full classes: {chart_area.get('class', [])}")
+            logger.info(f"📊 DEBUG: Chart area id: {chart_area.get('id', 'None')}")
+            logger.info(f"📊 DEBUG: Chart area style: {chart_area.get('style', 'None')}")
+            
+            # Count all elements in chart area
+            all_elements = chart_area.find_all()
+            logger.info(f"📊 DEBUG: Total elements in chart area: {len(all_elements)}")
+            
+            # Look for specific elements
+            h4_elements = chart_area.find_all('h4')
+            svg_elements = chart_area.find_all('svg')
+            div_elements = chart_area.find_all('div')
+            logger.info(f"📊 DEBUG: Elements found - h4: {len(h4_elements)}, svg: {len(svg_elements)}, div: {len(div_elements)}")
+            
+            # First try to convert SVG directly to image
+            svg_chart = chart_area.find('svg')
+            logger.info(f"🔍 DEBUG: SVG search result: {bool(svg_chart)}")
+            logger.info(f"🔍 DEBUG: Chart area type: {type(chart_area)}")
+            logger.info(f"🔍 DEBUG: Chart area tag: {getattr(chart_area, 'name', 'None')}")
+            
+            if svg_chart:
+                logger.info("📊 Found SVG chart - converting to image")
+                image_success = self._convert_svg_to_image(cell, chart_area, svg_chart)
+                if image_success:
+                    logger.info("✅ Successfully converted SVG chart to image")
+                    return
+                else:
+                    logger.info("⚠️ SVG conversion failed, falling back to text extraction")
+            else:
+                logger.info("⚠️ No SVG found, using fallback text extraction")
+            
+            # Fallback: Extract text data if SVG conversion fails
             current_price = None
-            price_data = []
+            chart_title = None
+            price_range = None
             
-            for script in script_tags:
-                script_text = script.get_text()
-                if 'stockData' in script_text:
-                    import re
-                    # Extract the last few price points
-                    price_matches = re.findall(r"'price':\s*([\d.]+)", script_text)
-                    date_matches = re.findall(r"'date':\s*'([\d-]+)'", script_text)
+            # Method 1: Look for title elements
+            title_elem = chart_area.find(class_='chart-title')
+            logger.info(f"🔍 DEBUG: Title element found: {bool(title_elem)}")
+            if title_elem:
+                chart_title = title_elem.get_text().strip()
+                logger.info(f"📈 Found chart title: {chart_title}")
+            
+            # Method 2: Look for current price elements  
+            price_elem = chart_area.find(class_='current-price')
+            logger.info(f"🔍 DEBUG: Price element found: {bool(price_elem)}")
+            if price_elem:
+                price_text = price_elem.get_text().strip()
+                logger.info(f"💰 DEBUG: Price text: '{price_text}'")
+                import re
+                price_match = re.search(r'[\$HKD\s]*(\d+\.?\d*)', price_text)
+                logger.info(f"💰 DEBUG: Price regex match: {bool(price_match)}")
+                if price_match:
+                    current_price = float(price_match.group(1))
+                    logger.info(f"💰 Found current price: ${current_price:.2f}")
+            
+            # Method 3: Look for price range elements
+            range_elem = chart_area.find(class_='price-range')
+            logger.info(f"🔍 DEBUG: Range element found: {bool(range_elem)}")
+            if range_elem:
+                price_range = range_elem.get_text().strip()
+                logger.info(f"📊 Found price range: {price_range}")
+            
+            # Method 4: Extract from general text content if no specific elements
+            if not current_price:
+                chart_text = chart_area.get_text()
+                import re
+                # Look for patterns like "Current: HKD $40.38", "$40.38", "HKD 40.38"
+                price_matches = re.findall(r'(?:Current|Price|HKD|[\$])\s*[\$]?\s*(\d+\.?\d*)', chart_text)
+                if price_matches:
+                    current_price = float(price_matches[0])
+                    logger.info(f"💰 Extracted price from text: ${current_price:.2f}")
+                
+                # Look for range patterns
+                range_matches = re.findall(r'Range[:\s]*[\$]?\s*(\d+\.?\d*)\s*[-–]\s*[\$]?\s*(\d+\.?\d*)', chart_text)
+                if range_matches:
+                    min_price, max_price = range_matches[0]
+                    price_range = f"${min_price} - ${max_price}"
+                    logger.info(f"📊 Extracted range from text: {price_range}")
+            
+            # Look for SVG charts (original logic) if no simple data found
+            if not current_price:
+                svg_chart = chart_area.find('svg')
+                if svg_chart:
+                    logger.info("📊 Found SVG chart - extracting price data")
                     
-                    if price_matches and date_matches:
-                        # Get recent data points
-                        recent_data = list(zip(date_matches[-6:], price_matches[-6:]))
-                        current_price = float(price_matches[-1])
-                        start_price = float(price_matches[0])
-                        min_price = min(float(p) for p in price_matches)
-                        max_price = max(float(p) for p in price_matches)
-                        price_change = current_price - start_price
-                        price_change_pct = (price_change / start_price) * 100
-                        break
+                    # Extract chart title from h4 element
+                    title_elem = chart_area.find('h4')
+                    if title_elem:
+                        chart_title = title_elem.get_text().strip()
+                        logger.info(f"📈 Chart title: {chart_title}")
+                        
+                        # Extract current price from title (e.g., "5-Year Stock Price (BUOU.SI) - Current: S$0.95")
+                        import re
+                        title_price_match = re.search(r'Current:\s*S?\$?(\d+\.\d+)', chart_title)
+                        if title_price_match:
+                            current_price = float(title_price_match.group(1))
+                            logger.info(f"💰 Extracted current price from title: S${current_price:.2f}")
+                    
+                    # Extract price data from SVG text elements (for range)
+                    price_texts = svg_chart.find_all('text')
+                    prices = []
+                    
+                    import re
+                    for text_elem in price_texts:
+                        text_content = text_elem.get_text().strip()
+                        # Look for price patterns like "S$1.20", "$1.20", etc.
+                        price_match = re.search(r'[S$]?\$?(\d+\.\d+)', text_content)
+                        if price_match:
+                            try:
+                                price_val = float(price_match.group(1))
+                                prices.append(price_val)
+                                logger.info(f"📊 Found price in SVG: S${price_val:.2f}")
+                            except ValueError:
+                                pass
+                    
+                    if prices:
+                        # If we didn't get current price from title, use max price
+                        if not current_price:
+                            current_price = max(prices)
+                        min_price = min(prices)
+                        max_price = max(prices)
+                        price_range = f"S${min_price:.2f} - S${max_price:.2f}"
+                        logger.info(f"📊 Extracted SVG price data: Current=S${current_price:.2f}, Range={price_range}")
             
-            if current_price:
-                # Chart title
+            # Fallback: Look for JavaScript data
+            if not current_price:
+                script_tags = chart_area.find_all('script')
+                for script in script_tags:
+                    script_text = script.get_text()
+                    if 'stockData' in script_text:
+                        import re
+                        price_matches = re.findall(r"'price':\s*([\d.]+)", script_text)
+                        if price_matches:
+                            current_price = float(price_matches[-1])
+                            start_price = float(price_matches[0])
+                            min_price = min(float(p) for p in price_matches)
+                            max_price = max(float(p) for p in price_matches)
+                            price_change = current_price - start_price
+                            price_change_pct = (price_change / start_price) * 100
+                            logger.info("📊 Extracted JavaScript chart data")
+                            break
+            
+            logger.info(f"🔍 DEBUG: Final values - current_price={current_price}, chart_title='{chart_title}'")
+            
+            if current_price or chart_title:
+                logger.info("✅ Chart data found - rendering chart content")
+                # Chart title (use extracted title or default)
                 title_para = cell.add_paragraph()
                 title_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                title_run = title_para.add_run("📈 Stock Price Summary")
+                display_title = chart_title if chart_title else "📈 Stock Price Chart"
+                title_run = title_para.add_run(display_title)
                 title_run.font.size = Pt(14)
                 title_run.font.bold = True
                 title_run.font.name = self.primary_font
-                title_run.font.color.rgb = self.robeco_colors['robeco_blue']
+                title_run.font.color.rgb = self.robeco_colors['brown_black']
                 title_para.space_after = Pt(10)
                 
-                # Current price (large)
-                price_para = cell.add_paragraph()
-                price_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                price_run = price_para.add_run(f"HKD ${current_price:.2f}")
-                price_run.font.size = Pt(24)
-                price_run.font.bold = True
-                price_run.font.name = self.primary_font
-                price_run.font.color.rgb = self.robeco_colors['robeco_blue']
-                price_para.space_after = Pt(8)
+                if current_price:
+                    # Current price (large) - detect currency from price range
+                    currency = "S$" if "S$" in str(price_range) else "$"
+                    price_para = cell.add_paragraph()
+                    price_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    price_run = price_para.add_run(f"{currency}{current_price:.2f}")
+                    price_run.font.size = Pt(20)
+                    price_run.font.bold = True
+                    price_run.font.name = self.primary_font
+                    price_run.font.color.rgb = self.robeco_colors['blue']
+                    price_para.space_after = Pt(8)
+                    
+                    # Price range summary
+                    if price_range:
+                        range_para = cell.add_paragraph()
+                        range_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                        range_run = range_para.add_run(f"Range: {price_range}")
+                        range_run.font.size = Pt(12)
+                        range_run.font.name = self.primary_font
+                        range_run.font.color.rgb = self.robeco_colors['text_secondary']
+                        range_para.space_after = Pt(8)
                 
-                # Change summary
-                change_para = cell.add_paragraph()
-                change_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                change_color = self.robeco_colors.get('accent_green', RGBColor(46, 125, 50)) if price_change >= 0 else self.robeco_colors.get('accent_red', RGBColor(198, 40, 40))
-                change_symbol = "+" if price_change >= 0 else ""
-                change_run = change_para.add_run(f"{change_symbol}HKD ${price_change:.2f} ({change_symbol}{price_change_pct:.1f}%)")
-                change_run.font.size = Pt(12)
-                change_run.font.bold = True
-                change_run.font.name = self.primary_font
-                change_run.font.color.rgb = change_color
-                change_para.space_after = Pt(8)
-                
-                # Price range
-                range_para = cell.add_paragraph()
-                range_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                range_run = range_para.add_run(f"Range: ${min_price:.2f} - ${max_price:.2f}")
-                range_run.font.size = Pt(11)
-                range_run.font.name = self.primary_font
-                range_run.font.color.rgb = self.robeco_colors['text_secondary']
-                range_para.space_after = Pt(12)
-                
-                # Recent prices (simple list)
-                recent_para = cell.add_paragraph()
-                recent_para.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-                recent_run = recent_para.add_run("Recent 6 Months:")
-                recent_run.font.size = Pt(11)
-                recent_run.font.bold = True
-                recent_run.font.name = self.primary_font
-                recent_para.space_after = Pt(4)
-                
-                # List recent prices
-                for date, price in recent_data:
-                    point_para = cell.add_paragraph()
-                    point_para.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-                    point_run = point_para.add_run(f"• {date}: ${float(price):.2f}")
-                    point_run.font.size = Pt(9)
-                    point_run.font.name = self.primary_font
-                    point_run.font.color.rgb = self.robeco_colors['text_secondary']
-                    point_para.space_after = Pt(2)
-                
-                logger.info(f"✅ Added simple static chart: Current ${current_price:.2f}, Change {price_change_pct:.1f}%")
+                    currency = "S$" if "S$" in str(price_range) else "$"
+                    logger.info(f"✅ Added SVG chart content: Current {currency}{current_price:.2f}")
+                else:
+                    # Just show the chart title if no price data
+                    logger.info("📊 Added chart title without price data")
             else:
-                # Simple fallback
-                self._add_chart_fallback(cell)
-                logger.info("⚠️ Added chart fallback (no price data found)")
+                # No chart data found - add placeholder
+                placeholder_para = cell.add_paragraph()
+                placeholder_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                placeholder_run = placeholder_para.add_run("📊 [Stock Chart]")
+                placeholder_run.font.size = Pt(14)
+                placeholder_run.font.italic = True
+                placeholder_run.font.color.rgb = self.robeco_colors['text_secondary']
+                logger.info("⚠️ Added chart placeholder (no data found)")
                 
         except Exception as e:
-            logger.error(f"❌ Simple chart failed: {e}")
-            self._add_chart_fallback(cell)
+            logger.error(f"❌ Chart processing failed: {e}")
+            # Add simple fallback
+            fallback_para = cell.add_paragraph()
+            fallback_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            fallback_run = fallback_para.add_run("📊 [Chart Unavailable]")
+            fallback_run.font.size = Pt(12)
+            fallback_run.font.italic = True
+    
+    def _add_standalone_chart(self, doc: Document, chart_element):
+        """Add standalone chart element (SVG, canvas, etc.) directly to document"""
+        try:
+            logger.info(f"📊 Processing standalone chart: {chart_element.name}")
+            
+            # Add chart as a centered element
+            p = doc.add_paragraph()
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            # Try to extract chart data if it's an SVG
+            if chart_element.name == 'svg':
+                # Look for text elements in SVG that might contain prices
+                price_texts = chart_element.find_all('text')
+                prices = []
+                chart_title = None
+                
+                for text_elem in price_texts:
+                    text_content = text_elem.get_text().strip()
+                    # Look for price patterns
+                    import re
+                    price_match = re.search(r'[\$￥¥]?(\d+\.?\d*)', text_content)
+                    if price_match:
+                        try:
+                            prices.append(float(price_match.group(1)))
+                        except ValueError:
+                            pass
+                    
+                    # Look for chart title patterns
+                    if any(keyword in text_content.lower() for keyword in ['stock', 'price', 'chart', 'year', 'month']):
+                        if not chart_title or len(text_content) > len(chart_title):
+                            chart_title = text_content
+                
+                # Also check parent/sibling elements for context
+                parent = chart_element.parent
+                if parent:
+                    # Look for nearby text that might contain chart info
+                    nearby_texts = parent.find_all(text=True)
+                    for text in nearby_texts:
+                        text_content = text.strip()
+                        price_match = re.search(r'[\$￥¥]?(\d+\.?\d*)', text_content)
+                        if price_match:
+                            try:
+                                prices.append(float(price_match.group(1)))
+                            except ValueError:
+                                pass
+                
+                if prices:
+                    current_price = max(prices)
+                    title_text = chart_title if chart_title else "5-Year Stock Price"
+                    
+                    # Create a visual chart representation
+                    self._add_visual_stock_chart(p, title_text, current_price, prices)
+                    logger.info(f"✅ Added visual stock chart: {title_text} with price ${current_price:.2f}")
+                else:
+                    title_text = chart_title if chart_title else "Interactive Stock Chart"
+                    
+                    # Create a simple chart placeholder with visual elements
+                    self._add_chart_placeholder(p, title_text)
+                    logger.info(f"✅ Added visual chart placeholder: {title_text}")
+            else:
+                # Canvas or other chart element
+                run = p.add_run("📊 Interactive Chart Element")
+                run.font.size = Pt(14)
+                run.font.color.rgb = self.robeco_colors['blue']
+                logger.info(f"✅ Added standalone {chart_element.name} chart")
+                
+        except Exception as e:
+            logger.error(f"❌ Standalone chart processing failed: {e}")
+            p = doc.add_paragraph()
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            run = p.add_run("📊 [Chart Element]")
+            run.font.size = Pt(12)
+            run.font.italic = True
+            run.font.color.rgb = self.robeco_colors['text_secondary']
+    
+    def _add_company_header_with_border(self, doc: Document, header_soup):
+        """Add company header with blue border styling"""
+        logger.info("🔵 Adding company header with blue border")
+        
+        # Add the company header first
+        self._add_company_header(doc, header_soup)
+        
+        # Add blue border after the header with minimal spacing
+        border_para = doc.add_paragraph()
+        border_para.space_before = Pt(3)  # Minimal space before
+        border_para.space_after = Pt(6)   # Reduced space after
+        
+        # Set paragraph formatting to reduce height
+        pPr = border_para._element.get_or_add_pPr()
+        spacing = OxmlElement('w:spacing')
+        spacing.set(qn('w:before'), '0')
+        spacing.set(qn('w:after'), '120')  # 6pt after
+        spacing.set(qn('w:line'), '240')   # Single line spacing
+        spacing.set(qn('w:lineRule'), 'auto')
+        pPr.append(spacing)
+        
+        # Add blue bottom border using paragraph border
+        p_bdr = OxmlElement('w:pBdr')
+        bottom_border = OxmlElement('w:bottom')
+        bottom_border.set(qn('w:val'), 'single')
+        bottom_border.set(qn('w:sz'), '18')  # 3px equivalent 
+        bottom_border.set(qn('w:color'), '005F90')  # Robeco blue
+        bottom_border.set(qn('w:space'), '0')  # No space from text
+        p_bdr.append(bottom_border)
+        pPr.append(p_bdr)
+        
+        logger.info("🔵 Added blue border below company header")
+    
+    def _add_visual_stock_chart(self, paragraph, title, current_price, prices):
+        """Create a visual stock chart representation in Word"""
+        try:
+            # Chart title
+            title_run = paragraph.add_run(f"📈 {title}\n")
+            title_run.font.size = Pt(14)
+            title_run.font.bold = True
+            title_run.font.color.rgb = self.robeco_colors['blue']
+            
+            # Current price display
+            price_run = paragraph.add_run(f"Current: ${current_price:.2f}\n")
+            price_run.font.size = Pt(16)
+            price_run.font.bold = True
+            price_run.font.color.rgb = self.robeco_colors['accent_green'] if len(prices) > 1 and current_price >= min(prices) else self.robeco_colors['text_dark']
+            
+            # Create a simple ASCII chart representation
+            if len(prices) > 1:
+                min_price = min(prices)
+                max_price = max(prices)
+                price_range = max_price - min_price if max_price > min_price else 1
+                
+                # Create 5 data points for visualization
+                chart_points = prices[:5] if len(prices) >= 5 else prices
+                
+                chart_line = ""
+                for i, price in enumerate(chart_points):
+                    if i == 0:
+                        chart_line += "●"  # Start point
+                    elif price > chart_points[i-1]:
+                        chart_line += "↗"
+                    elif price < chart_points[i-1]:
+                        chart_line += "↘"
+                    else:
+                        chart_line += "→"
+                    
+                    if i < len(chart_points) - 1:
+                        chart_line += "─"
+                
+                chart_run = paragraph.add_run(f"{chart_line}\n")
+                chart_run.font.size = Pt(12)
+                chart_run.font.color.rgb = self.robeco_colors['blue']
+                
+                # Price range info
+                range_run = paragraph.add_run(f"Range: ${min_price:.2f} - ${max_price:.2f}")
+                range_run.font.size = Pt(10)
+                range_run.font.color.rgb = self.robeco_colors['text_secondary']
+            
+        except Exception as e:
+            logger.error(f"❌ Visual chart creation failed: {e}")
+            # Fallback to simple text
+            fallback_run = paragraph.add_run(f"📈 {title} - ${current_price:.2f}")
+            fallback_run.font.size = Pt(14)
+            fallback_run.font.color.rgb = self.robeco_colors['blue']
+    
+    def _convert_svg_to_image(self, cell, chart_area, svg_chart):
+        """Convert SVG chart directly to PNG image and insert into Word cell"""
+        logger.info("🖼️ === ENTERING SVG TO IMAGE CONVERSION ===")
+        logger.info(f"🖼️ DEBUG: SVG chart type: {type(svg_chart)}")
+        logger.info(f"🖼️ DEBUG: SVG chart tag: {getattr(svg_chart, 'name', 'None')}")
+        logger.info(f"🖼️ DEBUG: SVG viewBox: {svg_chart.get('viewBox')}")
+        logger.info(f"🖼️ DEBUG: SVG style: {svg_chart.get('style')}")
+        logger.info(f"🖼️ DEBUG: SVG HTML preview: {str(svg_chart)[:300]}...")
+        
+        # Use Puppeteer to capture the chart as image
+        try:
+            import tempfile
+            import subprocess
+            import os
+            
+            logger.info("📊 Converting chart to image using Puppeteer")
+            
+            # Extract the chart area HTML
+            chart_html = str(chart_area)
+            
+            # Create a temporary HTML file with just the chart
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{ 
+            margin: 0; 
+            padding: 20px; 
+            font-family: Arial, sans-serif;
+            background: white;
+        }}
+    </style>
+</head>
+<body>
+    {chart_html}
+</body>
+</html>
+"""
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_html:
+                temp_html.write(html_content)
+                temp_html_path = temp_html.name
+            
+            # Create temporary PNG file
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_png:
+                temp_png_path = temp_png.name
+            
+            # Use Puppeteer to capture screenshot
+            puppeteer_script = f'''
+const puppeteer = require('puppeteer');
+(async () => {{
+    const browser = await puppeteer.launch({{headless: true}});
+    const page = await browser.newPage();
+    await page.goto('file://{temp_html_path}');
+    await page.setViewport({{width: 500, height: 450}});
+    await page.screenshot({{path: '{temp_png_path}', fullPage: true}});
+    await browser.close();
+}})();
+'''
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as temp_js:
+                temp_js.write(puppeteer_script)
+                temp_js_path = temp_js.name
+            
+            # Run Puppeteer
+            result = subprocess.run(['node', temp_js_path], 
+                                  capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0 and os.path.exists(temp_png_path):
+                # Insert the image into Word
+                img_para = cell.add_paragraph()
+                img_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                
+                run = img_para.add_run()
+                run.add_picture(temp_png_path, width=Inches(4.0))
+                
+                logger.info("✅ Successfully converted chart to image using Puppeteer")
+                success = True
+            else:
+                logger.error(f"❌ Puppeteer failed: {result.stderr}")
+                success = False
+            
+            # Clean up temporary files
+            for temp_file in [temp_html_path, temp_png_path, temp_js_path]:
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+            
+            return success
+            
+        except ImportError as e:
+            logger.warning(f"⚠️ SVG conversion libraries not available: {e}")
+            logger.info("💡 Install with: pip install cairosvg pillow")
+            return False
+        except Exception as e:
+            logger.error(f"❌ SVG to image conversion failed: {e}")
+            return False
+    
+    def _add_chart_placeholder(self, paragraph, title):
+        """Create a visual chart placeholder"""
+        try:
+            # Chart title
+            title_run = paragraph.add_run(f"📊 {title}\n")
+            title_run.font.size = Pt(14)
+            title_run.font.bold = True
+            title_run.font.color.rgb = self.robeco_colors['blue']
+            
+            # Visual placeholder
+            placeholder_run = paragraph.add_run("●─●─●─●─● [Interactive Chart]\n")
+            placeholder_run.font.size = Pt(12)
+            placeholder_run.font.color.rgb = self.robeco_colors['text_secondary']
+            
+            # Note
+            note_run = paragraph.add_run("View full chart in digital report")
+            note_run.font.size = Pt(10)
+            note_run.font.italic = True
+            note_run.font.color.rgb = self.robeco_colors['text_secondary']
+            
+        except Exception as e:
+            logger.error(f"❌ Chart placeholder creation failed: {e}")
+            # Fallback
+            fallback_run = paragraph.add_run(f"📊 {title}")
+            fallback_run.font.size = Pt(14)
+            fallback_run.font.color.rgb = self.robeco_colors['blue']
+    
+    def _add_intro_content(self, doc: Document, intro_block):
+        """Add introduction/analysis content from intro-text-block"""
+        try:
+            logger.info("📝 Processing intro-text-block for analysis content")
+            
+            # Add a section header for analysis
+            analysis_header = doc.add_paragraph()
+            analysis_header.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+            header_run = analysis_header.add_run("Investment Analysis")
+            header_run.font.size = Pt(18)
+            header_run.font.bold = True
+            header_run.font.color.rgb = self.robeco_colors['blue']
+            analysis_header.space_after = Pt(12)
+            
+            # Process all paragraphs and content in the intro block
+            for child in intro_block.children:
+                if hasattr(child, 'name') and child.name is not None:
+                    if child.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                        logger.info(f"✅ Found header in intro: {child.name}")
+                        self._add_header(doc, child)
+                    elif child.name == 'p':
+                        logger.info("✅ Found paragraph in intro")
+                        self._add_paragraph(doc, child)
+                    elif child.name == 'ul' or child.name == 'ol':
+                        logger.info("✅ Found list in intro")
+                        self._add_list(doc, child)
+                    elif child.name == 'div':
+                        # Process nested divs
+                        div_text = child.get_text().strip()
+                        if div_text:
+                            logger.info(f"✅ Found content div in intro: {len(div_text)} chars")
+                            self._add_paragraph(doc, child)
+                elif hasattr(child, 'strip'):
+                    # Text node
+                    text_content = child.strip()
+                    if text_content:
+                        logger.info("✅ Found direct text in intro")
+                        p = doc.add_paragraph(text_content)
+                        p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                        for run in p.runs:
+                            run.font.size = Pt(16)
+                            run.font.name = self.primary_font
+                            run.font.color.rgb = self.robeco_colors['text_dark']
+            
+            logger.info("✅ Successfully processed intro-text-block content")
+            
+        except Exception as e:
+            logger.error(f"❌ Intro content processing failed: {e}")
+            # Fallback - add whatever text we can extract
+            text_content = intro_block.get_text().strip()
+            if text_content:
+                p = doc.add_paragraph(text_content)
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
     
     def _add_stock_chart_content(self, cell, chart_area):
         """Add sophisticated stock chart representation based on D3.js chart data"""
@@ -1058,7 +1665,7 @@ class RobecoWordReportGenerator:
                 title_run.font.size = Pt(14)
                 title_run.font.bold = True
                 title_run.font.name = self.primary_font
-                title_run.font.color.rgb = self.robeco_colors['robeco_blue']
+                title_run.font.color.rgb = self.robeco_colors['blue']
                 title_para.space_after = Pt(8)
                 
                 # Calculate key metrics
@@ -1077,7 +1684,7 @@ class RobecoWordReportGenerator:
                 current_run.font.size = Pt(18)
                 current_run.font.bold = True
                 current_run.font.name = self.primary_font
-                current_run.font.color.rgb = self.robeco_colors['robeco_blue']
+                current_run.font.color.rgb = self.robeco_colors['blue']
                 current_para.space_after = Pt(8)
                 
                 # Performance summary
@@ -1137,7 +1744,7 @@ class RobecoWordReportGenerator:
                         chart_run = chart_para.add_run(" ".join(trend_chars))
                         chart_run.font.size = Pt(12)
                         chart_run.font.name = self.primary_font
-                        chart_run.font.color.rgb = self.robeco_colors['robeco_blue']
+                        chart_run.font.color.rgb = self.robeco_colors['blue']
                 
                 # Recent key data points (last 6 months)
                 data_para = cell.add_paragraph()
@@ -1178,7 +1785,7 @@ class RobecoWordReportGenerator:
         title_run.font.size = Pt(14)
         title_run.font.bold = True
         title_run.font.name = self.primary_font
-        title_run.font.color.rgb = self.robeco_colors['robeco_blue']
+        title_run.font.color.rgb = self.robeco_colors['blue']
         
         desc_para = cell.add_paragraph()
         desc_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -1187,6 +1794,21 @@ class RobecoWordReportGenerator:
         desc_run.font.italic = True
         desc_run.font.name = self.primary_font
         desc_run.font.color.rgb = self.robeco_colors['text_secondary']
+    
+    def _add_analysis_paragraph(self, doc, analysis_div):
+        """Add formatted analysis paragraph with proper styling"""
+        try:
+            text_content = analysis_div.get_text().strip()
+            if text_content:
+                para = doc.add_paragraph()
+                para.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                run = para.add_run(text_content)
+                run.font.size = Pt(11)
+                run.font.name = self.primary_font
+                run.font.color.rgb = self.robeco_colors.get('text_dark', RGBColor(0, 0, 0))
+                logger.info(f"✅ Added analysis paragraph with {len(text_content)} characters")
+        except Exception as e:
+            logger.error(f"❌ Failed to add analysis paragraph: {e}")
     
     def _hide_table_borders(self, table):
         """Hide all table borders to mimic CSS borderless layout"""
@@ -1248,17 +1870,29 @@ class RobecoWordReportGenerator:
         logger.info(f"🔍 Processing MAIN content container with {len(list(main_soup.children))} children")
         logger.info(f"🔍 Main classes: {main_classes}")
         
+        # Get slide ID for debugging
+        slide_parent = main_soup.parent
+        slide_id = slide_parent.get('id', 'no-id') if slide_parent else 'no-id'
+        logger.info(f"🔍 Processing main for slide ID: {slide_id}")
+        
         # Check if this is a prose layout (Pages 3-15) - check both main and slide classes
+        # Pages 1-2 should use analysis layout (portrait-page-1, portrait-page-1A)
+        is_page_1_or_2 = slide_id in ['portrait-page-1', 'portrait-page-1A']
         is_prose = 'report-prose' in main_classes or 'report-prose' in slide_classes
-        if is_prose:
+        
+        # Force analysis layout for pages 1-2 regardless of classes
+        if is_page_1_or_2:
+            logger.info(f"📊 Processing ANALYSIS LAYOUT (Pages 1-2) - Slide ID: {slide_id}")
+            self._process_analysis_layout(doc, main_soup)
+        elif is_prose:
             logger.info("📝 Processing PROSE LAYOUT (Pages 3-15)")
             self._process_prose_layout(doc, main_soup)
         else:
-            logger.info("📊 Processing ANALYSIS LAYOUT (Pages 1-2)")
+            logger.info("📊 Processing ANALYSIS LAYOUT (default)")
             self._process_analysis_layout(doc, main_soup)
     
     def _process_prose_layout(self, doc: Document, main_soup):
-        """Process prose layout for Pages 3-15"""
+        """Process prose layout for Pages 3-15 - FULL WIDTH content"""
         for child in main_soup.children:
             if hasattr(child, 'name') and child.name is not None:
                 if child.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
@@ -1267,17 +1901,114 @@ class RobecoWordReportGenerator:
                 elif child.name == 'p':
                     logger.info("✅ Found prose paragraph")
                     self._add_paragraph(doc, child)
-                elif child.name == 'div' and 'content-item' in child.get('class', []):
-                    logger.info("✅ Found content-item in prose layout")
-                    # Process content-item as simple paragraphs
-                    for para in child.find_all('p'):
-                        self._add_paragraph(doc, para)
+                elif child.name == 'table':
+                    logger.info("✅ Found FULL-WIDTH table in prose layout")
+                    self._add_full_width_table(doc, child)
+                elif child.name == 'div':
+                    child_classes = child.get('class', [])
+                    if 'content-item' in child_classes:
+                        logger.info("✅ Found content-item in prose layout")
+                        # Process content-item as simple paragraphs
+                        for para in child.find_all('p'):
+                            self._add_paragraph(doc, para)
+                    elif 'metrics-grid' in child_classes:
+                        logger.info("✅ Found metrics-grid in prose layout")
+                        self._add_metrics_grid(doc, child)
+                    elif 'intro-and-chart-container' in child_classes:
+                        logger.info("⚠️ Found intro-chart container in prose - treating as full-width")
+                        # Don't use 2-column layout in prose, extract content directly
+                        self._add_full_width_intro_content(doc, child)
+                    else:
+                        # FIRST: Check for charts in this div before recursive processing
+                        svg_elements = child.find_all('svg')
+                        canvas_elements = child.find_all('canvas')
+                        
+                        # Enhanced chart detection
+                        is_chart_div = any(keyword in ' '.join(child_classes).lower() for keyword in ['chart', 'stock', 'price', 'graph'])
+                        
+                        # Check for chart-indicating height in style attribute
+                        style_attr = child.get('style', '')
+                        is_chart_by_height = ('height' in style_attr and 
+                                             any(size in style_attr for size in ['300px', '400px', '420px', '500px'])) or \
+                                            ('height:' in style_attr and 
+                                             any(size in style_attr for size in ['300', '400', '420', '500']))
+                        
+                        # Check for SVG with viewBox (strong chart indicator)
+                        has_viewbox = any(svg.get('viewbox') or svg.get('viewBox') for svg in svg_elements)
+                        
+                        # Additional chart indicators
+                        has_chart_title = child.find('h4') and any(word in child.find('h4').get_text().lower() for word in ['price', 'chart', 'stock', 'performance'])
+                        contains_background_white = 'background: white' in style_attr or 'background-color: white' in style_attr
+                        
+                        # Check for structured content (tables, lists, headers) FIRST
+                        has_tables = child.find_all('table')
+                        has_lists = child.find_all(['ul', 'ol'])
+                        has_headers = child.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                        has_structured_content = bool(has_tables or has_lists or has_headers)
+                        
+                        text_content = child.get_text().strip()
+                        is_analysis_text = (len(text_content) > 200 and 
+                                           any(keyword in text_content.lower() for keyword in ['overweight', 'underweight', 'buy', 'sell', 'hold', 'target', 'consensus', 'analysis', 'opportunity', 'presents', 'compelling'])
+                                           and not has_structured_content)  # Only treat as analysis if no structured content
+                        
+                        logger.info(f"🔍 RECURSIVE DIV: classes={child_classes}, SVG={len(svg_elements)}, Canvas={len(canvas_elements)}, Tables={len(has_tables)}, Is chart={is_chart_div}, Has viewBox={has_viewbox}, Chart height={is_chart_by_height}, Chart title={has_chart_title}, White bg={contains_background_white}, Is analysis={is_analysis_text}, Text len={len(text_content)}")
+                        
+                        # Process charts (enhanced detection with multiple indicators)
+                        is_likely_chart = (svg_elements or canvas_elements or is_chart_div or 
+                                         is_chart_by_height or has_viewbox or has_chart_title or
+                                         (contains_background_white and len(svg_elements) > 0))
+                        
+                        if is_likely_chart:
+                            logger.info(f"📊 RECURSIVE: Found chart content - processing visual elements")
+                            
+                            # Process SVG charts
+                            for svg in svg_elements:
+                                self._add_standalone_chart(doc, svg)
+                            
+                            # Process canvas charts
+                            for canvas in canvas_elements:
+                                self._add_standalone_chart(doc, canvas)
+                                
+                            # If no visual elements but looks like chart container, add placeholder
+                            if not svg_elements and not canvas_elements and (is_chart_div or is_chart_by_height or has_chart_title):
+                                logger.info("📊 RECURSIVE: Chart container but no SVG/Canvas - adding placeholder")
+                                self._add_chart_placeholder(doc, child)
+                        
+                        elif has_structured_content:
+                            logger.info(f"📊 RECURSIVE: Found structured content (tables={len(has_tables)}, lists={len(has_lists)}, headers={len(has_headers)}) - processing elements")
+                            # Process structured content properly
+                            for table in has_tables:
+                                logger.info("📊 RECURSIVE: Processing table structure")
+                                self._add_full_width_table(doc, table)
+                            for header in has_headers:
+                                logger.info("📊 RECURSIVE: Processing header")
+                                self._add_header(doc, header)
+                            for list_elem in has_lists:
+                                logger.info("📊 RECURSIVE: Processing list")
+                                self._add_list(doc, list_elem)
+                            # Process any remaining paragraphs that aren't inside tables/lists
+                            for para in child.find_all('p'):
+                                if not para.find_parent(['table', 'ul', 'ol']):  # Don't duplicate content already in tables/lists
+                                    self._add_paragraph(doc, para)
+                        
+                        elif is_analysis_text:
+                            logger.info(f"📝 RECURSIVE: Found pure analysis text - adding formatted paragraph")
+                            self._add_analysis_paragraph(doc, child)
+                            # Skip further processing to avoid duplication
+                        else:
+                            logger.info(f"✅ Processing div with classes: {child_classes}")
+                            # Process child content recursively
+                            self._process_prose_layout(doc, child)
                 else:
-                    # Process other elements recursively
-                    self._process_main_content(doc, child)
+                    logger.info(f"✅ Processing other element: {child.name}")
+                    # Process other elements recursively  
+                    self._process_prose_layout(doc, child)
     
     def _process_analysis_layout(self, doc: Document, main_soup):
         """Process analysis layout for Pages 1-2 with metrics grid, intro-chart, and analysis sections"""
+        # DEBUG: Save main content for analysis
+        logger.info(f"🔍 DEBUG: Main HTML content preview: {str(main_soup)[:500]}...")
+        
         # Recursively process all children of main element
         for child in main_soup.children:
             if hasattr(child, 'name') and child.name is not None:
@@ -1296,6 +2027,52 @@ class RobecoWordReportGenerator:
                 elif 'analysis-sections' in child_classes:
                     logger.info("✅ Found analysis-sections in main content")
                     self._process_analysis_sections(doc, child)
+                
+                # DEBUG: Look for any chart-related containers or SVG elements
+                elif any(keyword in ' '.join(child_classes).lower() for keyword in ['chart', 'stock', 'price', 'graph']):
+                    logger.info(f"🔍 DEBUG: Found potential chart container: {child.name}, classes: {child_classes}")
+                    # Try to process as chart container
+                    self._add_intro_chart_container(doc, child)
+                
+                # Look for standalone chart elements (SVG, canvas, chart divs)
+                elif child.name in ['svg', 'canvas'] or any(keyword in ' '.join(child_classes).lower() for keyword in ['visualization', 'd3']):
+                    logger.info(f"📊 DEBUG: Found standalone chart element: {child.name}, classes: {child_classes}")
+                    # Create a simple chart display from SVG/canvas
+                    self._add_standalone_chart(doc, child)
+                    
+                # Also check for divs that might contain charts
+                elif child.name == 'div':
+                    # Check if this div contains chart-related content
+                    svg_elements = child.find_all('svg')
+                    canvas_elements = child.find_all('canvas')
+                    chart_class_elements = child.find_all(class_=lambda x: x and any(kw in ' '.join(x).lower() for kw in ['chart', 'stock', 'price', 'graph']))
+                    
+                    # Also check for script tags with chart data
+                    script_elements = child.find_all('script')
+                    chart_scripts = [s for s in script_elements if 'stockData' in s.get_text() or 'chartData' in s.get_text()]
+                    
+                    logger.info(f"📊 DEBUG: Checking div for charts: SVG={len(svg_elements)}, Canvas={len(canvas_elements)}, Chart classes={len(chart_class_elements)}, Chart scripts={len(chart_scripts)}")
+                    
+                    if svg_elements or canvas_elements or chart_class_elements or chart_scripts:
+                        logger.info(f"📊 DEBUG: Found div with chart content: {len(svg_elements + canvas_elements + chart_class_elements + chart_scripts)} chart elements")
+                        # Process the chart elements directly
+                        for svg in svg_elements:
+                            self._add_standalone_chart(doc, svg)
+                        for canvas in canvas_elements:
+                            self._add_standalone_chart(doc, canvas)
+                        if chart_scripts:
+                            # If we have chart scripts, try to process as chart container
+                            logger.info(f"📊 DEBUG: Processing chart scripts in div")
+                            self._add_intro_chart_container(doc, child)
+                        elif chart_class_elements and not svg_elements and not canvas_elements:
+                            # If only chart classes but no SVG/canvas, try full container processing
+                            self._add_intro_chart_container(doc, child)
+                    else:
+                        # Process as regular content
+                        logger.info(f"✅ Found content div in main: {len(child.get_text())} chars, classes: {child.get('class', [])}")
+                        # Add div content as paragraph
+                        if child.get_text().strip():
+                            self._add_paragraph(doc, child)
                 
                 elif 'content-grid' in child_classes:
                     logger.info("✅ Found content-grid in main content") 
@@ -1341,20 +2118,38 @@ class RobecoWordReportGenerator:
                         logger.info("✅ Found bullet-list-square in div")
                         self._process_bullet_list_square(doc, child)
                     else:
-                        # Generic div - check if it has meaningful content
-                        text_content = child.get_text().strip()
-                        if text_content and len(text_content) > 0:
-                            logger.info(f"✅ Found content div in main: {len(text_content)} chars, classes: {child_classes}")
-                            # If it has nested structure, recurse first
-                            if child.find_all(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'table']):
-                                logger.info("🔄 Recursing into structured div content")
-                                self._process_main_content(doc, child)
-                            else:
-                                self._add_paragraph(doc, child)
+                        # Check if this could be analysis content or chart content
+                        intro_text_block = child.find(class_='intro-text-block') 
+                        stock_chart_container = child.find(class_='stock-chart-container')
+                        has_svg_or_chart = bool(child.find('svg') or child.find('canvas') or 
+                                               any('chart' in str(c).lower() for c in child.get('class', [])))
+                        
+                        if intro_text_block and stock_chart_container:
+                            logger.info("🔍 Found implicit intro-and-chart-container")
+                            self._add_intro_chart_container(doc, child)
+                        elif intro_text_block:
+                            logger.info("📝 Found intro-text-block - adding analysis content")
+                            self._add_intro_content(doc, intro_text_block)
+                        elif has_svg_or_chart:
+                            logger.info("📊 Found chart content in div")
+                            # Process chart elements
+                            for svg in child.find_all('svg'):
+                                self._add_standalone_chart(doc, svg)
                         else:
-                            # Empty div, but may contain other elements - recurse
-                            logger.info("🔄 Recursing into empty div in main content")
-                            self._process_main_content(doc, child)
+                            # Generic div - check if it has meaningful content
+                            text_content = child.get_text().strip()
+                            if text_content and len(text_content) > 0:
+                                logger.info(f"✅ Found content div in main: {len(text_content)} chars, classes: {child_classes}")
+                                # If it has nested structure, recurse first
+                                if child.find_all(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'table']):
+                                    logger.info("🔄 Recursing into structured div content")
+                                    self._process_main_content(doc, child)
+                                else:
+                                    self._add_paragraph(doc, child)
+                            else:
+                                # Empty div, but may contain other elements - recurse
+                                logger.info("🔄 Recursing into empty div in main content")
+                                self._process_main_content(doc, child)
                 
                 else:
                     # Generic element with text content
@@ -1552,43 +2347,25 @@ class RobecoWordReportGenerator:
             logger.error(f"❌ Error applying HTML styling: {e}")
     
     def _force_precise_flexbox_layout(self, table):
-        """Force EXACT 16%/84% flexbox layout using advanced XML manipulation"""
+        """Force EXACT 16%/84% flexbox layout using percentage-based approach for better Word compatibility"""
         logger.info("📐 PRECISION: Forcing exact CSS flexbox layout (16%/84%) to match HTML")
         
         try:
             tbl = table._element
             
-            # Set table properties for full width (using twips for better precision)
+            # Set table properties for full width using percentage
             tblPr = tbl.find(qn('w:tblPr'))
             if tblPr is None:
                 tblPr = OxmlElement('w:tblPr')
                 tbl.insert(0, tblPr)
             
-            # Table width: 100% (use DXA units for better precision)
+            # Table width: 100% (use percentage for better compatibility)
             tblW = OxmlElement('w:tblW')
-            tblW.set(qn('w:w'), '9000')  # 100% width (9000 twips ≈ 6.25")
-            tblW.set(qn('w:type'), 'dxa')
+            tblW.set(qn('w:w'), '5000')  # 100% width in percentage units
+            tblW.set(qn('w:type'), 'pct')
             tblPr.append(tblW)
             
-            # Create precise column grid with exact measurements
-            tblGrid = tbl.find(qn('w:tblGrid'))
-            if tblGrid is None:
-                tblGrid = OxmlElement('w:tblGrid')
-                tbl.insert(1, tblGrid)
-            else:
-                tblGrid.clear()
-            
-            # Column 1: EXACT 16% = 1440 twips (16% of 9000)
-            gridCol1 = OxmlElement('w:gridCol')
-            gridCol1.set(qn('w:w'), '1440')  
-            tblGrid.append(gridCol1)
-            
-            # Column 2: EXACT 84% = 7560 twips (84% of 9000)
-            gridCol2 = OxmlElement('w:gridCol')
-            gridCol2.set(qn('w:w'), '7560')  
-            tblGrid.append(gridCol2)
-            
-            # Force individual cell widths with EXACT measurements
+            # Force individual cell widths using percentages
             for row in tbl.findall(qn('w:tr')):
                 cells = row.findall(qn('w:tc'))
                 if len(cells) >= 2:
@@ -1599,8 +2376,8 @@ class RobecoWordReportGenerator:
                         cells[0].insert(0, tcPr1)
                     
                     tcW1 = OxmlElement('w:tcW')
-                    tcW1.set(qn('w:w'), '1440')  # Exact 16% in twips
-                    tcW1.set(qn('w:type'), 'dxa')
+                    tcW1.set(qn('w:w'), '800')  # 16% in percentage units (16% of 5000)
+                    tcW1.set(qn('w:type'), 'pct')
                     tcPr1.append(tcW1)
                     
                     # Cell 2: EXACT 84% width  
@@ -1610,11 +2387,11 @@ class RobecoWordReportGenerator:
                         cells[1].insert(0, tcPr2)
                     
                     tcW2 = OxmlElement('w:tcW')
-                    tcW2.set(qn('w:w'), '7560')  # Exact 84% in twips
-                    tcW2.set(qn('w:type'), 'dxa')
+                    tcW2.set(qn('w:w'), '4200')  # 84% in percentage units (84% of 5000)
+                    tcW2.set(qn('w:type'), 'pct')
                     tcPr2.append(tcW2)
             
-            logger.info("✅ PRECISION: Applied EXACT 16%/84% layout (1440/7560 twips)")
+            logger.info("✅ PRECISION: Applied EXACT 16%/84% layout using percentage-based approach")
             
         except Exception as e:
             logger.error(f"❌ PRECISION FAILED: {e}")
@@ -1872,11 +2649,16 @@ class RobecoWordReportGenerator:
             logger.info(f"📸 ENHANCED: Found {len(all_images)} images in slide")
             
             # Also look for chart containers with canvas/svg elements or chart data
-            chart_containers = slide_soup.find_all(['canvas', 'svg']) + slide_soup.find_all(['div'], class_=lambda x: x and any(chart_class in ' '.join(x) for chart_class in ['chart', 'graph', 'visualization']))
+            chart_containers = slide_soup.find_all(['canvas', 'svg'])
+            chart_divs = slide_soup.find_all('div', class_=lambda x: x and ('chart' in ' '.join(x) or 'graph' in ' '.join(x) or 'visualization' in ' '.join(x)))
+            chart_containers.extend(chart_divs)
+            
             if chart_containers:
                 logger.info(f"📊 Found {len(chart_containers)} chart containers (canvas/svg/chart-divs)")
                 for container in chart_containers:
                     self._process_chart_container(doc, container, slide_soup)
+            else:
+                logger.info("📊 No chart containers found in this slide")
             
             # 📍 CREATE IMAGE POSITION MAP: Analyze HTML structure for precise positioning
             image_position_map = self._create_image_position_map(slide_soup, all_images)
@@ -2372,6 +3154,158 @@ class RobecoWordReportGenerator:
             
         except Exception as e:
             logger.error(f"❌ Error inserting chart placeholder: {e}")
+    
+    def _add_full_width_table(self, doc: Document, table_soup):
+        """Add table with full page width (for prose layout)"""
+        try:
+            logger.info("📊 Creating full-width table")
+            rows = table_soup.find_all('tr')
+            if not rows:
+                return
+            
+            # Create Word table with full width
+            max_cols = max(len(row.find_all(['td', 'th'])) for row in rows)
+            table = doc.add_table(rows=len(rows), cols=max_cols)
+            table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            
+            # Set table to use full page width
+            table.autofit = False
+            col_width_each = Inches(7.5 / max_cols) if max_cols > 0 else Inches(1.5)
+            for i, col in enumerate(table.columns):
+                col.width = col_width_each  # Distribute full width evenly
+            
+            # Fill table content
+            for i, row_soup in enumerate(rows):
+                cells = row_soup.find_all(['td', 'th'])
+                for j, cell_soup in enumerate(cells):
+                    if j < max_cols:
+                        cell = table.cell(i, j)
+                        cell_p = cell.paragraphs[0]
+                        cell_p.clear()
+                        
+                        # Add cell content with proper formatting
+                        cell_text = cell_soup.get_text().strip()
+                        run = cell_p.add_run(cell_text)
+                        
+                        # Header styling for th elements
+                        if cell_soup.name == 'th':
+                            run.font.bold = True
+                            run.font.color.rgb = self.robeco_colors['blue_darker']
+                            cell_p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                        else:
+                            cell_p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                        
+                        run.font.size = Pt(12)
+                        run.font.name = self.primary_font
+                        
+                        # Add cell padding
+                        cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+            
+            # Add spacing after table
+            spacing_para = doc.add_paragraph()
+            spacing_para.space_after = Pt(16)
+            
+            logger.info(f"✅ Added full-width table with {len(rows)} rows, {max_cols} columns")
+            
+        except Exception as e:
+            logger.error(f"❌ Error adding full-width table: {e}")
+    
+    def _add_full_width_intro_content(self, doc: Document, container_soup):
+        """Process intro-chart container as full-width content (for prose layout)"""
+        try:
+            logger.info("📝 Processing intro-chart container as full-width content")
+            
+            # Extract intro text block
+            intro_block = container_soup.find(class_='intro-text-block')
+            if intro_block:
+                logger.info("✅ Found intro-text-block, processing as full-width")
+                for para in intro_block.find_all('p'):
+                    self._add_paragraph(doc, para)
+            
+            # Extract any other content 
+            for child in container_soup.children:
+                if hasattr(child, 'name') and child.name is not None:
+                    if child.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                        self._add_header(doc, child)
+                    elif child.name == 'p':
+                        self._add_paragraph(doc, child)
+                    elif child.name == 'table':
+                        self._add_full_width_table(doc, child)
+            
+            logger.info("✅ Completed full-width intro content processing")
+            
+        except Exception as e:
+            logger.error(f"❌ Error processing full-width intro content: {e}")
+    
+    def _process_slide_logo(self, doc: Document, logo_container):
+        """Process slide-logo container with Robeco logo"""
+        try:
+            logger.info("🏢 Processing slide-logo container")
+            
+            # Find Robeco logo image
+            img = logo_container.find('img')
+            if img:
+                img_src = img.get('src', '')
+                img_alt = img.get('alt', '')
+                
+                if 'robeco' in img_src.lower() or 'robeco' in img_alt.lower():
+                    logger.info("🏢 Found Robeco logo in slide-logo container")
+                    
+                    # Create paragraph for logo
+                    p = doc.add_paragraph()
+                    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                    
+                    # Insert Robeco logo with appropriate size
+                    success = self._download_and_insert_image_inline(p, img_src, img_alt, Inches(1.2))
+                    
+                    if success:
+                        logger.info("✅ Successfully inserted Robeco logo from slide-logo container")
+                    else:
+                        # Remove empty paragraph if failed
+                        doc.paragraphs.pop()
+                        logger.warning("⚠️ Failed to insert Robeco logo from slide-logo container")
+                else:
+                    logger.info("ℹ️ Image in slide-logo container is not Robeco logo")
+            else:
+                logger.info("ℹ️ No image found in slide-logo container")
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing slide-logo container: {e}")
+    
+    def _add_slide_logo_header(self, doc: Document, slide_logo_soup):
+        """Add slide logo at top-right following HTML structure"""
+        try:
+            logger.info("🏢 Adding slide logo header (top-right positioning)")
+            
+            # Find Robeco logo image in slide-logo container
+            img = slide_logo_soup.find('img')
+            if img:
+                img_src = img.get('src', '')
+                img_alt = img.get('alt', '')
+                
+                if 'robeco' in img_src.lower() or 'robeco' in img_alt.lower():
+                    # Create right-aligned paragraph for top-right positioning
+                    p = doc.add_paragraph()
+                    p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+                    
+                    # Insert Robeco logo with appropriate size (2rem = ~24px = ~0.33 inches)
+                    success = self._download_and_insert_image_inline(p, img_src, img_alt, Inches(1.0))
+                    
+                    if success:
+                        logger.info("✅ Successfully added slide logo header (top-right)")
+                        # Add spacing after logo
+                        p.space_after = Pt(12)
+                    else:
+                        # Remove empty paragraph if failed
+                        doc.paragraphs.pop()
+                        logger.warning("⚠️ Failed to add slide logo header")
+                else:
+                    logger.info("ℹ️ Image in slide-logo is not Robeco logo")
+            else:
+                logger.info("ℹ️ No image found in slide-logo container")
+                
+        except Exception as e:
+            logger.error(f"❌ Error adding slide logo header: {e}")
     
     def _download_and_insert_image_inline(self, paragraph, img_url: str, alt_text: str, target_width: object) -> bool:
         """Download image from URL and insert into Word document"""

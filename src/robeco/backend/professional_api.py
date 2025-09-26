@@ -21,6 +21,8 @@ from ..core.memory import EnhancedSharedMemory, APIKeyManager
 from ..core.models import AnalysisContext, WebSocketMessage
 from ..agents.streaming_professional_analyst import StreamingInvestmentAnalystTeam
 from ..backend.websocket_manager import WebSocketManager
+from ..backend.word_report_generator import RobecoWordReportGenerator
+from ..backend.pdf_report_generator import RobecoPdfReportGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,12 @@ class ReportRequest(BaseModel):
     company_name: str
     report_type: str = "unlimited"  # unlimited AI capacity analysis
 
+class DocumentConversionRequest(BaseModel):
+    html_content: str
+    company_name: str
+    ticker: str
+    format: str  # "word" or "pdf"
+
 
 class ProfessionalInvestmentAPI:
     """Professional Investment Analysis API - Unlimited AI Capacity"""
@@ -47,6 +55,8 @@ class ProfessionalInvestmentAPI:
         self.api_manager = APIKeyManager(settings.GEMINI_API_KEYS)
         self.analyst_team = StreamingInvestmentAnalystTeam(self.memory, self.api_manager)
         self.websocket_manager = WebSocketManager(self.memory)
+        self.word_generator = RobecoWordReportGenerator()
+        self.pdf_generator = RobecoPdfReportGenerator()
         
         # Template configuration for unlimited AI interface
         self.templates = Jinja2Templates(directory="src/robeco/frontend/templates")
@@ -216,6 +226,50 @@ class ProfessionalInvestmentAPI:
             except Exception as e:
                 logger.error(f"Unlimited AI report generation failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
+        
+        @app.post("/api/professional/convert")
+        async def convert_html_to_document(request: DocumentConversionRequest):
+            """Convert HTML report to Word document or PDF"""
+            try:
+                logger.info(f"🔄 Converting HTML to {request.format.upper()}: {request.ticker}")
+                
+                if request.format.lower() == "word":
+                    # Convert to Word document
+                    output_path = await self.word_generator.convert_html_to_word(
+                        html_content=request.html_content,
+                        company_name=request.company_name,
+                        ticker=request.ticker
+                    )
+                    
+                    return {
+                        "status": "success",
+                        "format": "word",
+                        "file_path": output_path,
+                        "message": f"Word document generated successfully for {request.ticker}",
+                        "download_available": True
+                    }
+                    
+                elif request.format.lower() == "pdf":
+                    # Convert to PDF document
+                    output_path = await self.pdf_generator.convert_html_to_pdf(
+                        html_content=request.html_content,
+                        company_name=request.company_name,
+                        ticker=request.ticker
+                    )
+                    
+                    return {
+                        "status": "success", 
+                        "format": "pdf",
+                        "file_path": output_path,
+                        "message": f"PDF document generated successfully for {request.ticker}",
+                        "download_available": True
+                    }
+                else:
+                    raise HTTPException(status_code=400, detail="Invalid format. Use 'word' or 'pdf'")
+                    
+            except Exception as e:
+                logger.error(f"Document conversion failed: {e}")
+                raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
         
         @app.get("/api/professional/analysts")
         async def get_analyst_team_status():

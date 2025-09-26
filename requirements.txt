@@ -30,9 +30,22 @@ json-repair>=0.25.0
 python-docx>=0.8.11
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
+pillow>=10.0.0
+cairosvg>=2.7.0
+
+# PDF Generation
+pypdf>=3.0.0
 
 # FastAPI Dependencies
 pydantic>=2.0.0
+
+# Security & Authentication
+bcrypt>=4.0.0
+pyjwt>=2.8.0
+cryptography>=41.0.0
+
+# Database
+sqlalchemy>=1.4.23
 
 # System Monitoring
 psutil>=5.9.0

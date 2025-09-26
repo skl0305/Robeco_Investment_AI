@@ -495,20 +495,7 @@
             color: var(--robeco-blue-darker);
         }
 
-        /* Specific fix for Company Analysis page content visibility */
-        #company-analysis-page {
-            min-height: 2500px; /* Ensure enough height for all content */
-            height: auto;
-            overflow: visible;
-        }
-
-        #company-analysis-page .slide-content {
-            flex-grow: 1;
-            min-height: 2000px; /* Ensure content area is tall enough */
-            height: auto;
-            overflow: visible;
-            display: block; /* Change from flex to block for better content flow */
-        }
+        /* Company Analysis page now uses standard slide dimensions */
 
         /* Force visibility of all slide content */
         .slide-content h3,

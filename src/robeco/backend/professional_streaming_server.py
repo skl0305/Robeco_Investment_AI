@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Dict, Set, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from typing import List
 import uvicorn
@@ -39,6 +40,8 @@ from robeco.backend.template_report_generator import template_report_generator
 
 # Import Word report generator
 from robeco.backend.word_report_generator import word_report_generator
+# Import Enhanced PDF service
+from robeco.backend.enhanced_pdf_service import EnhancedPdfService
 
 # Import for chat functionality
 try:
@@ -71,6 +74,25 @@ if static_path.exists():
 active_connections: Set[WebSocket] = set()
 connection_counter = 0
 chat_sessions = {}  # Store chat history per connection and analyst
+
+# Document conversion request model
+class DocumentConversionRequest(BaseModel):
+    html_content: str
+    company_name: str
+    ticker: str
+    format: str  # "word" or "pdf"
+
+# Enhanced PDF service - no lazy loading needed (static methods)
+def get_pdf_generator():
+    """Return the EnhancedPdfService for PDF generation"""
+    try:
+        # EnhancedPdfService uses static methods, so just return the class
+        logger.info("✅ PDF generator initialized successfully")
+        logger.info("📍 Using PDF engine: Enhanced Puppeteer Service")
+        return EnhancedPdfService
+    except Exception as e:
+        logger.error(f"❌ PDF generator initialization failed: {e}")
+        raise RuntimeError(f"PDF generation unavailable: {e}")
 
 @app.get("/favicon.ico")
 async def get_favicon():
@@ -1623,6 +1645,70 @@ async def cleanup_upload_session(session_id: str):
         logger.error(f"❌ Session cleanup failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/professional/convert")
+async def convert_html_to_document(request: DocumentConversionRequest):
+    """Convert HTML report to Word document or PDF"""
+    try:
+        logger.info(f"🔄 Converting HTML to {request.format.upper()}: {request.ticker}")
+        
+        if request.format.lower() == "word":
+            # Convert to Word document
+            output_path = await word_report_generator.convert_html_to_word(
+                html_content=request.html_content,
+                company_name=request.company_name,
+                ticker=request.ticker
+            )
+            
+            return {
+                "status": "success",
+                "format": "word",
+                "file_path": output_path,
+                "message": f"Word document generated successfully for {request.ticker}",
+                "download_available": True
+            }
+            
+        elif request.format.lower() == "pdf":
+            # Convert to PDF document using EnhancedPdfService
+            try:
+                pdf_gen = get_pdf_generator()  # Returns EnhancedPdfService class
+                
+                # Generate PDF using the EnhancedPdfService static method
+                pdf_data = pdf_gen.generate_pdf_from_html(
+                    html_content=request.html_content,
+                    project_id=request.ticker,
+                    settings=None
+                )
+                
+                # Save PDF to temporary file for download
+                import tempfile
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_ticker = request.ticker.replace('.', '_').replace(':', '_')
+                filename = f"{safe_ticker}_Investment_Report_{timestamp}.pdf"
+                output_path = os.path.join(tempfile.gettempdir(), filename)
+                
+                with open(output_path, 'wb') as f:
+                    f.write(pdf_data)
+                
+            except RuntimeError as e:
+                raise HTTPException(
+                    status_code=503,
+                    detail=str(e)
+                )
+            
+            return {
+                "status": "success", 
+                "format": "pdf",
+                "file_path": output_path,
+                "message": f"PDF document generated successfully for {request.ticker}",
+                "download_available": True
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Invalid format. Use 'word' or 'pdf'")
+            
+    except Exception as e:
+        logger.error(f"Document conversion failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
+
 @app.get("/api/download/word")
 async def download_word_document(file_path: str):
     """
@@ -1660,6 +1746,51 @@ async def download_word_document(file_path: str):
         raise
     except Exception as e:
         logger.error(f"❌ Word download failed: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Download failed: {e}"
+        )
+
+@app.get("/api/download/pdf")
+async def download_pdf_document(file_path: str):
+    """
+    Download generated PDF document
+    """
+    try:
+        import os
+        import tempfile
+        from fastapi.responses import FileResponse
+        from pathlib import Path
+        
+        # Validate file path and existence
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not file_path_obj.suffix.lower() == '.pdf':
+            raise HTTPException(status_code=400, detail="Invalid file type")
+        
+        # Security check - ensure file is in expected temporary directory
+        temp_dirs = ['/tmp/', '/var/folders/', tempfile.gettempdir()]
+        is_valid_temp = any(str(file_path_obj).startswith(temp_dir) for temp_dir in temp_dirs)
+        if not is_valid_temp:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Generate appropriate filename
+        filename = file_path_obj.name
+        
+        logger.info(f"📥 Serving PDF document download: {filename}")
+        
+        return FileResponse(
+            path=str(file_path_obj),
+            filename=filename,
+            media_type='application/pdf'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ PDF download failed: {e}")
         raise HTTPException(
             status_code=500, 
             detail=f"Download failed: {e}"

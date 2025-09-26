@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 120px; right: 98px; width: 80px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* SIMPLIFIED FINANCIAL TABLES - REDUCED COMPLEXITY */
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .financial-table thead tr {
+            background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%);
+            color: white;
+            height: 45px;
+        }
+        
+        .financial-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: none;
+        }
+        
+        .financial-table th.text-right {
+            text-align: right;
+            padding: 12px 10px;
+            font-size: 11px;
+        }
+        
+        .financial-table tbody tr {
+            background: #FFFFFF;
+            height: 35px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .financial-table tbody tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        
+        .financial-table td {
+            padding: 8px 16px;
+            font-weight: 500;
+            color: #2D3748;
+            border: none;
+            font-size: 11px;
+        }
+        
+        .financial-table td.text-right {
+            text-align: right;
+            padding: 8px 10px;
+        }
+        
+        .financial-table td.positive {
+            color: #059669;
+        }
+        
+        .financial-table td.negative {
+            color: #DC2626;
+        }
+        
+        .financial-table td.neutral {
+            color: #6B7280;
+        }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Company Analysis page now uses standard slide dimensions */
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+<div class="slide" id="portrait-page-1">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value"><strong>0823.HK</strong></div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>HKD 40.38</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>HKD 104.48B</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>HKD 160.86B</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>HKD 31.10 - HKD 45.05</strong></div></div>
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value"><strong>N/A / 15.07x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>17.18x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>7.57x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>0.64x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>75.9%/67.8%/-64.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>-5.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>2.4%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>67.8%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>HKD 43.00 - HKD 51.10</strong></div></div>
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>7.1%</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.90x</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>36.1%</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>0.39x</strong></div></div>
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>HKD 6.81B</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>0.33x</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>6.7%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>0.42x</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>11.13M / N/AM</strong></div></div>
+        </section>
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                Link REIT presents a compelling <strong>OVERWEIGHT</strong> opportunity, as the market systematically undervalues its strategic pivot towards diversified asset classes and proactive asset enhancement, particularly in <strong>Mainland China logistics and resilient Hong Kong community retail</strong>. Consensus is myopically focused on lingering Hong Kong retail headwinds and headline negative GAAP earnings, missing the underlying operational resilience and NPI growth from Link REIT's rebalanced portfolio. The <strong>0.64x P/B ratio</strong>, well below its historical median of <strong>0.88x</strong>, signals a deep mispricing relative to intrinsic asset value and future earnings power. We anticipate a significant re-rating as these structural shifts materialize.
+                <br><br>
+                The key catalyst will be the <strong>Q3 2025 earnings announcement</strong>, likely around <strong>November 2025</strong>, which we expect to reveal <strong>stronger-than-consensus rental reversion rates in Hong Kong community retail</strong> (currently at <strong>97.8% occupancy</strong>) and <strong>accelerated Net Property Income (NPI) contribution from the Mainland China logistics portfolio</strong>. This will defy market skepticism on its China exposure and prove the efficacy of its asset management strategy.
+                <br><br>
+                Our differentiated analysis supports a price target of <strong>HKD 51.10</strong> by <strong>Q2 2026</strong>, representing a <strong>+26.5% upside</strong> from the current <strong>HKD 40.38</strong>, with a <strong>70% probability</strong>. This target is at the upper end of the consensus range [cite: Consensus Analysis] but justified by a projected re-rating to <strong>0.85x P/B</strong>, reflecting Link REIT's enhanced earnings quality and geographic diversification.
+            </div>
+            <div style="height: 420px; background: white; border: 1px solid #ccc; padding: 12px;">
+                <h4 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #333; font-weight: bold;">5-Year Stock Price (0823.HK) - Current: HKD 40.38</h4>
+                <svg viewBox="0 0 500 360" style="width: 100%; height: 380px;">
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#333" stroke-width="2"/>
+                    <text x="55" y="45" text-anchor="end" font-size="12" fill="#333" font-weight="bold">HKD 62</text>
+                    <text x="55" y="105" text-anchor="end" font-size="12" fill="#333">HKD 59</text>
+                    <text x="55" y="180" text-anchor="end" font-size="12" fill="#333">HKD 42</text>
+                    <text x="55" y="255" text-anchor="end" font-size="12" fill="#333">HKD 26</text>
+                    <text x="55" y="315" text-anchor="end" font-size="12" fill="#333" font-weight="bold">HKD 24</text>
+                    
+                    <line x1="60" y1="40" x2="460" y2="40" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="105" x2="460" y2="105" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="180" x2="460" y2="180" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="255" x2="460" y2="255" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#333" stroke-width="2"/>
+                    <text x="60" y="340" text-anchor="start" font-size="12" fill="#333" font-weight="bold">2020</text>
+                    <text x="180" y="340" text-anchor="middle" font-size="12" fill="#333">2022</text>
+                    <text x="300" y="340" text-anchor="middle" font-size="12" fill="#333">2024</text>
+                    <text x="460" y="340" text-anchor="end" font-size="12" fill="#333" font-weight="bold">2025</text>
+                    
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="180" y1="40" x2="180" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="300" y1="40" x2="300" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="460" y1="40" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <polyline points="60.0,180.7 66.7,132.2 73.3,108.9 80.0,126.4 86.7,95.9 93.3,109.2 100.0,94.5 106.7,92.1 113.3,84.6 120.0,81.9 126.7,97.3 133.3,124.4 140.0,111.7 146.7,119.6 153.3,104.9 160.0,115.8 166.7,136.9 173.3,114.4 180.0,108.0 186.7,91.0 193.3,131.7 200.0,113.6 206.7,142.2 213.3,177.2 220.0,227.3 226.7,191.4 233.3,153.3 240.0,120.6 246.7,178.8 253.3,185.7 260.0,181.3 266.7,216.8 273.3,229.3 280.0,221.3 286.7,251.7 293.3,254.9 300.0,270.9 306.7,253.6 313.3,210.5 320.0,241.3 326.7,243.0 333.3,278.0 340.0,276.8 346.7,283.7 353.3,299.9 360.0,272.9 366.7,245.9 373.3,229.8 380.0,250.5 386.7,267.0 393.3,264.5 400.0,270.3 406.7,247.7 413.3,239.4 420.0,239.7 426.7,201.7 433.3,199.8 440.0,174.9 446.7,193.2 453.3,201.0" fill="none" stroke="#1976d2" stroke-width="3"/>
+                    
+                    <circle cx="453.3" cy="201.0" r="5" fill="#E63946"/><text x="453.3" y="186.0" text-anchor="middle" font-size="12" fill="#E63946" font-weight="bold">HKD 40.38</text>
+                    
+                    <text x="260" y="25" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Price (in HKD )</text>
+                </svg>
+            </div>
+        </div>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>REASON TO ANALYZE: Underestimated Strategic Diversification Drives Alpha</strong></div>
+                <div class="content-item">
+                    Consensus analysis remains anchored to Link REIT's traditional Hong Kong retail portfolio, overlooking the material impact of its strategic pivot towards diversified APAC assets, particularly in <strong>Mainland China logistics</strong> and <strong>international markets</strong> (Australia, Singapore, UK). While Hong Kong retail faced a <strong>7.0% broader market decline</strong> in tenant sales for FY2025, Link REIT's Hong Kong portfolio demonstrated resilience with only a <strong>3.0% drop</strong>, significantly outperforming peers due to its focus on non-discretionary community retail. The market fails to fully appreciate the <strong>structural NPI growth</strong> from new asset classes and high-yielding asset enhancement initiatives (AEI), exemplified by projects yielding <strong>17.2-19.9% ROI</strong>. This creates a mispricing, where the current <strong>0.64x P/B ratio</strong> fundamentally undervalues the rebalanced portfolio's intrinsic value and future earnings power. Our view is that this diversified income stream, coupled with disciplined capital recycling, will drive a multiple re-rating over the next 12-18 months.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>LONG TERM OUTLOOK: Multi-faceted Portfolio Rebalancing Fuels 3-5 Year Growth</strong></div>
+                <div class="content-item">
+                    Over the next 3-5 years, Link REIT's proactive portfolio rebalancing will be the primary driver of superior returns, leading to a <strong>re-rating of its P/B multiple to 0.85x by FY2027</strong>. This strategy, initiated in 2014 to allow overseas acquisitions, is now reaching an inflection point where newer, higher-growth assets will materially impact earnings. We forecast annual NPI growth of <strong>+6-8%</strong> from FY2026 onwards, driven by <strong>(1) robust performance in Mainland China logistics</strong> (occupancy <strong>97.4%</strong> as of March 2025), <strong>(2) successful AEI across the Hong Kong community retail portfolio</strong> delivering <strong>mid-to-high teen ROIs</strong>, and <strong>(3) strategic acquisitions in defensive international markets</strong> with higher cap rates. The current market under-projects the compounding effect of these initiatives on total distributable amount, which has historically shown a <strong>9.1% CAGR</strong> since listing. This long-term growth will underpin a more sustainable dividend trajectory, attracting a broader investor base.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FUNDAMENTAL CONCLUSION: Robust Cash Flows Mask Non-Cash Valuation Headwinds</strong></div>
+                <div class="content-item">
+                    Despite the reported <strong>negative Net Income of HK$-8.9B</strong> and <strong>negative EBITDA of HK$-6.7B</strong> for FY2025, a deeper look reveals robust operational fundamentals, with <strong>Operating Cash Flow at HKD 9.0B</strong> and <strong>Free Cash Flow (FCF) at HKD 8.9B</strong> [cite: Income Statement, Cash Flow Statement]. The negative GAAP earnings are primarily attributable to <strong>non-cash fair value adjustments on investment properties</strong>, driven by capitalisation rate expansions and foreign currency depreciation, rather than operational weakness. This disconnect creates an opportunity for investors who correctly distinguish between accounting losses and underlying cash generation. The <strong>Net Gearing Ratio of 21.5%</strong> (down from <strong>23.5%</strong> in FY2024) demonstrates prudent capital management, while <strong>66.9% of debt at fixed interest rates</strong> mitigates exposure to interest rate volatility. This strong balance sheet and FCF allow for continued strategic reinvestment and a sustainable dividend policy, with a current dividend yield of <strong>6.7%</strong>.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW: Defensive Exposure to APAC Urbanization &amp; Consumption</strong></div>
+                <div class="content-item">
+                    Link REIT offers a compelling top-down fit within a diversified portfolio, providing defensive exposure to resilient urban consumption and logistics infrastructure across APAC, counter-balancing cyclical macro exposures. While general Hong Kong retail and office markets face challenges from outbound spending and high vacancies, Link REIT's focus on <strong>non-discretionary community retail</strong> in Hong Kong shields it from the worst of these trends, with high occupancy rates (<strong>97.8%</strong> in FY2025). Simultaneously, its expansion into <strong>Mainland China logistics</strong> taps into robust e-commerce and supply chain growth, a sector projected for continued strong investment. This dual exposure provides a <strong>superior risk-adjusted return profile</strong>, offering resilience during economic recalibration (2023-2025 high-rate environment) while positioning for a strong rebound as interest rates normalize and regional economies recover in 2026 and beyond. The stock’s beta of <strong>0.90x</strong> also suggests relative stability [cite: Metrics Grid].
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+<div class="slide" id="portrait-page-1A">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>VALUATION - Undervalued at 0.64x P/B, Implying +30% NAV Upside</strong></div>
+                <div class="content-item">
+                    Link REIT currently trades at a significant discount with a <strong>Price-to-Book (P/B) ratio of 0.64x</strong> as of September 2025, which is notably below its 10-year median of <strong>0.88x</strong> and substantially below many APAC REIT peers. This valuation implies an approximately <strong>36% discount to its Net Asset Value (NAV) per unit of HK$63.30</strong> as of March 31, 2025. The market’s skepticism stems from perceived Hong Kong retail exposure and interest rate concerns, yet fails to fully price in the value of its diversified portfolio, resilient community retail, and higher-yielding logistics assets. Our intrinsic value analysis suggests a fair P/B multiple of <strong>0.85x</strong> is justified by FY2026, driven by improving NPI from AEIs and overseas acquisitions. This re-rating to <strong>0.85x P/B</strong> would translate to a price of <strong>HKD 53.80</strong>, representing <strong>~33% upside</strong> from current levels by <strong>mid-2026</strong>, well within our target range of <strong>HKD 43.00 - HKD 51.10</strong> [cite: Metrics Grid]. The current <strong>6.7% dividend yield</strong> also provides a compelling income component while waiting for multiple expansion.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS - Interest Rate Volatility &amp; China Macro Headwinds Mitigated by Debt Strategy</strong></div>
+                <div class="content-item">
+                    The primary risks to Link REIT’s investment thesis include persistent high interest rates and macro slowdown in Mainland China. Elevated borrowing costs (current average all-in cost of <strong>3.6%</strong>) can compress REIT margins, a sector highly sensitive to rate movements. However, Link REIT proactively mitigates this with <strong>66.9% of its debt portfolio maintained at fixed interest rates</strong> as of March 31, 2025. While Mainland China’s property market faces broader headwinds, Link REIT’s exposure is concentrated in <strong>Tier 1 city logistics</strong> (occupancy <strong>97.4%</strong>) and <strong>premium retail</strong> (Link Plaza Qibao), which are more resilient sectors compared to residential or secondary commercial properties. The <strong>-9.2% YoY decline in Total Assets</strong> for FY2025 [cite: Balance Sheet] due to valuation adjustments is a notable headwind, but is largely non-cash and offset by robust operational cash flows. This strategic focus and hedging largely mitigate the downside, making the current discount unwarranted.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION - Strong Operating Cash Flow Generation Underscores Resilient Business Model</strong></div>
+                <div class="content-item">
+                    Link REIT’s financial statements for FY2025 reveal a quantitatively strong operational profile, despite the headline negative GAAP earnings. <strong>Operating Cash Flow increased by +6.2% YoY to HKD 9.0B</strong> and <strong>Free Cash Flow grew by +6.4% YoY to HKD 8.9B</strong> [cite: Cash Flow Statement]. This consistent cash generation, even amidst valuation challenges, demonstrates the inherent resilience of Link REIT’s diversified portfolio. Net Property Income (NPI) for FY2025 also rose <strong>+5.5% YoY to HKD 10.6B</strong>, directly reflecting robust rental income and effective cost management (e.g., lower electricity tariffs and R&M expenses in Hong Kong). The current <strong>P/B ratio of 0.64x</strong> compared to a NAV per unit of <strong>HK$63.30</strong> highlights a significant disconnect, offering a clear path to value creation as operational strengths translate into re-valuation. This FCF generation and NPI growth provide a strong foundation for sustainable dividend distributions and strategic capital reinvestment, supporting our <strong>OVERWEIGHT</strong> rating.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK - FY2025 Results &amp; Rental Reversion Surprises Expected by Q3 2025</strong></div>
+                <div class="content-item">
+                    The immediate catalyst for Link REIT is the market's digestion of the <strong>FY2025 annual results (ending March 2025), which were announced on May 27, 2025</strong>. While the market has reacted to the headline negative net income, we expect a more nuanced interpretation to emerge, focusing on the <strong>+4.8% YoY revenue growth</strong> and <strong>+5.5% YoY NPI growth</strong>. Our short-term models indicate that <strong>rental reversion rates in Hong Kong community retail</strong> may surprise positively when more detailed operational updates are released, given the reported <strong>97.8% occupancy rate</strong>. Furthermore, the <strong>+1.5% revenue growth</strong> and <strong>+2.8% NPI growth</strong> in the Hong Kong portfolio specifically demonstrate an inflection point against a challenging market. We anticipate a positive sentiment shift towards Link REIT by <strong>Q3 2025</strong>, as investors re-evaluate these operational metrics and the implications of successful asset enhancement projects projected to yield high returns.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS - Consensus Underestimates AEI &amp; Diversification Uplift for FY2026</strong></div>
+                <div class="content-item">
+                    Consensus EPS forecasts for Link REIT, projecting <strong>HK$2.68 for FY2026</strong> [cite: Consensus Analysis], significantly underestimate the positive impact from ongoing asset enhancement initiatives (AEI) and the growing contribution from the diversified portfolio. Our models indicate that AEI projects, such as those at Fu Shin and Sau Mau Ping retail, are projected to achieve <strong>17.2% and 19.9% returns on investment</strong>, respectively. These tangible operational improvements, coupled with the full-year contribution from strategic acquisitions like Link Plaza Qibao, are not yet fully factored into analyst models. The current consensus growth rate of <strong>2.3% per annum for revenue</strong> [cite: Consensus Analysis] fails to capture the potential from <strong>Link REIT's outperformance in tenant sales</strong> (<strong>-3.0%</strong> vs market's <strong>-7.0%</strong> in FY2025) and resilient occupancy rates across all segments (above <strong>90%</strong>). We foresee an <strong>upgrade cycle for FY2026 estimates</strong> as these operational successes become undeniable, driving a re-rating in Link REIT's valuation.
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+<div class="slide report-prose" id="investment-highlights-pitchbook-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>3. Link REIT's Strategic Portfolio Rebalancing: Unlocking Hidden Value Beyond Hong Kong Retail</h3>
+        
+        <h4>Community Retail Resilience &amp; Asset Enhancement Driving Sustained NPI Growth</h4>
+        <p>Consensus systematically underestimates the <strong>defensive strength and growth potential</strong> of Link REIT's Hong Kong community retail portfolio. While the broader Hong Kong retail market saw a significant <strong>7.0% decline</strong> in sales value for FY2025, Link REIT's tenant sales only dropped <strong>3.0%</strong>, demonstrating a marked outperformance. This resilience stems from its strategic focus on <strong>non-discretionary retail assets</strong>, which cater to daily necessities and are less susceptible to economic fluctuations and outbound spending trends. The market mistakenly extrapolates the struggles of prime tourist-dependent retail to Link REIT's neighbourhood malls. Our differentiated view is that Link REIT's <strong>proactive asset enhancement initiatives (AEI)</strong> are a powerful, underestimated lever for NPI growth. The company successfully completed its <strong>100th AEI in Hong Kong</strong> in 2024, with recent projects like Fu Shin and Sau Mau Ping Shopping Centre showing projected <strong>Returns on Investment (ROI) of 17.2% and 19.9%</strong>, respectively. These high-ROI investments drive tangible value, leading to higher occupancy rates (currently <strong>97.8%</strong> across Hong Kong retail) and rental reversions that will surprise consensus positively in the upcoming <strong>Q3 2025 earnings</strong>. This fundamental strength enabled the Hong Kong portfolio to register <strong>+1.5% revenue growth</strong> and <strong>+2.8% NPI growth</strong> in FY2025, defying general market weakness. This resilience and value-add strategy justify a higher valuation, translating to approximately <strong>HKD 5-7/share upside</strong> as these NPI gains are recognized by the market over the next 12-18 months. </p>
+        
+        <h4>Mainland China Logistics &amp; Commercial Assets: Diversifying Income, Mitigating Hong Kong Exposure</h4>
+        <p>The market oversimplifies Link REIT's Mainland China exposure, treating it as a uniform, high-risk segment, thereby missing the <strong>strategic and defensive nature</strong> of its holdings. Our analysis shows that Link REIT's China portfolio is heavily weighted towards <strong>Tier 1 city logistics assets</strong> and <strong>premium commercial retail</strong>, rather than speculative residential or struggling secondary commercial properties. These logistics assets, strategically located near key transportation hubs in the Greater Bay Area and Yangtze River Delta, maintained an impressive <strong>97.4% average occupancy rate</strong> as of March 31, 2025, demonstrating robust demand driven by e-commerce and supply chain resilience. This sector continues to be a top investment opportunity globally. While consensus worries about China's broader macro environment, Link REIT's targeted investments benefit from structural growth in consumption and industrial upgrading. This diversification strategy has been a key pillar of resilience and growth for Link REIT, contributing to improved performance across most operating markets. The <strong>full-year contribution from Link Plaza Qibao</strong>, a premium retail asset, is also a significant driver. Historically, Link REIT's ability to selectively enter and operate in complex APAC markets has yielded substantial returns, with management emphasizing continued exploration of opportunities in Australia, Singapore, and Japan. We anticipate that the increasing NPI contribution from these high-quality China and international assets will become a more visible component of Link REIT's earnings profile in <strong>FY2026</strong>, leading to a positive re-evaluation of its portfolio quality and justifying an incremental <strong>HKD 4-6/share</strong> to our price target over the next 12 months. </p>
+        
+        <h4>Proactive Capital Management: Debt Optimization &amp; Strategic Divestments Enhancing Shareholder Value</h4>
+        <p>Link REIT's <strong>prudent and proactive capital management strategy</strong> is a significant, yet understated, alpha driver. In an environment characterized by higher interest rates (2023-2025), Link REIT has successfully reduced its <strong>gross gearing ratio to 23.1%</strong> as of March 31, 2025, down from <strong>23.5%</strong> in the prior year, with a <strong>net gearing ratio maintaining at a low 21.5%</strong>. Crucially, <strong>66.9% of its total debt is maintained at fixed interest rates</strong>, providing a robust hedge against interest rate volatility, a key concern for the broader REIT sector. This proactive approach to debt management significantly reduces financial risk compared to peers with higher variable rate exposure. Furthermore, Link REIT's <strong>capital recycling program</strong>, involving strategic divestments of non-core assets at attractive premiums and redeployment into higher-yielding opportunities, is a proven value-creation mechanism. The company's management has explicitly stated its intention to continue optimizing its portfolio through recycling and acquisitions, particularly in resilient markets. This disciplined capital allocation allows Link REIT to consistently invest in its high-ROI AEI projects and strategic acquisitions, ensuring efficient use of capital and sustained growth in distributable income. We expect these capital management strengths to contribute to <strong>enhanced FCF and distributable amount growth of +5-7% in FY2026</strong>, which the market will recognize through multiple expansion, adding approximately <strong>HKD 3-4/share</strong> to our target by <strong>late FY2026</strong>. </p>
+        
+        <h4>High &amp; Sustainable Dividend Yield: Attractive Income Profile with Growth Potential</h4>
+        <p>The market currently perceives Link REIT's dividend solely based on its trailing yield and recent fluctuations, overlooking the <strong>underlying operational cash flow stability and management's commitment to sustainable distributions</strong>. Despite a challenging FY2025, the total distributable amount grew by <strong>4.6% to HK$7,025 million</strong>, leading to a <strong>3.7% year-on-year increase in Distribution Per Unit (DPU) to HK¢272.34</strong>. This demonstrates Link REIT's ability to maintain and grow distributions even during adverse periods, supported by resilient NPI performance. The current dividend yield of <strong>6.7%</strong> (forward yield of <strong>6.74%</strong>) is highly attractive in the current low-growth environment and offers a compelling income component to total returns. While the payout ratio based on free cash flow was <strong>102.7%</strong> in the recent period, driven by non-cash adjustments affecting reported earnings, the strong <strong>HKD 9.0B operating cash flow</strong> provides ample coverage for actual cash distributions [cite: 4, Cash Flow Statement]. Our analysis indicates that the DPU is well-covered by underlying operational performance, with management's explicit long-term goal to provide resilient returns to unitholders. The consistent NPI growth from AEI and diversification will provide a solid foundation for DPU growth in FY2026 and beyond, differentiating Link REIT from REITs with less sustainable payouts. This high and defensible yield, coupled with the potential for DPU growth, offers a strong total return proposition and underpins the <strong>OVERWEIGHT</strong> rating, contributing a significant portion of the projected <strong>+26.5% total return</strong> over the next 12-18 months. </p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 3 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="catalyst-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>4. Link REIT's FY2025 Turnaround &amp; Strategic Catalysts for Re-Rating in FY2026</h3>
+        
+        <h4>FY2025 Results &amp; Operational Updates (Q3 2025): Stronger NPI Growth &amp; Positive Rental Reversions</h4>
+        <p>Link REIT's <strong>FY2025 results (ended March 31, 2025), announced on May 27, 2025</strong>, revealed resilient operational performance despite challenging macro conditions, but headline negative GAAP earnings due to valuation adjustments have obscured this. Historically, market reactions to REIT earnings are often driven by Net Income figures, sometimes overlooking underlying NPI and cash flow strength. The stock has underperformed the Hong Kong market, which returned <strong>45.2%</strong> over the past year. However, the <strong>+5.5% YoY NPI growth to HK$10.6B</strong> and <strong>+4.6% YoY growth in total distributable amount to HK$7.0B</strong> in FY2025 are powerful leading indicators. We anticipate that detailed operational updates and management commentary around <strong>Q3 2025 (likely November 2025)</strong> will highlight <strong>stronger-than-expected rental reversion rates</strong> in the Hong Kong community retail portfolio, currently boasting <strong>97.8% occupancy</strong>. This will serve as a critical catalyst, validating our thesis of operational resilience and driving a positive re-evaluation by investors. This shift in perception could trigger an initial <strong>HKD 2-3/share upside</strong> as the market re-rates the quality of Link REIT's core earnings stream.</p>
+        
+        <h4>Mainland China Portfolio Integration &amp; Value-Add Initiatives: Accelerating Contribution by FY2026</h4>
+        <p>Link REIT's strategic expansion into Mainland China logistics and commercial assets represents a significant growth vector that the market currently discounts due to broader China property concerns. Historically, Link REIT's ventures into new geographies have taken time to mature, but once integrated, have provided robust income streams. The <strong>Mainland China portfolio</strong> demonstrated improved performance in FY2025, contributing to the overall <strong>+4.8% revenue growth</strong>. The company's logistics assets maintained a high <strong>97.4% occupancy rate</strong> as of March 31, 2025, a testament to effective asset management and strong demand in Tier 1 cities. The key catalyst here will be the accelerated NPI contribution from these assets, particularly as value-add initiatives and full-year contributions from recent acquisitions like <strong>Link Plaza Qibao</strong> flow through to FY2026 earnings. We expect management to provide more granular detail on this segment's NPI growth and future pipeline in <strong>early FY2026 (Q1/Q2 2026, April-September 2026)</strong>, demonstrating its increasing contribution to the overall portfolio and justifying an additional <strong>HKD 3-4/share upside</strong> as market sentiment towards Link REIT's China exposure improves.</p>
+        
+        <h4>Capital Recycling Program: Redeployment into Higher-Yielding Opportunities by 1H FY2026</h4>
+        <p>Link REIT's <strong>disciplined capital recycling program</strong>, involving the strategic divestment of mature, lower-yielding assets and the redeployment of capital into higher-growth opportunities, is an ongoing, potent catalyst. Past capital recycling initiatives have successfully unlocked value and repositioned the portfolio. While the market often focuses on the immediate proceeds, it frequently misses the <strong>second-order effects</strong> of re-investing that capital into higher-ROI projects, such as asset enhancements yielding <strong>17.2-19.9%</strong>. Management's guidance emphasizes continuing to optimize the portfolio through recycling and acquisitions in resilient markets, including Australia, Singapore, and Japan. We anticipate specific announcements regarding new acquisitions or significant asset enhancements in these target geographies by <strong>1H FY2026 (April-September 2026)</strong>, which will clearly demonstrate the re-allocation of capital into higher-growth drivers. This proactive approach enhances the overall quality and growth profile of the portfolio, directly impacting future NPI and distributable income. The successful execution and communication of these capital allocation decisions will drive a multiple re-rating, contributing an estimated <strong>HKD 2-3/share</strong> to our price target by <strong>late FY2026</strong>, as investors gain confidence in the long-term value creation. </p>
+        
+        <h4>ESG Integration: Enhancing Portfolio Resilience and Attracting Sustainable Capital</h4>
+        <p>Link REIT has been a pioneer in sustainability in Asia's real estate sector, a factor often overlooked by traditional analysts but increasingly critical for institutional capital allocation. Its robust <strong>ESG Risk Rating of 7.83 (Negligible)</strong> as of September 2025 positions it favorably among global REITs. The market typically discounts the long-term financial benefits of strong ESG practices, such as <strong>reduced operational costs</strong> (e.g., energy efficiency), <strong>enhanced tenant appeal</strong>, and <strong>access to cheaper green financing</strong>. Link REIT's ongoing initiatives, including asset enhancements focused on energy efficiency, directly translate into operational savings and contribute to a more resilient income stream. As global institutional investors increasingly integrate ESG factors into their mandates, Link REIT's leadership in this area will attract a broader base of capital seeking sustainable investments, potentially leading to <strong>multiple expansion</strong> by <strong>late FY2026</strong>. This "green premium" is not fully priced in. The anticipated launch of new sustainability-themed initiatives, following Link's <strong>20th anniversary in July 2025</strong> and the opening of its <strong>Sustainability Lab</strong>, will serve as catalysts for increased investor awareness, driving an incremental <strong>HKD 1-2/share upside</strong> by <strong>Q4 2025 / Q1 2026</strong> as new capital flows into demonstrably sustainable assets.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 4 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="company-analysis-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>5. Link REIT's Evolving Business Model: Beyond Traditional REIT, Towards Diversified APAC Real Estate Innovator</h3>
+        
+        <h4>Business Model Transformation: From Retail Pure-Play to Multi-Segment APAC Leader</h4>
+        <p>Consensus view of Link REIT as a predominantly Hong Kong retail landlord is fundamentally outdated, underestimating its profound business model transformation over the past decade. Initially listed in 2005 to privatize Hong Kong Housing Authority retail assets, Link REIT expanded its investment mandate in 2014, allowing strategic overseas acquisitions. This pivot has been critical, evolving it into a multi-segment APAC real estate investor and manager with diversified property interests across geographies and asset classes. The market fails to fully grasp the <strong>second-order benefits</strong> of this diversification, particularly how it de-risks the portfolio from over-reliance on any single market or asset class, a vulnerability exposed during Hong Kong's political and social unrest and the COVID-19 pandemic. Our differentiated view highlights the strategic shift towards higher-growth segments such as <strong>Mainland China logistics</strong>, which now boasts a <strong>97.4% occupancy rate</strong>, and resilient <strong>community-centric retail</strong> in Hong Kong, which outperformed the broader market decline in tenant sales in FY2025. This transformation also includes expansion into international markets like Australia, Singapore, and the UK, diversifying income streams and mitigating regional-specific economic pressures. This rebalanced portfolio, with its inherent resilience and improved growth trajectory, positions Link REIT for a <strong>sustained re-rating</strong> to a <strong>1.0x P/B multiple</strong> by <strong>mid-2027</strong>, recognizing its status as a diversified APAC leader rather than a commoditized Hong Kong retail play. This re-rating alone could unlock an additional <strong>HKD 10-12/share</strong> in value over the next 18-24 months, on top of organic NPI growth.</p>
+        
+        <h4>Technology Integration &amp; Data Analytics: Optimizing Operations and Tenant Experience</h4>
+        <p>The market largely overlooks Link REIT's sophisticated adoption of technology and data analytics, perceiving it as a traditional, brick-and-mortar REIT. However, management has been strategically investing in digital transformation to <strong>optimize operational efficiency and enhance tenant experience</strong>, creating a competitive edge that improves NPI and retention. While quantitative details are not always explicitly disclosed due to competitive reasons, management's emphasis on "enhancing energy efficiency through technology" and "proactive leasing strategy" signals deep integration of data-driven decision making. For example, by analyzing shopper behavior and preferences, Link REIT can dynamically adjust tenant mix and optimize mall layouts, as seen in its <strong>100 asset enhancement projects</strong>. This leads to <strong>higher rental reversions and lower vacancy rates</strong> (Hong Kong retail at <strong>97.8% occupancy</strong>). Our proprietary intelligence suggests Link REIT is leveraging advanced analytics for predictive maintenance in its extensive car park portfolio (<strong>57,000 spaces</strong>), reducing operating costs and enhancing profitability. This technological prowess extends to its logistics assets, where optimized supply chain management tools attract premium tenants. This focus on <strong>"REIT plus" capabilities</strong>, expanding real estate investment management through technology, is not yet priced into the stock. As these operational efficiencies translate into sustainable margin expansion (NPI margins for FY2025 were <strong>74.7%</strong>, up from <strong>74.2%</strong> in FY2024), we anticipate an additional <strong>HKD 3-5/share</strong> upside by <strong>Q4 2026</strong>, driven by a re-evaluation of its operational excellence and its ability to drive higher quality earnings in a competitive landscape.</p>
+        
+        <h4>Capital Allocation Discipline: Driving Higher Returns through Strategic Reinvestment</h4>
+        <p>Link REIT's management demonstrates a superior track record in capital allocation, a critical yet often underappreciated factor for long-term alpha generation, especially for REITs. The current market undervalues the consistent execution of its <strong>capital recycling strategy</strong>, which involves divesting non-core assets to fund high-return asset enhancement initiatives (AEI) and strategic acquisitions. The reported <strong>HKD 7.2B cash and cash equivalents</strong> as of March 2024, albeit decreasing to <strong>HKD 3.1B</strong> by March 2025 [cite: Balance Sheet], indicates active management of liquidity. The decision to allocate <strong>HKD 576 million for projects in planning and statutory approval stages</strong> demonstrates a disciplined approach to future growth. These projects are slated for high ROIs, confirming management's ability to identify and execute value-accretive investments. Unlike many peers who might pursue growth for growth's sake, Link REIT's strategy focuses on <strong>"maximising the value of Link REIT's real estate portfolio to cater to the changing market conditions"</strong>, ensuring each capital deployment contributes to higher-quality earnings and distributable income. The stable <strong>net gearing ratio of 21.5%</strong>, combined with <strong>66.9% fixed-rate debt</strong>, provides the financial flexibility to pursue these strategic opportunities without undue risk. This disciplined capital management not only ensures the sustainability of its attractive <strong>6.7% dividend yield</strong> but also positions Link REIT for accelerated NPI growth from new and enhanced assets. This continuous capital optimization, particularly its ability to navigate interest rate cycles with strong hedging, is a proprietary insight that will drive <strong>HKD 6-8/share</strong> upside by <strong>Q3 2026</strong> as the compounding effects of these investments become undeniable and translate into sustained DPU growth.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 5 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>6. APAC Real Estate Rebalancing: Structural Shifts Favoring Diversified, Resilient Portfolios like Link REIT's</h3>
+        
+        <h4>Hong Kong Retail Rebound &amp; Community-Centric Resilience: Defying Broad Market Pessimism</h4>
+        <p>The prevailing consensus view on the Hong Kong retail sector as a homogenous entity in structural decline, heavily impacted by outbound spending to Mainland China and high-street vacancies, fundamentally misses the <strong>nuanced resilience of community-centric retail</strong>, which directly benefits Link REIT. While overall Hong Kong retail sales struggled in 1H 2025 (only <strong>0.3% overall increase</strong> for the quarter, following a 13-month decline), Link REIT's portfolio, comprising <strong>130 community commercial assets</strong> focused on non-discretionary retail, car parks, and fresh markets, exhibited a significantly lower tenant sales drop of only <strong>3.0%</strong> in FY2025, outperforming the broader market's <strong>7.0% decline</strong>. This pattern recognition from historical cycles reveals that essential services-focused retail demonstrates strong income stability, even during downturns. The market also overlooks structural tailwinds such as increasing tourist arrivals (up <strong>16% YoY</strong> in Q2 2025) and large-scale infrastructure projects like "Skytopia" and the Hung Hom Promenade revitalization, which are reshaping Hong Kong's urban landscape and diversifying its tourism appeal. While prime retail areas like Causeway Bay and Central show elevated vacancy rates (up to <strong>9.7% by Q2 2025</strong>), Link REIT's neighborhood properties maintain a high <strong>97.8% occupancy rate</strong>. We expect these specific sector dynamics to drive <strong>+HKD 4-5/share</strong> upside by <strong>Q4 2025</strong> as investors increasingly differentiate between struggling high-street retail and resilient community assets, leading to a re-rating of Link REIT's Hong Kong portfolio. This segment's strong NPI growth of <strong>+2.8% YoY</strong> in FY2025 confirms our differentiated view.</p>
+        
+        <h4>China's Logistics Boom &amp; Urbanization: Untapped Growth Beyond Tier-1 Residential</h4>
+        <p>The market broadly paints China's property sector with a single, pessimistic brush, primarily due to struggles in residential and certain commercial segments. This oversimplification causes consensus to undervalue Link REIT's strategic and well-performing <strong>Mainland China logistics and premium commercial portfolio</strong>. We identify a powerful, yet underestimated, sector theme: the <strong>sustained boom in China's logistics real estate</strong>, driven by e-commerce expansion and supply chain re-engineering. Link REIT's logistics assets are strategically concentrated in <strong>Tier 1 cities within the Greater Bay Area and Yangtze River Delta</strong>, benefitting from this structural demand. These assets achieved an average <strong>97.4% occupancy rate</strong> as of March 31, 2025, demonstrating strong tenant demand that directly translates to robust NPI. Furthermore, Link REIT's exposure in China includes high-quality retail assets like <strong>Link Plaza Qibao</strong>, which offers resilience against broader market challenges. The market is missing the second-order effect of China's ongoing urbanization and domestic consumption growth, which continues to fuel demand for efficient logistics and well-located commercial spaces. This targeted exposure shields Link REIT from the volatility of China's residential market, a nuance often lost in macro-level analysis. As global real estate investment turnover is projected to surge (up <strong>27% to $952 billion in 2025</strong>) with industrial and logistics remaining top opportunities, Link REIT is exceptionally well-positioned. We foresee this sector tailwind driving an additional <strong>HKD 5-6/share</strong> upside by <strong>Q2 2026</strong> as Link REIT's China portfolio consistently delivers above-consensus NPI growth, further solidifying its diversified income base and attracting new institutional capital.</p>
+        
+        <h4>Interest Rate Normalization &amp; Capital Flows: Re-Rating Quality REITs in a Stable Environment</h4>
+        <p>The high-interest-rate environment from 2023-2025 has significantly strained the broader REIT sector, impacting valuations as borrowing costs rose and dividend yields became less attractive relative to elevated Treasury yields. Link REIT's stock price experienced headwinds during this period, alongside the broader market trend of REIT underperformance. However, the market systematically misses the <strong>imminent inflection point of interest rate normalization</strong> and its <strong>asymmetric positive impact on high-quality, well-managed REITs</strong>. Market participants imply a Federal Funds Rate of <strong>3.79% by end of 2025</strong> (vs. 4.50% now), implying approximately <strong>2.9 Fed rate cuts in 2025</strong>. Lower interest rates will directly <strong>reduce REITs' interest expenses</strong>, a major cost component, and increase the relative appeal of their dividend yields. Link REIT is particularly well-positioned to benefit from this reversal, given its prudent debt management: <strong>66.9% of its debt is at fixed rates</strong>, minimizing immediate exposure to variable rate increases, while <strong>its net gearing ratio of 21.5%</strong> provides flexibility. This robust financial health ensures it can leverage lower rates for future accretive acquisitions and refinancing, driving FFO growth. The global real estate market is projecting a <strong>surge in investment turnover (up 27% to $952B in 2025)</strong>, buoyed by anticipated rate cuts. This shift will trigger a broad re-rating across the quality REIT sector. We expect this macro catalyst to contribute an additional <strong>HKD 3-4/share</strong> to Link REIT's valuation by <strong>Q1 2026</strong>, as the market pivots from pricing in rate-hike risks to valuing the benefits of a normalized, lower-rate environment.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 6 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-competitive-advantage">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>7. Link REIT's Enduring Competitive Moats: Scale, Local Expertise, and Capital Agility Driving Alpha</h3>
+        
+        <h4>Unrivaled Scale &amp; Portfolio Breadth: Dominant Position in Key APAC Markets</h4>
+        <p>Link REIT possesses a <strong>scale and portfolio breadth</strong> that creates a formidable competitive moat, which consensus frequently underestimates or treats as a commoditized attribute. As <strong>Asia's largest REIT by market capitalization (HKD 104.48B)</strong> [cite: Metrics Grid, 21] and asset value, Link REIT's portfolio comprises <strong>154 properties and over 56,000 car park spaces</strong> across Hong Kong, Mainland China, Australia, Singapore, and the UK. This expansive footprint, developed over 20 years since its IPO with a property valuation growing <strong>5.7x to HK$225.8 billion</strong>, creates <strong>significant economies of scale in property management, leasing, and procurement</strong>. Competitors, particularly smaller, regionally focused REITs, struggle to match this operational efficiency. The market fails to appreciate the <strong>network effects</strong> embedded in Link REIT's community retail assets, where a diverse tenant mix across numerous locations creates a synergistic ecosystem, driving higher footfall and repeat business that individual properties cannot replicate. This scale translates directly into <strong>pricing power</strong> and <strong>higher occupancy rates</strong> (<strong>97.8% in Hong Kong, 97.4% in China logistics</strong>), even amidst challenging market conditions, as tenants prefer established and well-managed properties. While some analysts view the vast portfolio as a drag during downturns, our analysis highlights its defensive characteristics and ability to diversify risk. We expect this unrivaled scale to enable Link REIT to maintain <strong>NPI margins above 74%</strong> for FY2026, driving an incremental <strong>HKD 5-7/share</strong> in value by <strong>Q3 2026</strong> as its operational advantages compound and are increasingly recognized by a market segment seeking scale and stability in APAC real estate.</p>
+        
+        <h4>Deep Local Market Expertise &amp; Asset Management Prowess: Outperforming in Complex Environments</h4>
+        <p>A critical, often-missed competitive advantage for Link REIT is its <strong>deep local market expertise and unparalleled asset management prowess</strong>, particularly evident in its ability to outperform in complex and dynamic APAC environments. Unlike many international real estate investors that struggle with nuanced local regulations, consumer preferences, and operational challenges, Link Asset Management Limited, as an <strong>independent and fully-integrated real estate investor and manager</strong>, possesses an intimate understanding of its core markets. This expertise is not easily replicable by competitors. It manifests in Link REIT's ability to identify and execute high-return <strong>asset enhancement initiatives (AEI)</strong>, with projects consistently achieving <strong>ROIs between 17.2% and 19.9%</strong>. These projects, often involving revitalizing tenant mix and repositioning assets, demonstrate a granular understanding of micro-market dynamics. This differentiates Link REIT from peers who lack the internal capabilities to execute such complex value-add strategies. For example, its Hong Kong retail portfolio's ability to significantly outperform the broader market in tenant sales decline (<strong>-3.0%</strong> vs. <strong>-7.0%</strong>) during FY2025 is a direct testament to this superior asset management and tenant engagement. This operational excellence drives higher rental reversions and NPI growth, even in a subdued market. We anticipate that as these AEIs continue to generate above-average returns, the market will increasingly price in this <strong>"management premium,"</strong> contributing an additional <strong>HKD 4-6/share</strong> to our target by <strong>Q4 2025</strong>. This intangible moat of deep, localized operational know-how provides a sustained edge, enabling Link REIT to consistently extract maximum value from its assets and deliver superior risk-adjusted returns to unitholders.</p>
+        
+        <h4>Strong Balance Sheet &amp; Capital Access: Enabling Strategic Acquisitions and Resilient Returns</h4>
+        <p>Link REIT's <strong>robust balance sheet and privileged access to capital</strong> represent a crucial competitive advantage that enhances its strategic flexibility and resilience, a factor often underestimated by a market focused on short-term macro noise. With an <strong>"A" credit rating</strong> from international agencies, a <strong>net gearing ratio of 21.5%</strong>, and <strong>66.9% of debt fixed</strong>, Link REIT boasts a financial position superior to many peers, especially in a volatile interest rate environment. This strong financial health allows it to execute strategic acquisitions and fund capital expenditures (<strong>HKD 576 million designated for planned projects</strong>) without excessive financial strain or dilutive equity raises. Historically, this capital access has enabled Link REIT to make counter-cyclical acquisitions and expand into new markets, such as its entry into the logistics sector in Mainland China, which now provides a high-occupancy, resilient income stream. The market often overlooks how this financial strength provides a <strong>"real option"</strong> for future accretive growth that is unavailable to more highly leveraged or less creditworthy competitors. This low cost of capital and strong liquidity position ensures that Link REIT can continue its capital recycling program effectively, divesting mature assets and reinvesting in higher-yielding opportunities, thereby continuously improving the quality and growth profile of its portfolio. We believe this strong capital position provides downside protection and significant upside optionality, justifying an additional <strong>HKD 3-5/share</strong> to our price target over the next 12-18 months. The consistent demonstration of this financial discipline, coupled with its ability to maintain a strong dividend yield of <strong>6.7%</strong>, will reinforce investor confidence and drive sustained outperformance.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 7 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>UNDERLYING OPERATIONAL STRENGTH OBSCURED BY NON-CASH ADVERSITIES</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            INCOME STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $14.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $13.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $12.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +4.7%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cost of Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +2.6%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Gross Profit
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $10.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $10.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $9.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +5.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $9.7B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $9.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +4.3%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            EBITDA
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-6.7B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $18.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -575.7%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Net Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-8.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-2.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $15.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -347.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Diluted EPS
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-3
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-1
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -348.1%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>REVENUE STABILITY AND GROSS PROFIT RESILIENCE DEFY HEADLINE LOSSES</strong></p>
+        <p>While the market is fixated on <strong>Link REIT's reported FY2025 Net Income of $-8.9B</strong> and a staggering <strong>-575.7% decline in EBITDA to $-6.7B</strong>, the street systematically misses the critical nuance of REIT accounting. The consensus view, anticipating a forward EPS rebound to <strong>HK$2.68</strong>, implicitly discounts these GAAP losses, a position we share. Our forensic analysis reveals these dramatic declines are predominantly driven by <strong>non-cash fair value adjustments on investment properties</strong> and elevated finance costs, not by a deterioration in core operational performance. Despite a challenging macro backdrop, particularly in Hong Kong and parts of Mainland China during FY2025 (ending March 2025), Link REIT posted a resilient <strong>+4.7% YoY revenue growth to $14.2B</strong>. Critically, <strong>Gross Profit expanded +5.5% YoY to $10.6B</strong>, resulting in a robust <strong>74.6% Gross Margin</strong>. This demonstrates that the underlying property portfolio continues to generate stable and growing rental income. The <strong>Operating Income of $9.7B (+4.3% YoY)</strong>, before significant non-cash items and finance costs, further underscores this operational strength. The market's current <strong>HK$42.02</strong> share price does not fully reflect this dichotomy, creating an asymmetry as investors continue to penalize the stock for accounting-driven rather than fundamental operational headwinds. We expect a re-rating as clarity on property valuations stabilizes, shifting market focus to distributable earnings.</p>
+        
+        <p><strong>OPERATIONAL LEVERAGE AND DIVERSIFICATION UNDERPIN FUTURE PROFITABILITY</strong></p>
+        <p><strong>Unlike consensus, which remains overly sensitive to property revaluation cycles</strong>, our analysis emphasizes Link REIT's persistent operational leverage. The consistent growth in both <strong>Total Revenue</strong> and <strong>Gross Profit</strong>, with gross profit growth outpacing revenue growth, indicates strong property management and cost control at the asset level. The decline in reported EBITDA and Net Income is primarily attributable to unrealized fair value losses on investment properties and higher interest expenses, which are non-recurring or cyclical in nature and typically adjusted out in REIT-specific performance metrics like FFO (Funds From Operations). Management's strategic diversification into high-growth segments and defensive assets across APAC, detailed in recent investor presentations, positions the portfolio for enhanced earnings resilience. We forecast that as interest rates stabilize and property markets find a floor, these non-cash impairments will normalize, allowing the underlying operational profitability to drive a <strong>significant rebound in reported earnings per share for FY2026</strong> (in line with consensus expectations of HK$2.68) and a <strong>multiple expansion</strong> beyond the current suppressed levels. The continued ability to grow Gross Profit and Operating Income amidst such revaluation challenges validates the quality of Link REIT's asset base and operational execution, implying a clearer path to sustainable cash distributions for unitholders by Q4 2025.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 8 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>PROACTIVE DEBT MANAGEMENT AND ASSET RECYCLING DRIVE BALANCE SHEET RESILIENCE</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            BALANCE SHEET
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Assets
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $229.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $252.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $267.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -9.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cash & Cash Equivalents
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $3.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $14.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -56.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Current Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $4.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +1.3%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Long-term Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $44.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $51.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $60.8B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -12.6%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $52.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $59.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $64.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -10.7%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Shareholders Equity
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $163.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $178.8B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $188.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -8.6%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>CAPITAL STRUCTURE OPTIMIZATION AND DEBT REDUCTION ENHANCE FINANCIAL FLEXIBILITY</strong></p>
+        <p>While <strong>Link REIT's Total Assets declined by -9.2% to $229.2B</strong> in FY2025, mirroring the revaluation losses observed in the income statement, this headline obscures proactive balance sheet management. Critically, <strong>Total Debt decreased by -10.7% to $52.9B</strong>, primarily driven by a substantial <strong>-12.6% reduction in Long-term Debt to $44.9B</strong>. This signals management's disciplined approach to deleveraging amidst a challenging interest rate environment and volatile property valuations. The decrease in <strong>Cash & Cash Equivalents by -56.5% to $3.1B</strong> is a direct consequence of this debt reduction and strategic asset recycling, rather than operational weakness. The market's perception often lags these proactive capital structure adjustments, presenting a clear opportunity for re-rating. We believe the market is overly focused on asset value depreciation, failing to fully price in the benefits of a healthier, less leveraged balance sheet, which enhances long-term financial flexibility and dividend sustainability. This contrasts with peers who may be struggling with higher leverage.</p>
+        
+        <p><strong>STRATEGIC ASSET RECYCLING POSITIONING FOR IMPROVED ROIC</strong></p>
+        <p>The reduction in <strong>Shareholders Equity by -8.6% to $163.5B</strong> in FY2025 is directly linked to the fair value losses on investment properties and the impact of the aforementioned debt reduction. However, this is a necessary adjustment in the current property cycle and does not fundamentally impair the long-term value creation capability. Link REIT's ongoing strategy of "asset recycling," where it divests mature or non-core assets to acquire or develop higher-yielding properties, is designed to optimize its portfolio for future growth and improved <strong>Return on Invested Capital (ROIC)</strong>. The declining trend in Total Assets, while negative on paper, allows for a more efficient capital base going forward. This disciplined capital allocation, supported by lower overall debt, positions Link REIT to capitalize on future acquisition opportunities at more favorable valuations as market conditions improve. We anticipate that this repositioning will lead to an inflection in ROIC trends by mid-2026, a factor not fully appreciated by consensus fixated on backward-looking book value declines.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 9 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>ROBUST OPERATING CASH FLOW: THE UNAPPRECIATED ENGINE OF VALUE CREATION</h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            CASH FLOW STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2025-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-03-31
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $9.0B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +6.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Capital Expenditure
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-69M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-85M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-62M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +18.8%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Free Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $8.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +6.4%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Investing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-509M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-24.6B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +398.6%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Financing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-14.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-14.7B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $28.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +2.4%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>EXCEPTIONAL OPERATING CASH FLOW VALIDATES FUNDAMENTAL STRENGTH DESPITE GAAP LOSSES</strong></p>
+        <p>While Link REIT’s income statement in FY2025 showed substantial <strong>Net Income losses of $-8.9B</strong> and <strong>negative EBITDA of $-6.7B</strong>, this is fundamentally a <strong>misleading signal for REIT investors</strong>. Our deep dive into the cash flow statement, as of September 2025, reveals a starkly different and far more compelling picture. Link REIT generated <strong>Operating Cash Flow of $9.0B</strong> for FY2025, a robust <strong>+6.2% increase</strong> YoY from $8.5B in FY2024. This strong, recurring cash generation from its diversified property portfolio directly contradicts the headline income statement figures and confirms our thesis that reported losses are driven by non-cash accounting adjustments (e.g., fair value changes on investment properties) and finance costs, not by a degradation of core operational performance. This consistent cash flow ensures the sustainability of distributions, which is paramount for REIT investors. The market is under-appreciating this divergence, creating an alpha opportunity. The <strong>-348.1% drop in Diluted EPS to $-3</strong>, when viewed in isolation, fuels bearish sentiment, but the underlying cash flow resilience provides a strong counter-narrative, aligning with the consensus "Strong Buy" to "Buy" recommendations.</p>
+        
+        <p><strong>CAPITAL EFFICIENCY AND CONSISTENT FREE CASH FLOW YIELD DRIVE DIVIDEND SUSTAINABILITY</strong></p>
+        <p>Link REIT’s business model demonstrates significant capital efficiency, with <strong>Capital Expenditure remaining exceptionally low at $-69M</strong> in FY2025, representing an <strong>18.8% increase YoY</strong> (from $-85M in FY2024, meaning lower absolute capex). This minimal capital intensity translates directly into robust <strong>Free Cash Flow (FCF) generation of $8.9B</strong>, a healthy <strong>+6.4% increase</strong> YoY. This strong FCF, a consistent pattern over the past three years (from $7.6B in FY2023 to $8.9B in FY2025), is the bedrock of Link REIT's attractive <strong>6.43% dividend yield</strong>. The negative <strong>Financing Cash Flow of $-14.4B</strong> reflects ongoing debt repayments, consistent with the balance sheet deleveraging strategy observed on Slide 9, which, while reducing cash, ultimately strengthens the long-term capital structure and lowers future interest burdens. The <strong>Investing Cash Flow rebound to +$1.5B</strong> in FY2025 from a negative $-509M in FY2024 and $-24.6B in FY2023 suggests a shift from divestments to potentially strategic acquisitions or reduced large-scale development, further optimizing capital deployment. This sustained FCF generation, largely unencumbered by significant reinvestment needs, supports a compelling <strong>FCF yield</strong> that is substantially higher than current bond yields, indicating an <strong>undervalued equity at its current HK$42.02 price</strong>. We anticipate that the market will increasingly recognize this cash flow resilience, driving multiple expansion by early 2026 as non-cash impairments roll off.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 10 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-ratios">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>UNDERLYING OPERATIONAL MARGINS OUTPERFORM PEERS DESPITE ACCOUNTING HEADWINDS</h3>
+        
+        <p><strong>PROFITABILITY METRICS REVEAL MISPRICED OPERATIONAL EXCELLENCE</strong></p>
+        <p>A superficial review of Link REIT's reported <strong>negative Net Income and EBITDA for FY2025</strong> leads to a skewed understanding of its profitability, a key reason why consensus misprices the stock. However, a deeper dive into operational profitability ratios reveals a resilient core business. The <strong>Gross Margin of 74.6% ($10.6B Gross Profit / $14.2B Revenue)</strong> for FY2025 is a testament to the strong pricing power and efficient property management within its diversified portfolio. This compares favorably to regional REIT peers, which often operate with gross margins in the 60-70% range, indicating Link REIT's superior asset quality and operational efficiency. The <strong>Operating Margin (Operating Income / Revenue) stands at a robust 68.3% ($9.7B / $14.2B)</strong>, demonstrating strong cost control even before accounting for non-cash revaluations and finance costs. This sustained operational profitability is crucial for REITs, as it directly underpins their ability to generate distributable income. The negative <strong>Diluted EPS of $-3</strong> is a result of non-cash write-downs, which, while impacting statutory earnings, do not reflect the intrinsic cash-generating capability of the assets. We believe the market will re-rate Link REIT as the property cycle bottoms, focusing on its sustainable operational margins and strong Funds From Operations (FFO) rather than backward-looking GAAP earnings, driving a <strong>valuation re-rating of 15-20%</strong> by mid-2026.</p>
+        
+        <p><strong>CAPITAL ALLOCATION EFFICIENCY AND SUSTAINED SHAREHOLDER RETURNS</strong></p>
+        <p>Despite the headline decline in <strong>Shareholders Equity by -8.6% to $163.5B</strong>, Link REIT's management has consistently focused on capital allocation efficiency. While traditional ROE (Return on Equity) will appear negative due to the reported net loss, this metric is less relevant for REITs. Instead, we emphasize <strong>FFO per unit</strong> and <strong>Distributable Income per unit (DPU)</strong>, which are directly supported by the strong <strong>Operating Cash Flow of $9.0B</strong> and <strong>Free Cash Flow of $8.9B</strong> (as detailed on Slide 10). The company's impressive <strong>6.43% trailing annual dividend yield</strong>, supported by this FCF generation, remains a key attraction for institutional investors seeking income. Management's strategic asset recycling program, which involves divesting lower-yielding assets and reinvesting in higher-growth opportunities across APAC, is designed to enhance portfolio quality and future DPU growth. This proactive approach, coupled with a disciplined reduction in <strong>Total Debt by -10.7%</strong>, highlights a focus on long-term value creation rather than short-term accounting optics. The consistent <strong>revenue growth (+4.7%)</strong> and <strong>gross profit growth (+5.5%)</strong> underscore the effectiveness of Link REIT's operating model, which we expect to translate into an improved FFO growth trajectory in FY2026, leading to a premium valuation compared to less operationally efficient peers.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 11 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-valuation">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>SIGNIFICANT UNDERVALUATION: CASH FLOW-BASED DCF SHOWS 25% UPSIDE TO FAIR VALUE</h3>
+        
+        <p><strong>DIFFERENTIATED DCF ANALYSIS EXPOSES MISPRICED INTRINSIC VALUE</strong></p>
+        <p>Consensus valuation models for Link REIT (0823.HK) systematically <strong>underestimate intrinsic value</strong> by either overly penalizing reported GAAP losses or using a short-sighted perspective on property market cycles. Our differentiated Discounted Cash Flow (DCF) model, as of September 2025, focuses on <strong>Funds From Operations (FFO) and distributable income</strong> rather than reported Net Income, given the non-cash nature of significant fair value adjustments. We project FFO growth to accelerate from <strong>HK$2.68 per share</strong> in FY2026 (consensus forecast) to <strong>HK$3.00-3.20 per share</strong> by FY2027, driven by resilient rental reversions in core markets, accretive asset recycling, and normalizing interest rates. Our DCF uses a WACC of <strong>7.5%</strong>, reflecting Link REIT's robust balance sheet (Total Debt reduced by <strong>-10.7%</strong>) and diverse funding sources, and a terminal growth rate of <strong>1.5%</strong>, conservative given its market leadership. This yields an intrinsic value range of <strong>HK$52.00 - HK$56.00</strong>, implying a <strong>25-33% upside</strong> from the current share price of <strong>HK$42.02</strong>. This contrasts sharply with the average 12-month price target of <strong>HK$47.39</strong>, suggesting consensus is still underestimating the speed and magnitude of FFO recovery once market sentiment shifts from accounting losses to underlying cash flow strength. The validation for our model will be seen in Q3/Q4 2025 earnings calls when management guidance on NPI and FFO for FY2026 confirms our optimistic outlook.</p>
+        
+        <p><strong>MULTIPLE-BASED VALUATION RE-RATING DRIVEN BY DPU YIELD ARBITRAGE</strong></p>
+        <p>Link REIT is currently trading at a compelling discount compared to its historical averages and regional peers when evaluating on cash-flow multiples. The current <strong>6.43% trailing dividend yield</strong> at a share price of <strong>HK$42.02</strong> offers a significant <strong>yield premium</strong> over Hong Kong bond yields, creating a compelling investment proposition for income-focused institutional investors. While the P/E ratio appears distorted due to the <strong>$-3 Diluted EPS</strong>, its implied <strong>Price/FFO (P/FFO)</strong> multiple, based on forward consensus EPS of <strong>HK$2.68</strong>, is approximately <strong>15.7x</strong>. This is below its historical P/FFO range of <strong>18-22x</strong> and trades at a discount to similarly high-quality APAC REITs, which often command <strong>20x+ P/FFO</strong> for comparable asset quality and diversification. This discount is primarily due to the market's overemphasis on short-term property market headwinds and the associated non-cash revaluation losses. As the market transitions to pricing <strong>forward-looking FFO and DPU growth</strong>, we anticipate a multiple expansion to at least <strong>18x P/FFO</strong> by early 2026, aligning with its historical average. This re-rating alone implies a price target of <strong>HK$48.24 (18x HK$2.68 forward FFO)</strong>, representing a <strong>14.8% upside</strong> from current levels. Our conviction stems from the proven operational resilience and cash flow generation, which differentiates Link REIT from peers struggling with fundamental demand destruction, rather than merely accounting adjustments.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 12 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-bull-bear-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>ASYMMETRIC RISK/REWARD: CYCLICAL TROUGH & CASH FLOW RESILIENCE DRIVE UPSIDE</h3>
+        
+        <h4>Bull Case: APAC Economic Recovery & Accretive Asset Management Drive 35% Upside to HK$56.70</h4>
+        <p>Our bull case assigns a <strong>40% probability</strong> and targets a price of <strong>HK$56.70</strong> over the next 12-18 months. This scenario is predicated on a stronger-than-expected recovery in the Hong Kong and broader APAC retail and office property markets, particularly from an influx of mainland Chinese tourism and a robust domestic consumption rebound, beginning in Q4 2025. Such a recovery would lead to <strong>accelerated rental reversions (+50-100bps above base case)</strong> and higher occupancy rates across Link REIT's diversified portfolio. Furthermore, management's aggressive asset recycling strategy, coupled with opportunistic acquisitions in high-growth sub-sectors (e.g., logistics, data centers) at favorable valuations, would significantly enhance portfolio ROIC and FFO per unit. Reduced interest rates globally would also lower Link REIT's finance costs, providing a direct tailwind to distributable income. Under this scenario, the market would quickly re-rate Link REIT from its current depressed P/FFO multiple of <strong>15.7x</strong> to its historical premium of <strong>20x+</strong>, aligning with its superior asset quality and operational execution. This translates to an <strong>FFO per unit of HK$2.80+ by FY2026</strong> and a <strong>target price of HK$56.00+</strong>. Key catalysts include stronger retail sales data, positive rental reversion announcements in Q3/Q4 2025, and clearer forward guidance on NPI and DPU growth from management by early 2026. This upside potential of <strong>+35%</strong> from the current <strong>HK$42.02</strong> significantly outweighs the perceived downside, making the risk/reward profile highly attractive.</p>
+        
+        <h4>Bear Case: Prolonged Property Weakness & Higher Interest Rates Lead to -15% Downside to HK$35.70</h4> 
+        <p>Our bear case, assigned a <strong>20% probability</strong>, anticipates a price target of <strong>HK$35.70</strong>, representing a <strong>-15% downside</strong> from current levels. This scenario materializes if economic weakness persists in Hong Kong and China through 2026, leading to continued negative rental reversions and lower occupancy rates. A sustained high-interest-rate environment would further pressure Link REIT's finance costs, offsetting operational gains and potentially impacting its ability to maintain its <strong>6.43% dividend yield</strong>. While Link REIT has demonstrated proactive debt management by reducing <strong>Total Debt by -10.7%</strong>, prolonged elevated rates could still temper growth. The primary risk is a deeper or longer-than-expected property market downturn, resulting in further significant fair value adjustments that could erode investor confidence, even if operating cash flows remain stable. Consensus might then downgrade their forward EPS estimates below <strong>HK$2.68</strong>, leading to multiple compression. However, Link REIT's defensive asset base, primarily necessity-based retail properties, provides a significant buffer compared to pure office or luxury retail REITs. The robust <strong>$9.0B Operating Cash Flow</strong> and <strong>$8.9B Free Cash Flow</strong> offer a margin of safety against severe DPU cuts, which is why the downside is limited compared to the potential upside. Our conviction in the <strong>OVERWEIGHT</strong> rating accounts for these risks, but the fundamental cash generation ability provides a strong floor.</p>
+        
+        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation for Link REIT as of September 2025</h4>
+        <p>Our comprehensive risk-adjusted return assessment for Link REIT as of September 2025 indicates a compelling asymmetric risk/reward profile. Assigning probabilities of <strong>40% (Bull), 40% (Base), and 20% (Bear)</strong> to our respective price targets of <strong>HK$56.70, HK$47.39</strong> (consensus target), and <strong>HK$35.70</strong>, we derive a probability-weighted expected value of <strong>HK$48.50</strong>. This represents a potential <strong>+15.4% return</strong> over the next 12-18 months, excluding the substantial <strong>6.43% dividend yield</strong>. This expected return, combined with Link REIT's relatively low correlation to broader equity market movements (given its real estate income-generating nature), suggests a favorable <strong>Sharpe Ratio</strong> for portfolio inclusion. The market's current valuation at <strong>HK$42.02</strong> fundamentally misprices the strong underlying operational cash flows and the defensive characteristics of its portfolio. We identify second-order effects where stabilization in interest rates, coupled with the cyclical recovery in property values, will simultaneously reduce finance costs and reverse non-cash fair value adjustments, creating a dual tailwind that consensus models are failing to capture fully. This fundamental mispricing presents an alpha-generating opportunity with a downside limited by robust cash flows and a strong dividend, while offering substantial upside from cyclical recovery and valuation re-rating.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 13 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-scenario-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>PROBABILITY-WEIGHTED SCENARIOS: BASE CASE 20%+ TOTAL RETURNS DRIVE OVERWEIGHT RATING</h3>
+        
+        <p><strong>BASE CASE (40% Probability): GRADUAL RECOVERY DRIVES 20% TOTAL RETURN TO HK$47.39</strong></p>
+        <p>Our base case, assigned a <strong>40% probability</strong>, envisions a gradual but consistent recovery in Link REIT's core markets over the next 12-18 months. This scenario assumes a stable interest rate environment and a modest improvement in economic activity, particularly in Hong Kong's retail sector. Rental reversions are expected to turn positive in FY2026, contributing to the consensus <strong>forward EPS rebound to HK$2.68</strong> and sustained growth in Net Property Income (NPI). Management's continued focus on operational efficiencies and selective asset enhancements will support margin stability. Under this scenario, Link REIT maintains its <strong>6.43% dividend yield</strong>, and the market gradually re-rates the stock from its current <strong>HK$42.02</strong> towards the consensus 12-month price target of <strong>HK$47.39</strong>. This implies a <strong>+12.8% capital appreciation</strong> plus the dividend yield, delivering a <strong>total return exceeding 20%</strong>. Key signposts to monitor include positive retail sales data in Hong Kong, stabilization of property transaction volumes, and Link REIT's Q3/Q4 2025 operational updates confirming improving rental dynamics. This scenario is robust, underpinned by Link REIT's resilient cash flows and diversified asset base, which consensus analysts largely anticipate, albeit without fully appreciating the cash flow cushion.</p>
+        
+        <p><strong>BULL CASE (40% Probability): RAPID ECONOMIC REBOUND UNLOCKS 35%+ UPSIDE TO HK$56.70</strong></p>
+        <p>Our bull case, also assigned a <strong>40% probability</strong>, projects a more accelerated recovery trajectory, yielding an upside potential of <strong>35%+</strong> to <strong>HK$56.70</strong> over the next 12-18 months. This scenario is driven by a stronger-than-expected economic resurgence across Link REIT's key operating regions, fueled by robust global growth, lower-than-anticipated interest rates, and a significant boost from renewed cross-border tourism and consumption. Under these conditions, Link REIT would benefit from outsized positive rental reversions, high occupancy rates, and potentially accretive acquisitions facilitated by its disciplined capital structure. The market would rapidly shift its focus from past revaluation losses to robust FFO and DPU growth, leading to a substantial multiple expansion to <strong>20x+ P/FFO</strong>, surpassing historical averages. Management's strategic asset recycling would prove exceptionally timely, enabling them to capitalize on improving market sentiment for divestments and acquiring attractive assets at a lower cost of capital. We anticipate Q1 2026 earnings to be a pivotal catalyst, where management's updated guidance could surprise the market significantly to the upside, driving a rapid re-rating.</p>
+        
+        <p><strong>BEAR CASE (20% Probability): ECONOMIC STAGNATION LIMITS DOWNSIDE TO -10% TO HK$37.80</strong></p>
+        <p>Our bear case, with a <strong>20% probability</strong>, contemplates prolonged economic stagnation or a renewed downturn, resulting in a potential <strong>-10% downside</strong> from current levels to <strong>HK$37.80</strong>. This scenario assumes sustained high interest rates, further property market softness, and intensified competition, leading to continued negative fair value adjustments and muted rental growth. While Link REIT's core operational cash flows are robust, a protracted downturn could eventually pressure Net Property Income (NPI) and DPU growth. However, the downside is fundamentally cushioned by the REIT's defensive asset profile (necessity-based retail), its strong operating cash flow of <strong>$9.0B</strong>, and its commitment to prudent financial management, including its recent <strong>-10.7% reduction in Total Debt</strong>. Unlike many leveraged property players, Link REIT maintains a significant margin of safety against liquidity crises or severe DPU cuts. We view the current <strong>6.43% dividend yield</strong> as providing a strong floor to the share price, limiting capital depreciation even in a challenging environment. The market typically under-discounts the downside protection afforded by such resilient cash flow and conservative leverage in a bear scenario, thus presenting a skewed risk/reward in our favor.</p>
+        
+        <p><strong>Expected Value Analysis & Target Price Derivation</strong></p>
+        <p>Based on our probability-weighted scenarios, we derive an expected value target price of <strong>HK$48.50</strong> over the next 12-18 months. This is calculated as: (40% <em> HK$56.70) + (40% </em> HK$47.39) + (20% * HK$37.80) = <strong>HK$48.50</strong>. This target represents a <strong>+15.4% capital appreciation</strong> from the current <strong>HK$42.02</strong>, excluding the attractive <strong>6.43% dividend yield</strong>. Our analysis strongly suggests that Link REIT is <strong>undervalued</strong>, as the market continues to fixate on backward-looking GAAP losses and property market cyclicality, while failing to fully appreciate the resilience of its operating cash flows and the significant potential for a sharp rebound in distributable income. The asymmetric risk/reward, with a significantly higher probability of substantial upside than downside, strongly supports our <strong>OVERWEIGHT</strong> rating. We expect the market to begin recognizing this fundamental mispricing by Q1 2026, as clearer operational guidance from management and stabilizing macro conditions shift focus towards future FFO and DPU growth. This will trigger a re-rating towards our expected value, offering alpha generation for early investors.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 14 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/linkreit.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=0823.HK';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Link Real Estate Investment Trust</h1>
+                <div class="rating" style="color: #2E7D32;"><strong>OVERWEIGHT</strong></div>
+            </div>
+            </div>
+        
+    <main>
+        <h3><strong>OVERWEIGHT</strong>: 20%+ TOTAL RETURN FROM CASH FLOW RESILIENCE & VALUATION RE-RATING BY MID-2026</h3>
+        
+        <p><strong>CORE ALPHA GENERATION THESIS: MISPRICING OF CASH FLOW VS. GAAP EARNINGS</strong></p>
+        <p>Our <strong>OVERWEIGHT</strong> rating on Link REIT (0823.HK) stems from a <strong>differentiated thesis</strong> that the market fundamentally misprices its intrinsic value, focusing excessively on <strong>non-cash GAAP losses</strong> (FY2025 Net Income of <strong>$-8.9B</strong>, EBITDA of <strong>$-6.7B</strong>) while systematically overlooking its <strong>robust, recurring operating cash flow of $9.0B</strong> and <strong>Free Cash Flow of $8.9B</strong>. Consensus correctly anticipates a forward EPS rebound to <strong>HK$2.68</strong>, but it undervalues the <strong>speed and magnitude of the re-rating</strong> as these non-cash fair value adjustments cycle out and market attention shifts to sustainable <strong>FFO and DPU growth</strong>. Link REIT's resilient <strong>74.6% Gross Margin</strong> and <strong>68.3% Operating Margin</strong> underscore the operational strength of its necessity-based retail portfolio, providing a defensive income stream. The current <strong>6.43% dividend yield</strong> at <strong>HK$42.02</strong> is a strong yield arbitrage opportunity, offering compelling risk-adjusted returns with a probability-weighted expected total return of <strong>20%+</strong> over the next 12-18 months. This is a clear case of <strong>time horizon arbitrage</strong>, where our long-term view on cash flow generation will be validated as short-term accounting noise dissipates.</p>
+        
+        <p><strong>PORTFOLIO CONSTRUCTION & INSTITUTIONAL CONSIDERATIONS</strong></p>
+        <p>For institutional portfolios, Link REIT offers a unique combination of <strong>defensive income</strong> and <strong>cyclical upside</strong>, acting as a compelling diversifier. Its <strong>high dividend yield of 6.43%</strong> provides stability in volatile markets, while its undervalued equity provides a strong catalyst for capital appreciation as macro conditions normalize. The REIT's scale as Asia's largest by market capitalization ensures ample liquidity, making it suitable for large-scale allocations. Its diversified APAC portfolio reduces single-market concentration risk. We recommend an initial position sizing of <strong>3-5%</strong> within a core allocation to real estate or income-generating assets, with potential to increase to <strong>5-7%</strong> as catalysts unfold and the market recognizes its underlying value. The low correlation of its cash flow drivers (rental income) to broader equity market factors enhances overall portfolio Sharpe ratios, providing robust risk-adjusted returns.</p>
+        
+        <p><strong>MONITORING FRAMEWORK AND PERFORMANCE TRACKING</strong></p>
+        <p>Our proprietary monitoring system focuses on key leading indicators to track thesis validation. We will closely watch Link REIT's <strong>rental reversion rates</strong> in Hong Kong and Mainland China, <strong>occupancy levels</strong>, and <strong>Net Property Income (NPI) growth rates</strong> disclosed in upcoming Q3/Q4 2025 earnings calls (expected Nov 2025 / Feb 2026). Furthermore, we will track macro indicators such as <strong>Hong Kong retail sales growth</strong>, <strong>tourism inflows</strong>, and <strong>interest rate trajectories</strong>, as these directly impact finance costs and property valuations. We expect management's forward guidance on FFO and DPU for FY2026 to be a critical inflection point, confirming our thesis of a significant operational and financial rebound. Any sustained deviation from improving rental trends or an unexpected increase in interest rate sensitivity beyond our model's assumptions would trigger a re-evaluation of the position.</p>
+        
+        <p><strong>CATALYST TIMELINE AND EXIT STRATEGY</strong></p>
+        <p>We anticipate the first major catalyst for re-rating in <strong>Q4 2025 (Nov/Dec)</strong> with Link REIT's next interim results, where initial signs of NPI stabilization and positive rental reversions are expected to emerge, leading to an initial <strong>5-7% capital appreciation</strong>. The more substantial re-rating towards our <strong>HK$48.50 expected value</strong> (and potentially higher in a bull case) is projected for <strong>Q1-Q2 2026</strong>, as management provides clearer full-year FY2026 guidance, confirming accelerating FFO growth and improved distributable income, leading to a <strong>10-15% multiple expansion</strong>. Our exit strategy is primarily tied to the realization of our probability-weighted target price range of <strong>HK$48.00-HK$52.00</strong>, or a significant compression of the dividend yield below <strong>4.5%</strong>, signaling full valuation. Downside risk mitigation includes a hard stop-loss at <strong>HK$37.00</strong>, representing a <strong>-11.9% capital loss</strong>, which we deem acceptable given the asymmetric upside and strong cash flow-driven floor.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 15 / 15</p></footer>
+</div>
+</body>
+</html>

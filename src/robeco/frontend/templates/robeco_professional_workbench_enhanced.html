@@ -2293,7 +2293,7 @@
                         Generate Investment Report
                     </div>
                     <div style="color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 16px;">
-                        Step 1: Generate HTML report → Step 2: Convert to Word document
+                        Step 1: Generate HTML report → Step 2: Convert to Word/PDF document
                     </div>
                     <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
                         <button class="generate-report-btn" onclick="generateTemplateReport()" style="
@@ -2328,6 +2328,23 @@
                         " title="Generate HTML report first to enable Word conversion">
                             <i class="fas fa-file-word" style="margin-right: 8px;"></i>
                             Generate Word Document
+                        </button>
+                        <button class="generate-pdf-btn" id="generatePdfBtn" onclick="generatePdfReport()" disabled style="
+                            background: rgba(220,53,69,0.1); 
+                            color: rgba(255,255,255,0.4); 
+                            border: 2px solid rgba(220,53,69,0.2); 
+                            padding: 12px 24px; 
+                            border-radius: 8px; 
+                            font-weight: 600;
+                            font-size: 14px;
+                            cursor: not-allowed;
+                            transition: all 0.2s ease;
+                            backdrop-filter: blur(10px);
+                            display: inline-block;
+                            opacity: 0.4;
+                        " title="Generate HTML report first to enable PDF conversion">
+                            <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
+                            Generate PDF Document
                         </button>
                     </div>
                 </div>
@@ -4787,11 +4804,25 @@ stockInfoHtml += (stockData.business_summary ?
                 wordBtn.style.borderColor = 'rgba(255,140,0,0.3)';
                 
                 console.log('✅ Word generation button enabled after HTML report completion');
-                
-                // Show Word availability notification
-                showUserDebugSuccess('Word Export Available', 
-                    '📄 HTML report ready\n✅ Word document conversion now available\n🔄 Click "Generate Word Document" button');
             }
+            
+            // Enable PDF generation button
+            const pdfBtn = document.getElementById('generatePdfBtn');
+            if (pdfBtn && latestHtmlReport) {
+                // Enable and style the PDF button
+                pdfBtn.disabled = false;
+                pdfBtn.style.opacity = '1';
+                pdfBtn.style.cursor = 'pointer';
+                pdfBtn.style.background = 'rgba(220,53,69,0.2)';
+                pdfBtn.style.color = 'white';
+                pdfBtn.style.borderColor = 'rgba(220,53,69,0.3)';
+                
+                console.log('✅ PDF generation button enabled after HTML report completion');
+            }
+                
+            // Show Word and PDF availability notification
+            showUserDebugSuccess('Document Export Available', 
+                '📄 HTML report ready\n✅ Word and PDF document conversion now available\n🔄 Click "Generate Word Document" or "Generate PDF Document" button');
             
             // Show final success notification
             showUserDebugSuccess('Complete Report Generated Successfully', 
@@ -4890,6 +4921,19 @@ stockInfoHtml += (stockData.business_summary ?
                 wordBtn.style.color = 'white';
                 wordBtn.style.borderColor = 'rgba(255,140,0,0.3)';
                 wordBtn.title = 'Click to generate Word document from HTML report';
+            }
+            
+            // Show PDF generation button
+            const pdfBtn = document.getElementById('generatePdfBtn');
+            if (pdfBtn && latestHtmlReport) {
+                // Enable and style the PDF button
+                pdfBtn.disabled = false;
+                pdfBtn.style.opacity = '1';
+                pdfBtn.style.cursor = 'pointer';
+                pdfBtn.style.background = 'rgba(220,53,69,0.2)';
+                pdfBtn.style.color = 'white';
+                pdfBtn.style.borderColor = 'rgba(220,53,69,0.3)';
+                pdfBtn.title = 'Click to generate PDF document from HTML report';
                 
                 // Add hover effects back
                 wordBtn.onmouseover = function() {
@@ -5474,9 +5518,14 @@ stockInfoHtml += (stockData.business_summary ?
             const errorDiv = document.createElement('div');
             errorDiv.style.cssText = 'position: fixed; top: 120px; right: 20px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 6px; padding: 12px; max-width: 280px; z-index: 2000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px;';
             
-            const solutionsList = solutions.slice(0, 2).map(sol => '<li style="margin: 2px 0; font-size: 11px;">' + sol + '</li>').join('');
+            // Safely handle solutions parameter
+            let solutionsHTML = '';
+            if (solutions && Array.isArray(solutions) && solutions.length > 0) {
+                const solutionsList = solutions.slice(0, 2).map(sol => '<li style="margin: 2px 0; font-size: 11px;">' + sol + '</li>').join('');
+                solutionsHTML = '<div style="color: #744210; font-size: 11px;"><strong>Fix:</strong><ul style="margin: 4px 0 0 12px; padding: 0;">' + solutionsList + '</ul></div>';
+            }
             
-            errorDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;"><span style="color: #f56565; font-size: 12px;">🚨</span><strong style="color: #c53030; font-size: 12px;">' + title + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 14px; cursor: pointer; color: #c53030;">×</button></div><div style="color: #744210; font-size: 11px; margin-bottom: 6px;">' + message + '</div><div style="color: #744210; font-size: 11px;"><strong>Fix:</strong><ul style="margin: 4px 0 0 12px; padding: 0;">' + solutionsList + '</ul></div>';
+            errorDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;"><span style="color: #f56565; font-size: 12px;">🚨</span><strong style="color: #c53030; font-size: 12px;">' + title + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 14px; cursor: pointer; color: #c53030;">×</button></div><div style="color: #744210; font-size: 11px; margin-bottom: 6px;">' + message + '</div>' + solutionsHTML;
             
             document.body.appendChild(errorDiv);
             setTimeout(() => { if (errorDiv.parentNode) errorDiv.remove(); }, 8000);
@@ -6297,6 +6346,116 @@ stockInfoHtml += (stockData.business_summary ?
             } else {
                 showUserDebugError('Connection Error', 'WebSocket connection not available. Please refresh and try again.');
             }
+        }
+
+        function generatePdfReport() {
+            console.log('📄 generatePdfReport called');
+            console.log('📄 currentProject:', currentProject);
+            console.log('📄 latestHtmlReport length:', latestHtmlReport ? latestHtmlReport.length : 0);
+            
+            if (!currentProject) {
+                showUserDebugError('No Project Setup', 
+                    'Please set up an investment project first before generating documents.',
+                    [
+                        'Enter a company name and ticker symbol in the project setup section',
+                        'Click "Set Up Investment Project" to begin',
+                        'Complete at least one analyst analysis',
+                        'Then generate an HTML report before converting to PDF'
+                    ]
+                );
+                return;
+            }
+
+            if (!latestHtmlReport || latestHtmlReport.trim().length === 0) {
+                showUserDebugError('No HTML Report Available', 
+                    'You must generate an HTML report first before converting to PDF format.',
+                    [
+                        'Complete multiple analyst analyses (Fundamentals, Technical, Risk, etc.)',
+                        'Click "Generate HTML Report" button to create the report',
+                        'Wait for the HTML report generation to complete successfully',
+                        'Then the PDF generation button will become available'
+                    ]
+                );
+                return;
+            }
+
+            // Validate HTML report contains actual content
+            if (latestHtmlReport.length < 1000) {
+                showUserDebugError('Invalid HTML Report', 
+                    'The HTML report appears to be incomplete or corrupted. Please regenerate the HTML report first.',
+                    [
+                        'Check if the HTML report generation completed successfully',
+                        'Try generating the HTML report again',
+                        'Ensure all analyst analyses are complete before generating report'
+                    ]
+                );
+                return;
+            }
+
+            console.log('📄 Generating PDF document for', currentProject.ticker);
+
+            // Use fetch API to send PDF generation request
+            const pdfData = {
+                html_content: latestHtmlReport,
+                company_name: currentProject.company,
+                ticker: currentProject.ticker,
+                format: 'pdf'
+            };
+
+            // Show loading state
+            const pdfBtn = document.getElementById('generatePdfBtn');
+            if (pdfBtn) {
+                pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating PDF...';
+                pdfBtn.disabled = true;
+            }
+
+            fetch('/api/professional/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(pdfData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('✅ PDF generation completed:', data);
+                
+                // Reset button state
+                if (pdfBtn) {
+                    pdfBtn.innerHTML = '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>Generate PDF Document';
+                    pdfBtn.disabled = false;
+                }
+
+                if (data.status === 'success') {
+                    // Show success message with download option
+                    showUserDebugSuccess('PDF Document Ready', 
+                        `PDF document generated successfully for ${currentProject.company}! Click to download.`,
+                        [{
+                            text: 'Download PDF Document',
+                            action: () => {
+                                // Trigger download
+                                const downloadUrl = `/api/download/pdf?file_path=${encodeURIComponent(data.file_path)}`;
+                                window.open(downloadUrl, '_blank');
+                            }
+                        }]
+                    );
+                } else {
+                    const errorMessage = (data && data.message) ? data.message : 'Failed to generate PDF document';
+                    showUserDebugError('PDF Generation Failed', errorMessage);
+                }
+            })
+            .catch(error => {
+                console.error('❌ PDF generation error:', error);
+                
+                // Reset button state
+                if (pdfBtn) {
+                    pdfBtn.innerHTML = '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>Generate PDF Document';
+                    pdfBtn.disabled = false;
+                }
+                
+                const errorMessage = error && error.message ? error.message : 'Unknown error occurred';
+                showUserDebugError('PDF Generation Failed', 'Failed to generate PDF document: ' + errorMessage);
+            });
         }
 
         function handleWordGenerationStarted(data) {

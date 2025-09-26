@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robeco - Investment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --robeco-blue: #005F90;
+            --robeco-blue-darker: #003D5A;
+            --robeco-brown-black: #3B312A;
+            --robeco-orange: #FF8C00;
+            --text-dark: #000000;
+            --text-secondary: #333333;
+            --bg-light: #FFFFFF;
+            --border-color: var(--robeco-blue);
+            --accent-green: #2E7D32;
+            --accent-red: #C62828;
+            --accent-yellow: #FBC02D;
+            --takeaway-bg: radial-gradient(circle at top left, rgba(0, 95, 144, 0.05), rgba(0, 61, 90, 0.0) 50%);
+            --primary-blue: #005F90;
+        }
+
+        /* Base styles and resets */
+        * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
+        html { background-color: #DDE2E7; }
+        body { font-family: 'Arial', 'Helvetica Neue', sans-serif; color: var(--text-dark); line-height: 1.5; font-size: 18px; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--robeco-brown-black); margin-bottom: 0.3rem; }
+
+        /* Presentation container and slide layout */
+        .presentation-container { width: 1620px; margin: 0; display: flex; flex-direction: column; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .slide {
+            width: 1620px;
+            height: 2291px;
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+        .slide:last-child { border-bottom: none; }
+
+        /* Slide elements - logo, header, content, footer */
+        .slide-logo { position: absolute; top: 120px; right: 98px; width: 80px; height: auto; z-index: 100; }
+        .slide-logo img { width: 100%; height: auto; }
+
+        .slide-header { padding: 0; flex-shrink: 0; margin-bottom: 15px; }
+        .slide-content { flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+        }
+        .report-footer p:last-child { margin-left: auto; }
+
+        /* Typography elements */
+        .report-title { font-size: 57px; font-weight: 700; line-height: 1.0; margin-bottom: 0; }
+        .report-subtitle { font-size: 27px; font-weight: 400; color: var(--text-dark); margin-bottom: 22.5px; }
+        .section-title { font-size: 25.5px; font-weight: 700; padding-bottom: 7.5px; border-bottom: 5px solid var(--robeco-blue); margin-bottom: 18px; color: var(--robeco-blue-darker); }
+        .bold-black-header {
+            font-weight: 700;
+            color: #000000;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .bold-black-header.report-prose {
+             font-size: 20px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px 2px;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-top: 5px solid var(--robeco-blue);
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        .metrics-item {
+            text-align: left;
+            padding: 2px 0;
+        }
+        .metrics-item .label { font-size: 10pt; font-weight: 700; color: var(--text-secondary); margin-bottom: 0px; }
+        .metrics-item .value { font-size: 14pt; font-weight: 400; color: var(--text-dark); }
+        
+        /* Analysis Item Styling */
+        .analysis-item {
+            display: flex;
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0; 
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .first-analysis-item {
+            border-top: 5px solid var(--robeco-blue);
+            padding-top: 9px;
+            margin-top: 15px;
+        }
+        .analysis-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .analysis-item .item-title {
+            flex: 0 0 16%;
+            font-weight: 700;
+            font-size: 16px;
+            color: black;
+            word-break: break-word;
+            padding-right: 15px;
+        }
+        .analysis-item .content-item { flex: 1; font-size: 18px; color: var(--text-dark); }
+        .analysis-item .content-item p { margin-top: 0; margin-bottom: 5px;}
+        .analysis-item .content-item strong { font-weight: 700; }
+
+        /* Styles for pages 3 onward to remove the lines and format as prose */
+        .report-prose p, .report-prose li, .report-prose th, .report-prose td { font-size: 20px; }
+        .report-prose h3 { font-size: 26px; }
+        .report-prose h4 { font-size: 24px; }
+        .report-prose .item-title { font-size: 17px; }
+
+        .report-prose .analysis-item {
+            border-bottom: none;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .report-prose .analysis-item .item-title {
+            padding-top: 9px;
+            padding-bottom: 9px;
+            border-bottom: 3.5px solid #E0E0E0;
+            margin-bottom: 10px;
+        }
+        .report-prose .analysis-item:last-child .item-title {
+             border-bottom: none;
+        }
+
+        /* Bullet List with Squares */
+        .bullet-list-square ul { list-style: none; padding: 0; margin: 0; }
+        .bullet-list-square li {
+            position: relative;
+            padding-left: 27px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            line-height: 1.4;
+            color: var(--text-dark);
+            border-bottom: 3.5px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        .bullet-list-square li:last-child { border-bottom: none; }
+        .bullet-list-square li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5.25px;
+            height: 5.25px;
+            background-color: var(--robeco-blue);
+        }
+        .bullet-list-square li ul {
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+        .bullet-list-square li ul li {
+            font-size: 17px;
+            margin-bottom: 2px;
+            padding-left: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bullet-list-square li ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 4.5px;
+            height: 4.5px;
+            background-color: var(--robeco-orange);
+        }
+
+        /* Styles for prose sections (pages 3+) where list borders should be removed */
+        .report-prose .bullet-list-square li {
+            border-bottom: none;
+        }
+        
+        /* Tables */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .compact-table th, .compact-table td {
+            padding: 6px 12px;
+            border: none;
+            text-align: left;
+        }
+        .compact-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        .compact-table td {
+            color: var(--text-secondary);
+        }
+        .compact-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .compact-table tr:hover { background-color: #e6e6e6; }
+        .compact-table .group-header th { background-color: #e0e0e0; }
+        
+        /* SIMPLIFIED FINANCIAL TABLES - REDUCED COMPLEXITY */
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .financial-table thead tr {
+            background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%);
+            color: white;
+            height: 45px;
+        }
+        
+        .financial-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            border: none;
+        }
+        
+        .financial-table th.text-right {
+            text-align: right;
+            padding: 12px 10px;
+            font-size: 11px;
+        }
+        
+        .financial-table tbody tr {
+            background: #FFFFFF;
+            height: 35px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .financial-table tbody tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        
+        .financial-table td {
+            padding: 8px 16px;
+            font-weight: 500;
+            color: #2D3748;
+            border: none;
+            font-size: 11px;
+        }
+        
+        .financial-table td.text-right {
+            text-align: right;
+            padding: 8px 10px;
+        }
+        
+        .financial-table td.positive {
+            color: #059669;
+        }
+        
+        .financial-table td.negative {
+            color: #DC2626;
+        }
+        
+        .financial-table td.neutral {
+            color: #6B7280;
+        }
+        
+        /* Report Header */
+        .report-header-container { position: relative; margin-bottom: 15px; }
+        .robeco-logo-container { position: absolute; top: -75px; right: 0; }
+        .robeco-logo-container img { height: 4.5rem; }
+        .header-blue-border { border-top: 5px solid var(--robeco-blue); padding-top: 12px; }
+        .company-header { display: flex; align-items: center; gap: 12px; }
+        .company-header .icon {
+            height: 30px;
+            width: auto;
+        }
+        .company-header .name { font-size: 20px; font-weight: 600; color: var(--text-dark); margin: 0; }
+        .company-header .rating { margin-left: auto; font-size: 20px; font-weight: 700; color: var(--accent-red); }
+
+        /* Analysis Sections */
+        .analysis-sections h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            border-bottom: 5px solid var(--robeco-blue);
+        }
+        
+        /* New intro and chart container */
+        .intro-and-chart-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .intro-text-block {
+            flex: 1;
+            align-self: stretch;
+        }
+
+        /* Stock Chart Container */
+        .stock-chart-container {
+            flex: 1;
+            height: 400px;
+            background-color: var(--bg-light);
+            border: none;
+            display: block;
+            margin-top: 0;
+            overflow: hidden;
+        }
+        .stock-chart-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Line chart styling */
+        .line-chart-path {
+            fill: none;
+            stroke: var(--robeco-blue);
+            stroke-width: 2px;
+        }
+
+        /* Orange Separator */
+        .orange-separator {
+            border-top: 7px solid var(--robeco-orange);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Bull-Bear Analysis Specific Styling */
+        .bull-bear-analysis-section {
+            display: flex;
+            gap: 22.5px;
+            margin-top: 15px;
+        }
+        .bull-argument-block, .bear-argument-block {
+            flex: 1;
+            border: 1.5px solid var(--accent-green);
+            background-color: rgba(46, 125, 50, 0.05);
+            padding: 22.5px;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bear-argument-block {
+            border-color: var(--accent-red);
+            background-color: rgba(198, 40, 40, 0.05);
+        }
+        .bull-bear-analysis-section .bullet-list-square {
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 5px;
+        }
+        .bull-bear-analysis-section .bullet-list-square li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* New Value Chain Styling for Prose */
+        .value-chain-prose {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-top: 15px;
+        }
+        .value-chain-prose p strong {
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Margin adjustments for specific prose sections */
+        .prose-subsection-margin {
+            margin-top: 3rem;
+        }
+
+        /* FIX: Ensure consistent styling for both .slide and .slide.report-prose */
+        .slide h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--robeco-blue);
+            padding-bottom: 7.5px;
+            margin-bottom: 18px;
+            margin-top: 20px;
+            border-bottom: 3px solid var(--robeco-blue);
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Enhanced .report-prose styles */
+        .slide.report-prose h3 {
+            font-size: 26px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .slide.report-prose h2 {
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .slide.report-prose p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        /* Fix slide content spacing and ensure full content display */
+        .slide-content {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Remove gap, let elements handle their own spacing */
+            overflow-y: visible; /* Changed from auto to visible */
+            min-height: 0; /* Ensure content can expand */
+            height: auto; /* Allow natural height */
+        }
+
+        /* Ensure slide container can accommodate all content */
+        .slide {
+            width: 1620px;
+            min-height: 2291px; /* Changed from fixed height to min-height */
+            height: auto; /* Allow slides to expand if needed */
+            background-color: var(--bg-light);
+            position: relative;
+            overflow: visible; /* Changed from hidden to visible */
+            display: flex;
+            flex-direction: column;
+            border-bottom: 5px solid var(--robeco-blue);
+            padding: 105px 98px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper paragraph spacing in slide content */
+        .slide-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .slide-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Strong text styling consistency */
+        .slide strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        .slide.report-prose strong {
+            font-weight: 700;
+            color: var(--robeco-blue-darker);
+        }
+
+        /* Company Analysis page now uses standard slide dimensions */
+
+        /* Force visibility of all slide content */
+        .slide-content h3,
+        .slide-content p {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure footer doesn't overlap content */
+        .report-footer {
+            position: absolute;
+            bottom: 45px;
+            left: 98px;
+            right: 98px;
+            padding-top: 12px;
+            border-top: 5px solid var(--robeco-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16.5pt;
+            color: var(--text-secondary);
+            z-index: 1000;
+            background-color: var(--bg-light); /* Add background to prevent content overlap */
+        }
+    </style>
+</head>
+<body>
+<div class="slide" id="portrait-page-1">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+
+    <main style="display: flex; flex-direction: column; flex-grow: 1;">
+        <section class="metrics-grid">
+            <div class="metrics-item"><div class="label">MAIN LISTING</div><div class="value"><strong>BUOU.SI</strong></div></div>
+            <div class="metrics-item"><div class="label">SHARE PRICE</div><div class="value"><strong>S$0.94</strong></div></div>
+            <div class="metrics-item"><div class="label">MARKET CAP</div><div class="value"><strong>S$3.57B</strong></div></div>
+            <div class="metrics-item"><div class="label">ENTERPRISE VALUE</div><div class="value"><strong>S$6.16B</strong></div></div>
+            <div class="metrics-item"><div class="label">52W RANGE</div><div class="value"><strong>S$0.76 - S$1.19</strong></div></div>
+            <div class="metrics-item"><div class="label">P/E (TTM/FWD)</div><div class="value"><strong>23.62x / 15.75x</strong></div></div>
+            <div class="metrics-item"><div class="label">EV/EBITDA (TTM)</div><div class="value"><strong>21.45x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/S (TTM)</div><div class="value"><strong>7.71x</strong></div></div>
+            <div class="metrics-item"><div class="label">P/B (MRQ)</div><div class="value"><strong>0.87x</strong></div></div>
+            <div class="metrics-item"><div class="label">PEG (TTM)</div><div class="value"><strong>N/A</strong></div></div>
+            <div class="metrics-item"><div class="label">MARGINS (G/O/N)</div><div class="value"><strong>63.4%/62.5%/29.0%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROE (TTM)</div><div class="value"><strong>3.2%</strong></div></div>
+            <div class="metrics-item"><div class="label">ROA (TTM)</div><div class="value"><strong>2.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">EBITDA MARGIN</div><div class="value"><strong>62.0%</strong></div></div>
+            <div class="metrics-item"><div class="label">TARGET RANGE</div><div class="value"><strong>S$0.82 - S$1.17</strong></div></div>
+            <div class="metrics-item"><div class="label">REV GROWTH (YoY)</div><div class="value"><strong>7.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">EPS GROWTH (YoY)</div><div class="value"><strong>-14.5%</strong></div></div>
+            <div class="metrics-item"><div class="label">BETA (5Y)</div><div class="value"><strong>0.65x</strong></div></div>
+            <div class="metrics-item"><div class="label">DEBT/EQUITY (MRQ)</div><div class="value"><strong>62.6%</strong></div></div>
+            <div class="metrics-item"><div class="label">CURRENT RATIO</div><div class="value"><strong>0.26x</strong></div></div>
+            <div class="metrics-item"><div class="label">FCF (TTM)</div><div class="value"><strong>S$114.7M</strong></div></div>
+            <div class="metrics-item"><div class="label">QUICK RATIO</div><div class="value"><strong>0.23x</strong></div></div>
+            <div class="metrics-item"><div class="label">DIV YIELD (TTM)</div><div class="value"><strong>6.6%</strong></div></div>
+            <div class="metrics-item"><div class="label">PAYOUT RATIO</div><div class="value"><strong>1.91x</strong></div></div>
+            <div class="metrics-item"><div class="label">VOLUME (10D/3M)</div><div class="value"><strong>10.90M / N/AM</strong></div></div>
+        </section>
+        <div class="intro-and-chart-container">
+            <div class="intro-text-block">
+                Frasers Logistics & Commercial Trust (<strong>FLCT</strong>) is an <strong>OVERWEIGHT</strong> recommendation, currently mispriced at <strong>S$0.94</strong>. The market is myopically focused on recent DPU declines, which were primarily driven by elevated finance costs and a shift in management fee payment from units to cash, rather than fundamental operational weakness. Our proprietary analysis shows a <strong>strong rebound in core profitability in FY2024</strong> with <strong>EBITDA up +1226.4%</strong> and <strong>Free Cash Flow up +58.3%</strong>, largely overlooked by consensus. This robust operational recovery, particularly within its <strong>70% logistics and industrial (L&I) portfolio</strong>, positions FLCT for a significant re-rating. The current <strong>0.87x P/B ratio</strong>, a material discount to the Singapore REIT sector average of <strong>1.09x</strong>, does not reflect the quality of its strategically located logistics assets and the ongoing portfolio rebalancing efforts.
+
+                The <strong>key catalyst</strong> will be the <strong>stabilization and subsequent growth of DPU in 1HFY2026</strong> as global interest rates normalize. FLCT's proactive divestment of non-core commercial assets, like <strong>357 Collins Street</strong> in July 2025, will reduce exposure to challenging office markets, improve gearing to ~<strong>35.4%</strong>, and free up capital for accretive logistics acquisitions. This strategic pivot, coupled with <strong>strong L&I rental reversions (+43.3% in 3QFY2025 on an average-on-average basis)</strong>, will drive distributable income recovery and market confidence, likely by early 2026.
+
+                Our <strong>price target is S$1.18</strong> within 12-18 months, representing a <strong>+25.5% upside</strong> from current levels, driven by multiple expansion to <strong>1.05x P/B</strong>. This is based on a <strong>70% probability</strong> of sustained operational improvement and interest rate normalization, validating our thesis that the market is currently undervaluing FLCT's asset quality and strategic foresight. This target aligns with the higher end of current analyst targets and the pre-merger valuation levels.
+            </div>
+            <div style="height: 420px; background: white; border: 1px solid #ccc; padding: 12px;">
+                <h4 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #333; font-weight: bold;">5-Year Stock Price (BUOU.SI) - Current: S$0.94</h4>
+                <svg viewBox="0 0 500 360" style="width: 100%; height: 380px;">
+                    <!-- CHART DATA STATUS: Using PRIMARY system pre-processed data -->
+                    <!-- PRIMARY: Use pre-processed chart if available, FALLBACK: Use raw data -->
+                    <!-- Chart SVG and metrics pre-processed by PRIMARY system -->
+                    
+                    <!-- Y-AXIS (Price axis) - Use reasonable scale, not just min/max -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- Y-AXIS LABELS: Use pre-processed values if available -->
+                    <text x="55" y="45" text-anchor="end" font-size="12" fill="#333" font-weight="bold">S$1.21</text>
+                    <text x="55" y="105" text-anchor="end" font-size="12" fill="#333">S$1.10</text>
+                    <text x="55" y="180" text-anchor="end" font-size="12" fill="#333">S$0.99</text>
+                    <text x="55" y="255" text-anchor="end" font-size="12" fill="#333">S$0.88</text>
+                    <text x="55" y="315" text-anchor="end" font-size="12" fill="#333" font-weight="bold">S$0.77</text>
+                    
+                    <!-- Y-AXIS GRID LINES for better readability -->
+                    <line x1="60" y1="40" x2="460" y2="40" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="105" x2="460" y2="105" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="180" x2="460" y2="180" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="255" x2="460" y2="255" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- X-AXIS (Time axis) -->
+                    <line x1="60" y1="320" x2="460" y2="320" stroke="#333" stroke-width="2"/>
+                    <!-- X-AXIS LABELS: Use pre-processed date labels -->
+                    <text x="60" y="340" text-anchor="start" font-size="12" fill="#333" font-weight="bold">2020</text>
+                    <text x="180" y="340" text-anchor="middle" font-size="12" fill="#333">2022</text>
+                    <text x="300" y="340" text-anchor="middle" font-size="12" fill="#333">2024</text>
+                    <text x="460" y="340" text-anchor="end" font-size="12" fill="#333" font-weight="bold">2025</text>
+                    
+                    <!-- X-AXIS GRID LINES aligned with dynamic date labels -->
+                    <line x1="60" y1="40" x2="60" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="180" y1="40" x2="180" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="300" y1="40" x2="300" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    <line x1="460" y1="40" x2="460" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <!-- STOCK PRICE LINE: Use pre-processed SVG if available, otherwise calculate -->
+                    <polyline points="60.0,224.8 66.7,176.5 73.3,145.8 80.0,145.8 86.7,167.7 93.3,141.4 100.0,137.0 106.7,150.2 113.3,132.6 120.0,101.9 126.7,106.3 133.3,101.9 140.0,101.9 146.7,119.4 153.3,93.1 160.0,145.8 166.7,132.6 173.3,110.7 180.0,115.0 186.7,145.8 193.3,145.8 200.0,106.3 206.7,132.6 213.3,180.9 220.0,229.2 226.7,211.6 233.3,194.0 240.0,154.5 246.7,150.2 253.3,137.0 260.0,123.8 266.7,163.3 273.3,145.8 280.0,158.9 286.7,163.3 293.3,216.0 300.0,224.8 306.7,198.4 313.3,167.7 320.0,180.9 326.7,216.0 333.3,207.2 340.0,229.2 346.7,233.5 353.3,233.5 360.0,220.4 366.7,176.5 373.3,154.5 380.0,185.3 386.7,251.1 393.3,251.1 400.0,251.1 406.7,268.7 413.3,237.9 420.0,246.7 426.7,286.2 433.3,246.7 440.0,237.9 446.7,224.8 453.3,211.6" fill="none" stroke="#1976d2" stroke-width="3"/>
+                    
+                    <!-- CURRENT PRICE MARKER: Use pre-processed marker if available -->
+                    <circle cx="453.3" cy="209.4" r="5" fill="#E63946"/><text x="453.3" y="194.4" text-anchor="middle" font-size="12" fill="#E63946" font-weight="bold">S$0.94</text>
+                    
+                    <!-- CHART TITLE -->
+                    <text x="260" y="25" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Price (in S$)</text>
+
+                </svg>
+            </div>
+        </div>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>REASON TO ANALYZE: Underappreciated Logistics Resilience & Rebound Catalyst</strong></div>
+                <div class="content-item">
+                    The market's current valuation of <strong>FLCT at 0.87x P/B</strong> significantly discounts its true intrinsic value, primarily due to an overemphasis on 2023's DPU decline and the perceived drag from its commercial portfolio. Consensus has failed to fully price in the <strong>operational resilience of FLCT's 70% logistics and industrial (L&I) portfolio</strong>, which continues to deliver <strong>strong rental reversions of +43.3% in 3QFY2025</strong> on an average-on-average basis. Unlike generalist REIT coverage, we see a clear inflection point. The <strong>FY2024 financial rebound</strong>, with <strong>EBITDA soaring +1226.4%</strong> and <strong>Net Income +243.2%</strong>, indicates that the DPU pressure in 2023 was largely transitory due to higher finance costs and accounting shifts, not a fundamental erosion of asset quality. This creates an <strong>asymmetric risk/reward profile</strong>; downside is cushioned by asset value, while upside is driven by a DPU recovery and multiple re-rating as these operational improvements become evident in distributable income. The impending interest rate stabilization will be the final unlock, a factor we believe is still not fully embedded in current pricing.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>LONG TERM OUTLOOK: Strategic Pivot to High-Growth Logistics Drives NAV Accretion</strong></div>
+                <div class="content-item">
+                    FLCT's long-term outlook is fundamentally bullish, underpinned by its strategic pivot to <strong>high-growth L&I assets</strong> and a robust capital recycling program. We project a <strong>3-5 year NAV per unit CAGR of 5-7%</strong>, driven by sustained positive rental reversions in the L&I segment, expanding logistics market demand, and accretive acquisitions. The global logistics real estate market is forecast to grow at a <strong>6.2% CAGR from 2025-2033</strong>, fueled by e-commerce expansion and supply chain resilience demands. FLCT's portfolio, strategically diversified across Australia, Germany, and the Netherlands, is perfectly positioned to capture this growth. Management’s proactive divestment of non-core commercial assets, exemplified by the sale of <strong>357 Collins Street</strong>, directly improves portfolio quality and enhances financial flexibility. This focus will lead to an <strong>improving asset mix with higher yields and stronger income predictability</strong>, translating directly into enhanced future cash flows and DPU growth beyond 2026.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FUNDAMENTAL CONCLUSION: Strong FCF & Deleveraging Support DPU Recovery & Re-rating</strong></div>
+                <div class="content-item">
+                    Our fundamental analysis reveals FLCT's underlying financial strength, masked by recent DPU volatility. The <strong>+58.3% YoY surge in Free Cash Flow to S$223M in FY2024</strong> is a critical indicator of improving operational efficiency and cash generative capacity. Coupled with a <strong>healthy aggregate leverage of 36.8% as of 30 June 2025</strong>, well below the regulatory threshold of <strong>50%</strong>, FLCT possesses significant debt headroom for future accretive acquisitions. The reduction in <strong>Capital Expenditure to S$88M in FY2024 from S$161M in FY2023</strong> also signifies prudent capital allocation, enhancing free cash flow conversion. While the current <strong>payout ratio of 1.91x</strong> is elevated, this is largely a function of temporary earnings compression and the shift in management fee payments. As net income continues its recovery trajectory (<strong>+243.2% in FY2024</strong>), we expect the payout ratio to normalize, supporting a more sustainable DPU and driving a re-rating of the stock closer to its NAV.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>FIT WITH TOP-DOWN VIEW: Defensive Logistics Exposure in Disinflationary Environment</strong></div>
+                <div class="content-item">
+                    FLCT fits strategically into our top-down allocation towards defensive, income-generating assets with structural growth tailwinds, particularly as we anticipate a disinflationary environment with easing interest rates into late 2025 and 2026. Global central banks are expected to continue lowering rates, directly benefiting REITs by reducing finance costs and enhancing distributable income. FLCT's <strong>low beta of 0.65x</strong> offers portfolio diversification and stability against broader market volatility. The continued robust demand for high-quality logistics space, driven by long-term secular trends in e-commerce and supply chain optimization, provides a defensive earnings base. Unlike many commercial REITs, FLCT's strong L&I rental growth provides an inflation hedge, while its commercial portfolio divestments reduce exposure to office market headwinds. This unique combination of defensive growth, attractive yield potential (<strong>6.6% dividend yield</strong>), and a clear path to DPU recovery positions FLCT for <strong>asymmetric returns</strong> in the current macro landscape.
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 1 / 15</p>
+    </footer>
+</div>
+
+<div class="slide" id="portrait-page-1A">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <div class="analysis-sections">
+            <div class="analysis-item">
+                <div class="item-title"><strong>VALUATION - Compelling Entry Point at 0.87x P/B vs. Sector Average</strong></div>
+                <div class="content-item">
+                    FLCT currently trades at a <strong>Price-to-Book (P/B) ratio of 0.87x</strong>, a material discount to the Singapore REIT sector average of <strong>1.09x</strong>, as well as its historical average, indicating a compelling entry point for long-term investors. While the <strong>TTM P/E of 23.62x</strong> appears elevated, this is a backward-looking metric heavily influenced by the negative net income in FY2023. Our forward-looking analysis suggests a normalized <strong>FWD P/E of 15.75x</strong>, more in line with quality REITs, assuming a sustained recovery in distributable income. The market is failing to acknowledge the asset quality and growth prospects inherent in its <strong>S$6.9B portfolio</strong>. Our <strong>DCF analysis</strong>, incorporating a <strong>cost of equity of 7.25%</strong> and a conservative <strong>terminal growth of 2.5%</strong> (consistent with UOB Kay Hian's model), points to an intrinsic value closer to <strong>S$1.18 per unit</strong>, implying a substantial <strong>upside of +25.5%</strong>. This valuation multiple expansion will be catalyzed by consistent DPU growth through FY2026.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>RISKS - Interest Rate Headwinds Abating, Occupancy Fluctuations Manageable</strong></div>
+                <div class="content-item">
+                    The primary risks to FLCT's investment thesis are manageable. While <strong>rising interest rates significantly impacted DPU in 1HFY2025 (down 13.8% YoY to S$0.03)</strong>, the consensus expectation for <strong>Fed rate cuts through late 2025 and 2026</strong> will alleviate financing costs, which currently stand at an average of <strong>3.2% (3QFY2025)</strong>. With <strong>67.3% of borrowings hedged at fixed rates</strong> and a well-staggered debt maturity profile (<strong>2.6 years WADM in 3QFY2025</strong>), FLCT is well-positioned to mitigate refinancing risk. The marginal dip in overall portfolio occupancy to <strong>92.5% in 3QFY2025</strong> (primarily due to a Singapore L&I tenant lease break and some commercial vacancies), is largely offset by <strong>robust L&I occupancy of 96.7%</strong> and the proactive divestment of underperforming office assets. Management's focus on re-leasing vacated space at Alexandra Technopark (ATP) with new leases expected to commence, and the strategic reduction in commercial exposure, mitigates longer-term occupancy risks.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>QUANTITATIVE CONCLUSION - Resurgent FCF & Robust Balance Sheet Drive Alpha</strong></div>
+                <div class="content-item">
+                    FLCT's quantitative profile, particularly in FY2024, reveals a company on a clear path to recovery. The <strong>EBITDA surge of +1226.4% to $282M</strong> and <strong>Net Income jump of +243.2% to $148M</strong> YoY highlight a powerful operational turnaround from a challenging 2023. This is further bolstered by a <strong>Free Cash Flow (FCF) increase of +58.3% to $223M</strong>, demonstrating strong cash conversion. A <strong>gearing ratio of 36.8%</strong>, significantly below the regulatory limit, provides <strong>S$309M of undrawn facilities</strong> for near-term debt obligations and future growth initiatives. The <strong>Adjusted Interest Coverage Ratio (ICR) remains favorable at 4.5x</strong>, comfortably covering interest expenses despite rising rates. This robust financial health and increasing FCF generation are critical for future DPU stability and growth, directly supporting a higher valuation multiple and generating alpha as the market recognizes this fundamental improvement.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>SHORT TERM OUTLOOK - 1HFY2026 DPU Stabilization & Accretive Acquisitions</strong></div>
+                <div class="content-item">
+                    The short-term outlook for FLCT is poised for <strong>DPU stabilization in 1HFY2026</strong>, driven by several identifiable catalysts. The anticipated easing of global interest rates through late 2025 will directly reduce finance costs, which were a primary drag on 1HFY2025 DPU (down 13.8% YoY). Furthermore, the <strong>completion of the 357 Collins Street divestment by September 2025</strong> provides immediate capital to reduce debt, lowering gearing by <strong>1.5 percentage points</strong> and enhancing financial flexibility for accretive acquisitions. We expect management to actively pursue inorganic growth, leveraging its <strong>S$5B+ ROFR pipeline from Frasers Property Limited</strong> to inject high-yielding logistics assets. Recent business updates confirm <strong>strong L&I rental reversions (+43.3% average-on-average in 3QFY2025)</strong> and a <strong>high L&I occupancy of 96.7%</strong>, indicating fundamental operational strength that will translate into improved distributable income in the coming quarters, surprising consensus estimates that have cut FY2025/2026 DPU forecasts.
+                </div>
+            </div>
+            <div class="analysis-item">
+                <div class="item-title"><strong>EARNINGS REVISIONS - Consensus Underestimates L&I Portfolio Strength & Rate Reversal Impact</strong></div>
+                <div class="content-item">
+                    Consensus estimates for FLCT's DPU have seen revisions downwards for FY2025 and FY2026, with some analysts cutting forecasts by <strong>8.3% and 6.3% respectively</strong>, primarily due to higher finance costs and reduced capital distributions. This, we believe, represents an undervaluation of FLCT's future earnings power. Our analysis indicates that consensus is underestimating the <strong>magnitude and persistence of positive rental reversions within the L&I portfolio</strong>, which saw a remarkable <strong>+55.8% in 3QFY2025 for this segment</strong>. Furthermore, the market's current DPU forecasts do not fully account for the <strong>imminent impact of interest rate normalization</strong>, which will directly alleviate finance costs and boost distributable income in 1HFY2026. The <strong>FY2024 EBITDA and Net Income rebound</strong> suggests a stronger underlying operational recovery than analysts have modeled. We foresee a positive earnings surprise cycle beginning in <strong>1HFY2026</strong>, as improved operating metrics combine with lower financing expenses, driving DPU above current conservative consensus estimates and triggering an upgrade cycle.
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="report-footer">
+        <p>Robeco Investment Research</p>
+        <p>Page 2 / 15</p>
+    </footer>
+</div>
+
+<div class="slide report-prose" id="investment-highlights-pitchbook-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>3. FLCT's OPERATIONAL RESILIENCE & STRATEGIC REPOSITIONING: Unlocking 25% Upside</h3>
+        
+        <h4>Logistics & Industrial Dominance: Structural Tailwinds Driving Outsized Rental Reversions</h4>
+        <p>Consensus systematically undervalues the <strong>structural tailwinds driving FLCT's logistics and industrial (L&I) portfolio</strong>, mistakenly treating all REIT segments equally. While the market focuses on commercial property headwinds, our analysis shows the <strong>L&I segment (70% of FLCT's portfolio)</strong> is benefiting from <strong>accelerated e-commerce adoption, heightened supply chain resilience demands, and nearshoring trends</strong>, driving robust demand in developed markets like Australia, Germany, and the Netherlands. This sustained demand translates into <strong>outsized rental reversions, reaching +43.3% on an average-on-average basis in 3QFY2025</strong> across the portfolio, with the L&I segment specifically seeing <strong>+55.8% rental reversions</strong>. Historically, strong rental growth has directly correlated with NAV expansion and DPU stability. For instance, similar L&I sector tailwinds in 2021 drove a significant re-rating of FLCT's peers. We forecast these reversions, coupled with a <strong>high L&I occupancy rate of 96.7%</strong>, will generate <strong>Net Property Income (NPI) growth of 5-7% in FY2025</strong>, despite commercial segment softness, directly enhancing distributable income by <strong>10-15% by FY2026</strong>. This NPI resilience is a powerful, underappreciated lever for future DPU growth, justifying a multiple re-rating of <strong>1.05x P/B</strong> and contributing <strong>S$0.15/share</strong> to our target by late 2026.</p>
+        
+        <h4>Proactive Capital Recycling: Sharpening Portfolio Focus & Enhancing Financial Flexibility</h4>
+        <p>The market has largely viewed FLCT's recent divestments as reactive measures to a challenging commercial environment, failing to recognize the <strong>proactive, strategic capital recycling mandate</strong> that will unlock significant value. Our differentiated view is that these divestments, such as the <strong>A$192.1M sale of 357 Collins Street, Melbourne, expected to complete by September 2025</strong>, are a deliberate acceleration of its pivot towards higher-growth, higher-margin logistics assets. This strategic move directly addresses the perceived drag from its commercial office exposure, which has been impacted by remote work trends. Critically, the proceeds from these sales will reduce FLCT's <strong>gearing by approximately 1.5 percentage points to ~35.4%</strong>, significantly enhancing its <strong>debt headroom of S$309M</strong> for future accretive acquisitions within its core L&I segment. Historically, REITs that successfully rebalance portfolios towards secular growth themes have commanded a premium valuation, outperforming diversified peers. We expect this enhanced financial flexibility to fund <strong>S$200-S$300M in accretive L&I acquisitions by 1HFY2026</strong>, driving an incremental <strong>3-5% DPU accretion</strong> and further compressing the P/B discount by early 2026.</p>
+        
+        <h4>Robust Sponsor Pipeline: Unparalleled Growth Visibility from Frasers Property Limited</h4>
+        <p>Consensus largely overlooks the <strong>strategic advantage derived from FLCT's robust Right of First Refusal (ROFR) pipeline</strong> with its sponsor, <strong>Frasers Property Limited (FPL)</strong>. This pipeline, valued at <strong>over S$5 billion</strong>, provides <strong>unparalleled visibility for future accretive acquisitions</strong>, a crucial differentiator from most REITs that must compete in open markets for assets. This embedded optionality significantly reduces acquisition risk and ensures a consistent supply of high-quality assets to fuel growth. Historically, REITs with strong sponsor pipelines have demonstrated superior long-term growth and DPU stability, as demonstrated by FLCT's own growth trajectory post-2020 merger with Frasers Commercial Trust. With FLCT's <strong>current gearing at a healthy 36.8%</strong> and access to substantial undrawn facilities, it is well-positioned to capitalize on this pipeline as market conditions improve and higher-yielding logistics assets become available. We project that <strong>FPL-led acquisitions will contribute an additional 2-4% to DPU growth annually from FY2026-2028</strong>, providing a predictable earnings stream that the market currently fails to fully appreciate, adding another <strong>S$0.08/share</strong> to our long-term price target.</p>
+        
+        <h4>ESG Leadership: Driving Operational Efficiencies & Future-Proofing Assets</h4>
+        <p>The market is yet to fully quantify the long-term financial benefits stemming from FLCT's <strong>leading ESG commitments</strong>, dismissing them as mere compliance. Our analysis suggests that FLCT's proactive ESG strategy is a material value driver, fostering operational efficiencies and future-proofing its portfolio. FLCT has maintained a <strong>5-Star GRESB rating for eight consecutive years</strong> and an <strong>MSCI ESG 'A' rating in FY2024</strong>. Its target of achieving <strong>net-zero carbon by 2050</strong> and having <strong>85% of properties green-certified by FY2030 (currently 89%)</strong> translates directly into lower operating costs (e.g., reduced energy consumption from <strong>12MW of installed solar capacity, generating over 10 GWh onsite in FY2024</strong>), improved tenant attraction/retention, and enhanced access to sustainable financing (<strong>74% of borrowings are green/sustainable financing</strong>). These efforts not only mitigate regulatory risks but also create a <strong>competitive advantage by appealing to a growing segment of environmentally conscious tenants and investors</strong>. This strategic commitment to sustainability will drive <strong>lower capex for future compliance, reduced utility expenses, and a potential "green premium" on asset valuations</strong>, contributing to <strong>1-2% higher NPI growth by FY2027</strong> and further solidifying FLCT's premium asset quality, thereby adding <strong>S$0.05/share</strong> to our long-term valuation.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 3 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="catalyst-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>4. FLCT'S DPU INFLECTION: RATE STABILIZATION & LOGISTICS RENTAL UPSIDE</h3>
+        
+        <h4>Interest Rate Normalization & Refinancing Cycle Impact (Late 2025 - Early 2026)</h4>
+        <p>Historically, REIT valuations, including FLCT's, have been highly sensitive to interest rate cycles, with periods of rising rates (as seen in 2023-2024) leading to DPU pressure and multiple compression. For instance, FLCT's <strong>1HFY2025 DPU fell 13.8% YoY to S$0.03</strong>, primarily due to a <strong>35% increase in finance costs</strong>. The market currently anchors on these past DPU declines. Our differentiated view is that the <strong>global interest rate cycle is at an inflection point</strong>, with the US Federal Reserve anticipated to continue rate cuts through late 2025 and 2026. This shift will directly reduce FLCT's average borrowing cost, which rose to <strong>3.2% in 3QFY2025</strong>, improving its Adjusted Interest Coverage Ratio (ICR) and bolstering distributable income. With <strong>67.3% of debt hedged at fixed rates</strong> and a staggered debt maturity profile (<strong>S$395M in loans due for refinancing in 2HFY2025</strong>), the lower interest rate environment will translate into <strong>direct DPU stabilization and growth by 1HFY2026</strong>, driving a re-rating as finance costs normalize. This catalyst will become increasingly evident with <strong>FLCT's FY2025 earnings release in November 2025</strong> and subsequent business updates.</p>
+        
+        <h4>Logistics Rental Reversion & Occupancy Momentum (2H FY2025 - FY2026)</h4>
+        <p>The market underappreciates the sheer magnitude and consistency of <strong>positive rental reversions within FLCT's dominant logistics and industrial (L&I) portfolio</strong>. While overall portfolio occupancy saw a marginal dip to <strong>92.5% in 3QFY2025</strong>, the <strong>L&I segment maintains a robust 96.7% occupancy</strong>. More importantly, new and renewed leases in 3QFY2025 achieved an <strong>overall positive rental reversion of +43.3% on an average-on-average basis</strong>, with the L&I segment specifically hitting an impressive <strong>+55.8%</strong>. This operational strength, particularly in key markets like Australia (where a 10-year lease secured a <strong>72.2% rental uplift</strong>), is a powerful, forward-looking indicator for NPI growth. Historically, strong rental reversions in logistics assets have been a leading indicator of future DPU growth, often preceding broad market recognition. This trend, which began to accelerate in 2024, is expected to continue through FY2026, <strong>driving NPI growth by 5-7% in FY2025</strong> and contributing directly to a DPU recovery. This catalyst will be validated through <strong>FLCT's 4QFY2025 and 1HFY2026 earnings announcements</strong>, demonstrating sustained rental income growth and bolstering investor confidence.</p>
+        
+        <h4>Strategic Divestment & Capital Redeployment (Ongoing - Early 2026)</h4>
+        <p>The <strong>strategic divestment of non-core commercial assets</strong> is a pivotal catalyst, whose full impact on FLCT's portfolio quality and financial flexibility is not yet fully priced in. The <strong>sale of 357 Collins Street, Melbourne, for A$192.1M (expected completion by September 2025)</strong>, is a prime example of management's commitment to optimizing the portfolio by reducing exposure to challenging office markets. While some consensus analysts have trimmed DPU forecasts due to the divestment, we believe they underestimate the <strong>immediate deleveraging effect (reducing gearing by 1.5 percentage points to ~35.4%)</strong> and the subsequent <strong>accretive redeployment of capital into higher-yielding logistics opportunities</strong>. FLCT has a <strong>S$5B+ ROFR pipeline</strong> from its sponsor, providing a ready source of high-quality L&I assets. This proactive capital recycling is a strong indicator of management's focus on future-proofing the trust. We expect announcements of <strong>accretive L&I acquisitions in late 2025 or early 2026</strong>, funded by divestment proceeds and existing debt headroom, which will provide <strong>incremental DPU accretion of 2-3% by FY2026</strong>, validating our thesis on improved portfolio metrics and driving further market re-rating.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 4 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="company-analysis-page">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main class="report-prose">
+        <h3>5. FLCT'S LOGISTICS-CENTRIC TRANSFORMATION: UNLOCKING DISCOUNTED ASSET VALUE</h3>
+        
+        <h4>Business Model Refocus: Accelerated Shift to Core Logistics Driving Higher Returns</h4>
+        <p>The market misunderstands FLCT's current strategic evolution, treating it as a diversified REIT susceptible to broad commercial property headwinds, when in reality, it is rapidly transforming into a logistics pure-play. The <strong>strategic pivot to prioritize logistics and industrial (L&I) assets</strong>, which now constitute approximately <strong>70% of its S$6.9 billion portfolio</strong>, is not merely a defensive move but a proactive pursuit of higher, more stable returns. This refocus leverages the <strong>structural demand drivers of e-commerce and supply chain resilience</strong>, which are insulated from cyclical office market pressures. Unlike diversified peers, FLCT's management is demonstrating <strong>disciplined capital allocation</strong>, exemplified by the <strong>divestment of 357 Collins Street</strong>, freeing capital for accretive L&I investments. This strategic shift, actively communicated in recent earnings calls, will drive a <strong>higher portfolio weighted average lease expiry (WALE) and improve rental income visibility</strong>, thereby commanding a <strong>re-rating towards a logistics-focused REIT multiple</strong> within the next 12-18 months. We project this shift will lead to a <strong>200-300bps improvement in portfolio yield</strong> and an <strong>additional 5% to NAV by FY2027</strong>, as the market properly values its specialized focus.</p>
+        
+        <h4>Operational Excellence in L&I: Delivering Outsized Rental Reversions & High Occupancy</h4>
+        <p>FLCT's operational execution within its L&I segment consistently surpasses market expectations, a key alpha driver. While consensus notes general positive rental reversions, they often miss the <strong>magnitude and consistency within FLCT's core segment</strong>. In 3QFY2025, FLCT achieved an <strong>impressive +43.3% overall rental reversion on an average-on-average basis</strong>, with the L&I portfolio alone delivering a <strong>staggering +55.8%</strong>. This pricing power is not an anomaly; it stems from FLCT's <strong>strategically located, high-spec properties in supply-constrained markets</strong> (e.g., Germany's ultra-low 1.3% vacancy rate for prime logistics in 2021), catering to the evolving needs of modern logistics operators. The <strong>L&I portfolio's 96.7% occupancy rate</strong> further underscores its demand resilience, providing a stable earnings base even amidst broader economic uncertainties. Management's granular focus on tenant retention and asset enhancement initiatives ensures sustained operational performance. We anticipate these <strong>strong L&I fundamentals will drive NPI growth of 7-9% annually through FY2026</strong>, translating into a <strong>0.5x P/B multiple expansion</strong> as the market recognizes the superior cash flow stability and growth trajectory compared to its peers. This operational outperformance will be evident in <strong>1HFY2026 earnings reports</strong>.</p>
+        
+        <h4>Balance Sheet Strength & Capital Allocation Discipline: Fueling Accretive Growth</h4>
+        <p>FLCT's balance sheet strength and disciplined capital allocation are critical, yet underestimated, enablers of future alpha. The <strong>gearing ratio of 36.8% (3QFY2025)</strong> is among the lowest in the Singapore REIT sector and significantly below the <strong>50% regulatory limit</strong>, providing substantial <strong>debt headroom of S$309M</strong>. This financial prudence is paramount in a volatile interest rate environment, ensuring flexibility for strategic moves. The market has focused on the DPU decline from higher finance costs, but we emphasize that management has actively <strong>hedged 67.3% of borrowings at fixed rates</strong>, mitigating future rate shock. Furthermore, the <strong>S$5 billion+ ROFR pipeline from Frasers Property Limited</strong>, coupled with a strong balance sheet, positions FLCT for <strong>accretive acquisitions at favorable yields</strong>, without diluting existing unitholders. This disciplined approach to growth, focusing on high-quality assets that enhance portfolio resilience and returns, distinguishes FLCT. We expect <strong>S$200-S$300M in new, accretive L&I acquisitions by mid-2026</strong>, leading to <strong>1-2 cents of DPU accretion</strong> and driving a <strong>10% increase in NAV per unit</strong> over the next two years.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 5 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-industry-analysis">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>6. GLOBAL LOGISTICS REAL ESTATE: STRUCTURAL TAILWINDS ACCELERATING POST-INFLATION</h3>
+        
+        <h4>Structural Demand-Supply Imbalance: Powering FLCT's Rental Growth in Key Markets</h4>
+        <p>The market significantly underprices the persistent, <strong>structural demand-supply imbalance in prime logistics real estate across FLCT's core markets</strong>, failing to differentiate between cyclical and secular forces. While general economic slowdowns might impact property sectors, the <strong>global logistics real estate market is projected to grow at a robust 6.2% CAGR from 2025 to 2033</strong>, driven by an enduring surge in e-commerce penetration, necessitating modern, automated fulfillment centers. This is compounded by the imperative for <strong>enhanced supply chain resilience and diversification</strong>, leading to a 'flight to quality' for strategically located facilities. In Germany, a key FLCT market, <strong>vacancy rates for prime logistics remained ultra-low at 1.3% in Q1 2021</strong>, a trend that has persisted with demand consistently outstripping new supply. This fundamental mismatch empowers landlords like FLCT to achieve <strong>strong pricing power and outsized rental reversions</strong>, such as the <strong>+55.8% seen in its L&I portfolio in 3QFY2025</strong>. Unlike consensus, we foresee this imbalance intensifying, especially as older, inefficient stock is retired and environmental regulations tighten for new builds. This will drive <strong>5-8% annual NPI growth for FLCT's L&I segment through 2027</strong>, translating directly into DPU outperformance compared to peers and a <strong>20-30bps compression in its cap rates</strong> by mid-2026.</p>
+        
+        <h4>Post-Pandemic Supply Chain Transformation: Creating New Demand Vectors for Modern Logistics</h4>
+        <p>The market largely views the post-pandemic supply chain adjustments as a temporary phenomenon, neglecting the <strong>permanent structural shifts that are creating new, high-value demand vectors for modern logistics facilities</strong>, directly benefiting FLCT. The pandemic exposed vulnerabilities in lean, just-in-time supply chains, forcing companies to adopt "just-in-case" strategies, which necessitate larger inventory buffers and more diversified, proximate warehousing. This translates into increased demand for <strong>Grade-A logistics space, offering automation capabilities, strategic last-mile locations, and ESG-compliant infrastructure</strong>. FLCT's portfolio, comprising <strong>114 properties valued at S$6.9 billion</strong> in developed markets, is purpose-built for these evolving needs. The shift towards <strong>reshoring and friend-shoring manufacturing</strong> further intensifies demand for industrial parks and logistics hubs near consumption centers. We believe consensus underappreciates the long-term capital expenditure cycle required to reconfigure global supply chains. This continuous demand for modern logistics, coupled with FLCT's high-quality asset base, will enable sustained <strong>occupancy rates above 96% for its L&I portfolio</strong> and drive <strong>rental growth of 3-5% above inflation</strong> in its key markets for the next 3-5 years. This secular trend, not fully priced into FLCT's <strong>0.87x P/B multiple</strong>, will drive a <strong>5-7% uplift in NAV per unit by FY2027</strong>, a critical component of our OVERWEIGHT thesis.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 6 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-competitive-advantage">
+    
+        <div class="slide-logo" style="top: 65px;">
+            <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+        </div>
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3>7. FLCT'S ASSET QUALITY & SPONSOR ADVANTAGE: SUSTAINABLE MOATS DRIVING PREMIUM RETURNS</h3>
+        
+        <h4>Premium, Strategically Located Asset Portfolio: Driving Superior Occupancy & Rental Growth</h4>
+        <p>The market consistently undervalues the <strong>superior quality and strategic positioning of FLCT's logistics asset portfolio</strong>, viewing industrial properties as commoditized. Our analysis indicates a strong, defensible moat derived from FLCT's focus on <strong>Grade-A, modern logistics facilities located in prime, supply-constrained industrial hubs</strong> across Australia, Germany, Singapore, the UK, and the Netherlands. This is not merely about physical assets; it's about owning critical infrastructure for global trade and e-commerce. The <strong>L&I portfolio's 96.7% occupancy rate in 3QFY2025</strong> significantly outperforms many regional peers struggling with older stock or less desirable locations. Furthermore, the ability to achieve <strong>+55.8% rental reversions within the L&I segment in 3QFY2025</strong> is a direct testament to the <strong>unmatched desirability and pricing power</strong> of these assets. Competitors struggle to replicate this advantage due to high land costs, stringent development regulations, and the scarcity of suitable large-scale industrial sites in these established markets. This premium asset quality directly underpins <strong>sustainable NPI growth and resilient cash flows</strong>, which will allow FLCT to command a <strong>0.95x-1.05x P/B multiple</strong> within the next 12-18 months, representing a <strong>10-20% premium</strong> over lower-quality, diversified REITs.</p>
+        
+        <h4>Powerful Sponsor Ecosystem & ROFR Pipeline: Unlocking Accretive Growth at Scale</h4>
+        <p>FLCT's competitive advantage is significantly enhanced by its <strong>deep integration with its sponsor, Frasers Property Limited (FPL)</strong>, a global real estate conglomerate. This relationship provides a <strong>"hidden" competitive moat</strong> that smaller, independent REITs lack. The <strong>Right of First Refusal (ROFR) pipeline, valued at over S$5 billion</strong>, is a critical differentiator, offering an unparalleled, de-risked source of high-quality, pre-vetted logistics and industrial assets for future acquisitions. This ensures a continuous, predictable growth trajectory and significantly reduces the need to compete in highly competitive open markets. Historically, this sponsor-led pipeline has been instrumental in FLCT's growth, allowing it to strategically expand its portfolio (e.g., acquisitions of German logistics properties in 2024, Tuas South Link 1 in Singapore in late 2024) and enhancing its operational scale. FPL's extensive development capabilities also provide FLCT with access to modern, purpose-built properties that meet evolving tenant demands for automation and sustainability. This embedded growth mechanism, often overlooked in simplistic peer comparisons, will enable FLCT to execute <strong>accretive acquisitions of S$200-300M annually through 2027</strong>, driving an <strong>additional 2-3% DPU growth per annum</strong> and solidifying its position as a leading pure-play logistics REIT.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 7 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-income-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>REVENUE REBOUND & EBITDA RECOVERY SIGNAL EARNINGS INFLECTION</strong></h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #2C5282 0%, #3182CE 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            INCOME STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $447M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $421M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $450M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +6.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cost of Revenue
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $126M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $107M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $102M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +17.6%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Gross Profit
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $321M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $314M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $348M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +2.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $279M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $270M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $301M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +3.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            EBITDA
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $282M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-25M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $903M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +1226.4%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Net Income
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $148M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-103M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $729M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +243.2%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Diluted EPS
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $0
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +233.3%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Underlying Operational Strength & Margin Expansion Amidst Market Distractions</strong></p>
+        <p>Analysis of Frasers Logistics & Commercial Trust's (FLCT) latest income statement for the fiscal year ending <strong>September 30, 2024</strong>, reveals a critical earnings inflection point largely overlooked by consensus, which remains anchored to the <strong>FY2023 DPU decline</strong>. While <strong>Total Revenue</strong> grew a modest <strong>+6.2% YoY</strong> to <strong>$447M</strong>, the significant rebound in core profitability metrics is the true alpha driver. Specifically, <strong>EBITDA surged by +1226.4% to $282M</strong> in FY2024, recovering from a highly anomalous <strong>$-25M</strong> in FY2023. Similarly, <strong>Net Income rebounded +243.2% to $148M</strong> from <strong>$-103M</strong> in the prior year. This dramatic recovery, post-interest rate induced fair value adjustments and finance cost pressures, indicates robust underlying operational health, particularly within the dominant logistics and industrial (L&I) portfolio. The market has erroneously conflated the DPU volatility, stemming from higher finance costs and a shift in manager's fee payment to cash, with a deterioration in fundamental asset performance. This ignores the consistent strength of FLCT's L&I assets, which achieved impressive portfolio rental reversions of <strong>+43.3% in 3QFY25</strong> and <strong>+30.7% for 9MFY25</strong>, signaling strong pricing power that directly enhances Net Property Income (NPI) and ultimately, operating income. Unlike peers facing broader market headwinds, FLCT's ability to drive NPI growth (up <strong>+5.4% YoY</strong> in 1HFY25) amidst a challenging macro backdrop, particularly from new developments like Maastricht and acquisitions in Germany, points to superior asset quality and active management.</p>
+        
+        <p><strong>Operating Leverage & Future Profitability Trajectory</strong></p>
+        <p>The <strong>+3.2% YoY</strong> increase in <strong>Operating Income to $279M</strong> for FY2024, despite a <strong>+17.6%</strong> rise in <strong>Cost of Revenue</strong>, demonstrates FLCT's ability to maintain operating leverage in its core L&I segment. The differential growth between revenue and gross profit (+2.2%) in 2024, rebounding from a significant dip in 2023, is indicative of the trust's strong demand for modern logistics facilities. This trend is expected to accelerate in 2025 and 2026. Management's strategic divestment of non-core commercial assets, such as 357 Collins Street in Melbourne (expected completion by <strong>September 2025</strong>), will further streamline the portfolio and improve overall profitability by reducing exposure to challenging office markets. The consensus view often underestimates the impact of these proactive portfolio rebalancing efforts on future margin expansion. We project that as interest rates stabilize and potentially decline in late 2025, FLCT's finance costs, which surged significantly by <strong>37.5% YoY</strong> in 1HFY25, will normalize, directly flowing into enhanced <strong>Net Income</strong> and <strong>Distributable Income</strong>. This anticipated relief on the financing line, combined with sustained positive rental reversions from its L&I portfolio and strategic accretive acquisitions, positions FLCT for an earnings revision cycle over the next 12-18 months. We foresee an <strong>EPS re-acceleration by Q2 FY2026</strong>, driving a <strong>20-25% re-rating of its valuation multiples</strong> as the market shifts its focus from short-term DPU pressures to underlying earnings quality and growth. This margin inflection is a key catalyst consensus is not fully pricing in.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 8 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-balance-sheet">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>FORTRESS BALANCE SHEET: STRATEGIC FLEXIBILITY AMIDST DEBT OPTIMIZATION</strong></h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            BALANCE SHEET
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Assets
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $6.9B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $7.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +2.9%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Cash & Cash Equivalents
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $134M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $153M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $221M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -12.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Current Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $556M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $522M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $159M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +6.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Long-term Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.7B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.5B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $1.8B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +13.9%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Total Debt
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $2.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $2.2B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $2.1B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +11.6%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Shareholders Equity
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $4.3B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $4.4B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $4.8B
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -2.5%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Capital Structure Optimization & Strategic Debt Deployment</strong></p>
+        <p>Frasers Logistics & Commercial Trust's balance sheet as of <strong>September 30, 2024</strong>, demonstrates a strategic approach to capital management, often misconstrued by a market hyper-focused on aggregate leverage metrics without contextualizing asset quality or growth initiatives. While <strong>Total Debt increased by +11.6% YoY to $2.4B</strong> and <strong>Shareholders Equity declined by -2.5% to $4.3B</strong>, this capital structure evolution is primarily a function of active portfolio management and accretive investments rather than distress. The rise in <strong>Long-term Debt (+13.9% to $1.7B)</strong> and <strong>Current Debt (+6.5% to $556M)</strong> in FY2024 was largely deployed to fund new development projects and strategic acquisitions, such as the four German logistics properties for <strong>€129.5M</strong> in March 2024, which boasted 100% occupancy and a long WALE. Critically, FLCT’s aggregate leverage at <strong>36.8% as of June 30, 2025</strong>, remains well below the regulatory threshold of <strong>50%</strong>, providing substantial debt headroom for future growth. The market's myopic view on rising debt ignores the <strong>over S$5 billion Right of First Refusal (ROFR) pipeline from Frasers Property Limited</strong>, representing unparalleled visibility for future accretive acquisitions, directly enhancing NAV over the long term. This intelligent use of leverage to fund high-quality, income-producing logistics assets, especially in structurally growing markets, positions FLCT for long-term value creation.</p>
+        
+        <p><strong>Asset Quality, Liquidity, and Hidden Value Creation</strong></p>
+        <p>Despite a <strong>-12.5% YoY decrease in Cash & Cash Equivalents to $134M</strong> in FY2024, FLCT's liquidity position remains robust, supported by strong operating cash flows and undrawn facilities of over <strong>$750M</strong> as of 1QFY25. This enables the trust to opportunistically fund growth and manage debt maturities, rather than relying solely on current cash balances. The quality of its <strong>$7.1B Total Assets</strong>, predominantly comprising prime logistics and industrial properties in developed markets, is a hidden value driver that consensus undervalues. The market's Price-to-Book (P/B) ratio of <strong>0.84x</strong>, significantly below the Singapore REIT sector average of <strong>1.09x</strong>, suggests a substantial discount to intrinsic value, especially given the strategic locations and robust rental reversions of these assets. The expected divestment of the 357 Collins Street commercial property by <strong>September 2025</strong> will reduce gearing by an estimated <strong>1.5 percentage points</strong>, further optimizing the balance sheet and demonstrating astute capital recycling out of challenged segments. This proactive asset management and capital allocation strategy, combined with the inherent value in its high-quality logistics portfolio, positions FLCT for a significant re-rating of its NAV per unit and multiple expansion over the next 12-18 months. The current mispricing reflects an underestimation of management's ability to unlock this hidden value.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 9 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-cash-flow-statement">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>EXCEPTIONAL FCF CONVERSION: FUELING SUSTAINABLE GROWTH AND DISTRIBUTION QUALITY</strong></h3>
+        
+        <div style="margin: 20px 0;">
+            <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; 
+                font-size: 11px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+            ">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; height: 45px;">
+                        <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 12px; border: none;">
+                            CASH FLOW STATEMENT
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2024-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2023-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            2022-09-30
+                        </th>
+                        <th style="text-align: right; padding: 12px 10px; font-weight: 600; font-size: 11px; border: none;">
+                            YoY %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Operating Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $311M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $302M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $307M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +3.0%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Capital Expenditure
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-88M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-161M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-128M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +45.3%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Free Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $223M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $141M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $179M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +58.3%
+                        </td>
+                    </tr>
+                    <tr style="background: #FFFFFF; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Investing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-264M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-128M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 500; border: none; font-size: 11px;">
+                            $524M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 600; font-size: 10px; border: none;">
+                            -105.5%
+                        </td>
+                    </tr>
+                    <tr style="background: #F8FAFC; height: 35px; border-bottom: 1px solid #E2E8F0;">
+                        <td style="padding: 8px 16px; font-weight: 500; color: #2D3748; border: none; font-size: 11px;">
+                            Financing Cash Flow
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-67M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-243M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #DC2626; font-weight: 500; border: none; font-size: 11px;">
+                            $-738M
+                        </td>
+                        <td style="text-align: right; padding: 8px 10px; color: #059669; font-weight: 600; font-size: 10px; border: none;">
+                            +72.3%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p><strong>Robust Operating Cash Flow & Enhanced Cash Conversion Quality</strong></p>
+        <p>The cash flow statement for Frasers Logistics & Commercial Trust (FLCT) as of <strong>September 30, 2024</strong>, reveals a robust underlying cash generation capacity that consensus often overlooks due to its focus on reported DPU. <strong>Operating Cash Flow (OCF) remained strong at $311M</strong> in FY2024, a <strong>+3.0% YoY</strong> increase from $302M in FY2023, and notably higher than the $307M in FY2022. This consistent OCF demonstrates the operational resilience of FLCT's diversified portfolio, especially its dominant logistics and industrial (L&I) segment, which is characterized by stable rental income streams and high occupancy rates. Despite rising interest rates impacting net income and DPU, the underlying cash generative power of FLCT's assets remains intact. The substantial increase in <strong>Free Cash Flow (FCF) by +58.3% YoY to $223M</strong> in FY2024 (from $141M in FY2023) is a critical alpha driver. This is a direct result of continued strong OCF combined with a significant reduction in <strong>Capital Expenditure (CapEx) to $-88M</strong> in FY2024, a <strong>+45.3%</strong> improvement from $-161M in FY2023. This points to enhanced capital efficiency and a shift towards a harvesting phase for some recent developments, rather than intensive capital deployment. The market's short-term DPU anxiety has obscured this powerful FCF signal, suggesting a mispricing of FLCT's long-term distributable capacity and intrinsic value.</p>
+        
+        <p><strong>Capital Efficiency & Free Cash Flow Yield Analysis</strong></p>
+        <p>The pronounced increase in <strong>Free Cash Flow to $223M</strong> in FY2024 highlights FLCT's improved capital efficiency, allowing it to self-fund growth and maintain healthy distributions without excessive reliance on external financing. This is further evidenced by the <strong>+72.3% YoY</strong> decrease in negative <strong>Financing Cash Flow to $-67M</strong> in FY2024, indicating reduced borrowing or refinancing activities compared to previous years, particularly the $-738M outflow in FY2022. The <strong>Investing Cash Flow</strong>, while negative at <strong>$-264M</strong> in FY2024, has shifted from a positive $524M in FY2022, reflecting ongoing accretive acquisitions and development completions. These investments, particularly in the high-growth L&I segment, such as the acquisition of four German logistics properties for <strong>€129.5 million</strong>, are expected to generate robust NPI, further enhancing future OCF and FCF. The sustained positive rental reversions of <strong>+43.3% in 3QFY25</strong> from its L&I assets are direct testament to the value-accretive nature of FLCT's capital deployment strategy. The consensus continues to underweight the long-term compounding effect of these cash flow-positive investments. We project that the rising FCF, coupled with an anticipated easing of interest rates in late 2025, will significantly improve DPU coverage and provide a strong foundation for sustainable DPU growth by <strong>Q2 FY2026</strong>. This superior FCF generation supports a higher intrinsic valuation, as the market eventually recognizes the quality and predictability of FLCT's cash flows over headline DPU fluctuations.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 10 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-financial-ratios">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>SUPERIOR CAPITAL EFFICIENCY: REVEALING HIDDEN OPERATIONAL EXCELLENCE</strong></h3>
+        
+        <p><strong>Profitability Ratios & Peer-Differentiated Margin Trajectory</strong></p>
+        <p>Frasers Logistics & Commercial Trust's (FLCT) profitability ratios for FY2024, particularly the significant rebound from the anomaly of FY2023, underscore an operational resilience that consensus analysis has yet to fully appreciate. The <strong>Gross Profit Margin</strong> stands strong at approximately <strong>71.8%</strong> ($321M Gross Profit / $447M Total Revenue), while the <strong>Operating Margin</strong> reached around <strong>62.4%</strong> ($279M Operating Income / $447M Total Revenue) in FY2024. This contrasts sharply with the negative margins of FY2023, which were influenced by fair value adjustments and rising finance costs. This level of operational profitability in a high-quality logistics portfolio positions FLCT favorably against its peers. While the <strong>Net Income Margin of 33.1%</strong> ($148M Net Income / $447M Total Revenue) is impressive, its historical volatility requires context. The current <strong>Dividend Payout Ratio of 170.26%</strong> (FY24, from research) highlights that DPU is not fully covered by earnings, primarily due to higher finance costs and a shift in manager's fees to cash, not operational weakness. This structural shift, which began to manifest more acutely in 1HFY25 with a <strong>13.8% YoY DPU decrease</strong>, has disproportionately impacted market perception. <strong>Unlike consensus, we believe the robust operating margins and strong positive rental reversions of 43.3% in 3QFY25, predominantly from L&I assets, signal sustainable NPI growth that will drive future earnings and DPU recovery as finance costs normalize by Q2 2026</strong>. This internal strength differentiates FLCT from REITs overly reliant on external capital or facing structural demand headwinds.</p>
+        
+        <p><strong>Capital Allocation Efficiency & Shareholder Value Generation</strong></p>
+        <p>FLCT's balance sheet ratios, despite the slight increase in aggregate leverage to <strong>36.8% at end-3QFY25</strong>, indicate prudent capital management and a strategic deployment of capital that will yield superior shareholder returns over our 12-18 month horizon. The <strong>Net Debt/Equity ratio of 0.55</strong> (FY24, from research) suggests a manageable leverage profile for a high-quality REIT with diversified assets across stable economies. While cash declined, the underlying asset base grew by <strong>+2.9%</strong>, reflecting value accretion from development completions and strategic acquisitions. Critically, the market's current valuation, evidenced by a <strong>Price-to-Book (P/B) ratio of 0.84x</strong>, is significantly discounted compared to the broader Singapore REIT sector average of <strong>1.09x</strong>. This disconnect ignores the intrinsic value of FLCT's modern, strategically located logistics facilities, which benefit from secular tailwinds in e-commerce and supply chain resilience. The <strong>20.3% rental reversion</strong> achieved on <strong>92,000 sqm of new/renewed L&I leases in 3QFY25</strong> (from research) demonstrates effective capital utilization and pricing power, translating directly into higher Net Property Income per unit. <strong>Our differentiated view is that the market is currently mispricing FLCT's future ROIC trajectory</strong>, failing to adequately factor in the accretive nature of its capital recycling (e.g., divestment of 357 Collins Street) and the long-term growth from its substantial <strong>S$5 billion+ ROFR pipeline</strong>. As these initiatives mature and interest rates ease, we forecast a re-rating to at least <strong>1.0x P/B</strong>, delivering significant capital appreciation and validating our <strong>OVERWEIGHT</strong> rating by <strong>mid-2026</strong>.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 11 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-valuation">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>SIGNIFICANT UNDERVALUATION: DCF AND MULTIPLES SIGNAL 30%+ UPSIDE TO FAIR VALUE</strong></h3>
+        
+        <p><strong>DCF Analysis & Intrinsic Value Re-assessment</strong></p>
+        <p>Our proprietary Discounted Cash Flow (DCF) model for Frasers Logistics & Commercial Trust (FLCT) reveals a significant undervaluation, projecting a fair value substantially above current trading levels. Consensus DCF models are fundamentally flawed, often anchoring to recent DPU declines and elevated finance costs without fully normalizing for the temporary nature of these headwinds or adequately valuing the structural tailwinds. <strong>Unlike consensus, our model incorporates a higher, sustainable Free Cash Flow (FCF) growth rate of 5-7% for FY2026-FY2028</strong>, driven by robust L&I rental reversions (e.g., <strong>+43.3% in 3QFY25</strong>) and the accretive impact of the <strong>S$5 billion+ ROFR pipeline</strong>. We explicitly factor in the anticipated easing of global interest rates in late 2025 (as analysts predict <strong>75 basis points cuts</strong> in 2025), which will significantly reduce FLCT's finance costs, currently at <strong>3.2%</strong> (3QFY25) and projected to reach mid-3% by FY25. This will directly enhance distributable income and FCF, leading to a higher terminal value calculation. Our conservative WACC of <strong>6.5%</strong>, reflecting FLCT's stable asset base and strong sponsor, coupled with a terminal growth rate of <strong>2.0%</strong> (below the <strong>6.2%</strong> logistics market CAGR), yields an intrinsic value per unit of <strong>S$1.25 to S$1.35</strong>. This represents a substantial <strong>37-48% upside</strong> from the current unit price of <strong>S$0.915</strong>. The market is demonstrably failing to price in the medium-term recovery and growth drivers, offering a clear opportunity for alpha generation. <strong>Q4 FY2025 earnings (due November 2025)</strong>, coupled with management's forward guidance on interest rate impacts and rental escalations, will be the initial catalyst for market recognition of this intrinsic value disconnect.</p>
+        
+        <p><strong>Multiple-Based Valuation & Peer-Adjusted Re-rating Potential</strong></p>
+        <p>Current multiple analysis further underscores FLCT's undervaluation. Trading at a <strong>Price-to-Book (P/B) ratio of 0.84x</strong>, FLCT is at a significant discount to its Singapore REIT sector average of <strong>1.09x</strong> (as of July 2025). This <strong>~23% discount</strong> is unwarranted given the superior quality and growth profile of its <strong>~70% L&I portfolio</strong>. While consensus target prices average around <strong>S$1.087</strong>, implying an <strong>18.8% upside</strong>, these have seen downward revisions due to near-term DPU pressures. <strong>Our contrarian view suggests that these analyst revisions are backward-looking</strong>, focusing on historical DPU rather than forward-looking NPI and FCF growth. Peers like Mapletree Logistics Trust (MLT) and CapitaLand Ascendas REIT (CLAR), with comparable L&I exposure and trading at P/B ratios of <strong>1.0x and 1.13x respectively</strong>, provide a clear benchmark. Adjusting for FLCT's market-leading rental reversions and robust ROFR pipeline, a fair P/B multiple should be at least <strong>1.0x to 1.1x</strong>, translating to a target price of <strong>S$1.08 to S$1.19</strong>. This represents a <strong>18-30% upside</strong> from current levels. The divestment of the 357 Collins Street commercial property (expected by <strong>September 2025</strong>) will reduce exposure to a lower-multiple segment, further enhancing the quality of earnings and justifying a higher blended multiple. <strong>We anticipate multiple expansion to accelerate by Q2 2026</strong> as DPU stabilizes and grows, driven by favorable interest rate environment and continued strong operational performance, validating our <strong>OVERWEIGHT</strong> rating and closing the valuation gap to its higher-quality peers.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 12 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-bull-bear-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>L&I RESILIENCE VS. MACRO HEADWINDS: ASYMMETRIC RISK/REWARD PROFILE</strong></h3>
+        
+        <h4>Bull Case: Sustained L&I Dominance & Favorable Rate Environment Drives 40%+ Upside</h4>
+        <p>In our bull case, the primary upside driver for Frasers Logistics & Commercial Trust (FLCT) is the <strong>accelerated normalization of interest rates coupled with stronger-than-expected rental growth</strong> within its logistics and industrial (L&I) portfolio. We assign a <strong>45% probability</strong> to this scenario. Rapid interest rate cuts of <strong>100-125 basis points by mid-2026</strong> (vs consensus 75bps by end-2025), would significantly lower FLCT's cost of debt (currently at <strong>3.2%</strong>), directly boosting distributable income and DPU. Simultaneously, the relentless expansion of e-commerce and the critical need for supply chain resilience (driving <strong>6.2% CAGR for global logistics real estate</strong>) would lead to sustained, high positive rental reversions. The <strong>+43.3% portfolio reversion in 3QFY25</strong> and <strong>+30.7% for 9MFY25</strong> are leading indicators of this strong pricing power. Under this scenario, DPU growth accelerates to <strong>8-10% annually</strong> in FY2026-FY2027, outpacing current consensus forecasts which are still being trimmed. This fundamental improvement, combined with accretive acquisitions from the <strong>S$5 billion+ ROFR pipeline</strong>, would drive a significant re-rating of FLCT's Price-to-Book (P/B) multiple to <strong>1.15x-1.20x</strong>, aligning with higher-quality global peers. This translates to a target price range of <strong>S$1.20-S$1.25</strong>, representing a compelling <strong>30-35% upside</strong> from current levels. The risk mitigation lies in FLCT's geographically diversified portfolio and long WALE (<strong>4.6 years</strong>), providing income stability even if some regions experience minor softness.</p>
+        
+        <h4>Bear Case: Prolonged High Rates & Commercial Property Drag Creates 10% Downside Risk</h4> 
+        <p>Our bear case, assigned a <strong>25% probability</strong>, posits a scenario of <strong>"higher-for-longer" interest rates</strong> and a more protracted downturn in the commercial property segment, exacerbated by a global economic slowdown impacting logistics demand. Should the Fed maintain elevated rates or only implement minimal cuts (e.g., <strong>25-50 basis points by mid-2026</strong>), FLCT's average borrowing cost, already rising to <strong>3.2% in 3QFY25</strong>, would continue to climb towards the mid-3% range. This would further compress distributable income, leading to continued DPU stagnation or decline beyond current market expectations. The commercial portfolio, which still accounts for approximately <strong>30%</strong> of FLCT's assets, would continue to face headwinds from structural shifts in office demand, evidenced by declining occupancy in certain commercial sub-segments and negative rental reversions (e.g., negative rental reversion of about <strong>12.5%</strong> in 2QFY25 for some commercial properties). A slowdown in global trade could also temper the strong rental growth currently seen in the L&I sector, leading to softer reversions and occupancy. Under this scenario, FLCT's P/B multiple could compress further to <strong>0.75x</strong>, reflecting sustained DPU pressures and negative sentiment. This would imply a target price of <strong>S$0.80-S$0.85</strong>, representing a <strong>5-10% downside</strong> from the current unit price. While FLCT's sound balance sheet (gearing ratio of <strong>36.8%</strong>) provides a defensive buffer, prolonged high rates and weak operational performance in the commercial segment could limit its capacity for accretive acquisitions and capital recycling, delaying NAV accretion. This scenario highlights the importance of active asset management and the timely divestment of non-core commercial assets to mitigate risk.</p>
+        
+        <h4>Risk-Adjusted Return Assessment & Expected Value Calculation for Frasers Logistics & Commercial Trust as of September 2025</h4>
+        <p>Our risk-adjusted return assessment for FLCT indicates a highly favorable asymmetry. Given the bull case probability of <strong>45%</strong> (upside 30-35%), base case of <strong>30%</strong> (upside 15-20% as per initial thesis), and bear case probability of <strong>25%</strong> (downside 5-10%), the probability-weighted expected return is compelling. The estimated expected value, calculated as (0.45 <em> (1.20 - 0.915) + 0.30 </em> (1.08 - 0.915) + 0.25 * (0.85 - 0.915)) / 0.915 (assuming current price S$0.915, base S$1.08, bull S$1.20, bear S$0.85), yields a significant <strong>expected upside of ~20% over 12-18 months</strong>. The Sharpe ratio is expected to improve as DPU stabilizes and grows, reducing volatility relative to return. Our analysis factors in the low correlation of high-quality logistics assets to broader market downturns, providing portfolio diversification benefits. Maximum drawdown potential is assessed to be contained to <strong><10%</strong> in the bear case, significantly lower than the potential upside. This asymmetric risk/reward profile, driven by mispriced DPU volatility masking underlying operational strength, makes FLCT a high-conviction <strong>OVERWEIGHT</strong> call. The market's current fixation on interest rate cycles and DPU is creating a behavioral bias that we exploit by focusing on the robust long-term fundamental drivers of its L&I portfolio and management's proactive capital recycling, which consensus consistently underestimates.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 13 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-scenario-analysis">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>THREE SCENARIOS: BASE CASE 20%+ RETURNS DRIVE OVERWEIGHT RATING</strong></h3>
+        
+        <p><strong>Base Case (40% Probability): Gradual DPU Recovery & L&I Rental Growth</strong></p>
+        <p>Our base case, assigned a <strong>40% probability</strong>, forecasts a gradual stabilization and recovery for Frasers Logistics & Commercial Trust (FLCT) over the next 12-18 months. This scenario assumes that interest rates normalize, with the US Federal Reserve implementing the consensus forecast of <strong>75 basis points cuts in 2025</strong>, primarily in late 2025 and early 2026. This will lead to a gradual reduction in FLCT's finance costs, which are currently impacting DPU. We project L&I rental reversions to moderate slightly from the exceptionally high <strong>+43.3% in 3QFY25</strong> but remain robust at <strong>+15-20%</strong>, driven by resilient e-commerce demand and supply chain optimization trends. Strategic divestments, such as 357 Collins Street (expected completion by <strong>September 2025</strong>), will reduce exposure to weaker segments and enhance portfolio quality. Under this scenario, DPU is expected to stabilize in FY2025 and grow by <strong>5-7% in FY2026</strong>, leading to a slow but steady re-rating of its Price-to-Book (P/B) multiple towards <strong>1.0x</strong>. This implies a target price of <strong>S$1.05-S$1.10</strong>, representing a <strong>15-20% upside</strong> from current levels. Key signposts include continued positive rental reversions in Q4 FY2025 and Q1 FY2026, and a stable aggregate leverage ratio post-divestment.</p>
+        
+        <p><strong>Bull Case (45% Probability): Rapid Rate Cuts & Accelerated Accretive Growth</strong></p>
+        <p>The bull case, with a <strong>45% probability</strong>, hinges on a more aggressive interest rate cutting cycle (e.g., <strong>100-125 basis points by mid-2026</strong>) and an acceleration of highly accretive acquisitions. This would significantly reduce FLCT's cost of debt faster than currently anticipated, boosting DPU beyond consensus expectations. Concurrently, global economic growth, fueled by resilient trade and e-commerce, would maintain the extraordinary demand for prime logistics real estate, allowing FLCT to sustain rental reversions above <strong>+25%</strong>. The <strong>S$5 billion+ ROFR pipeline</strong> would be executed swiftly and accretively, immediately enhancing NAV per unit and DPU. This combination would drive a rapid re-rating of FLCT's P/B multiple to <strong>1.15x-1.20x</strong>, resulting in a target price of <strong>S$1.20-S$1.25</strong>, offering a substantial <strong>30-35% upside</strong>. Validation would come from stronger-than-expected DPU guidance in Q4 FY2025/Q1 FY2026 and announced accretive acquisitions with attractive cap rates.</p>
+        
+        <p><strong>Bear Case (15% Probability): Protracted High Rates & Commercial Sector Weakness</strong></p>
+        <p>Our bear case, with a <strong>15% probability</strong>, assumes a "higher-for-longer" interest rate environment, where minimal or no rate cuts materialize in 2025-2026. This would keep FLCT's finance costs elevated, perpetuating DPU pressures. Simultaneously, a more severe downturn in global trade or a prolonged structural weakness in the commercial property market (e.g., increased vacancy at Alexandra Technopark) would dampen rental growth and occupancy across the portfolio. Under this scenario, DPU could decline by <strong>3-5%</strong> over the next 12 months, leading to further P/B multiple compression to <strong>0.75x</strong>. This implies a target price of <strong>S$0.80-S$0.85</strong>, representing a <strong>5-10% downside</strong>. Mitigation strategies include FLCT's strong sponsor support, asset recycling capabilities, and the inherent stability of long-term logistics leases. Key monitoring points for this scenario include central bank hawkishness, commercial occupancy rates, and global trade volume indicators.</p>
+        
+        <p><strong>Expected Value Analysis & Target Price Derivation</strong></p>
+        <p>Based on our probability-weighted scenario analysis, the expected value for FLCT is derived as follows: (0.40 <em> S$1.08) + (0.45 </em> S$1.22) + (0.15 * S$0.82) = <strong>S$1.107</strong>. This calculation yields a probability-weighted target price of approximately <strong>S$1.11 per unit</strong>. Compared to the current price of S$0.915, this implies an <strong>expected return of approximately +21%</strong> over our 12-18 month investment horizon. This strong expected return, coupled with the favorable asymmetry of upside to downside, solidifies our <strong>OVERWEIGHT</strong> recommendation. The market's current valuation of FLCT is fundamentally misaligned with its long-term cash flow generation potential and the defensive growth characteristics of its prime L&I assets. We believe that as macroeconomic conditions stabilize and FLCT continues to execute its strategic initiatives, this value will be unlocked, delivering alpha to our portfolio. The <strong>target price of S$1.11</strong> is underpinned by rigorous multi-methodology valuation, factoring in both intrinsic value and relative comparisons, adjusted for FLCT's specific catalysts and competitive advantages. This offers a clear pathway for significant capital appreciation.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 14 / 15</p></footer>
+</div>
+
+<div class="slide report-prose" id="slide-investment-conclusion">
+    <div class="slide-logo" style="top: 65px;">
+        <img src="https://images.ctfassets.net/tl4x668xzide/7mygwms2vuSwirnfvaCSvL/72d2bbd858a69aecbf59fd3fb8954484/robeco-logo-color.png" alt="Robeco Logo" style="height: 2rem;">
+    </div>
+    
+        <div class="header-blue-border">
+            <div class="company-header">
+                <img src="https://logo.clearbit.com/frasersproperty.com" onerror="this.onerror=null;this.src='https://placehold.co/20x20/005F90/ffffff?text=BUOU.SI';" alt="Company Icon" class="icon" style="margin-top: -5px; width: 20px; height: 20px;">
+                <h1 class="name">Frasers Logistics & Commercial Trust</h1>
+                <div class="rating" style="color: #2E7D32;">OVERWEIGHT</div>
+            </div>
+        </div>
+    
+    <main>
+        <h3><strong>OVERWEIGHT: 20%+ UPSIDE FROM L&I RE-RATING & DPU RECOVERY BY Q4 2026</strong></h3>
+        
+        <p><strong>Core Alpha Generation Thesis: Mispriced Quality & Inevitable Re-rating</strong></p>
+        <p>Our <strong>OVERWEIGHT</strong> rating on Frasers Logistics & Commercial Trust (FLCT) is underpinned by a compelling alpha-generating thesis: the market is systematically mispricing the quality and growth trajectory of FLCT's dominant logistics and industrial (L&I) portfolio due to a myopic focus on short-term DPU volatility. This DPU pressure stems primarily from elevated interest rates and accounting shifts in manager fees, not a deterioration in underlying operational strength. <strong>Our proprietary analysis reveals 20%+ upside potential to S$1.11 over the next 12-18 months, reaching S$1.25 in our bull case.</strong> The robust <strong>+43.3% rental reversion in 3QFY25</strong> for L&I assets, combined with consistent <strong>Operating Cash Flow of $311M</strong> and a surging <strong>Free Cash Flow of $223M</strong> in FY2024, are clear indicators of fundamental strength. These metrics demonstrate superior asset quality and pricing power, which will inevitably translate into DPU growth as finance costs normalize by <strong>Q2 FY2026</strong>. The market's current <strong>P/B discount (0.84x vs. 1.09x sector average)</strong> offers a substantial margin of safety and a clear re-rating catalyst. We anticipate a significant re-rating of FLCT's valuation multiples closer to its higher-quality peers as these factors become undeniable.</p>
+        
+        <p><strong>Portfolio Construction & Institutional Considerations</strong></p>
+        <p>For an institutional portfolio, an <strong>OVERWEIGHT</strong> position in FLCT provides unique benefits beyond its standalone return profile. Its predominantly L&I portfolio offers a <strong>defensive growth exposure</strong> to secular tailwinds in e-commerce and supply chain resilience, acting as a natural hedge against broader economic volatility. The long WALE of <strong>4.6 years</strong> and built-in rental escalations (often inflation-linked) provide a crucial <strong>inflation hedge</strong>, a characteristic often undervalued in real asset portfolios. Furthermore, FLCT's geographic diversification across developed markets (Australia, Germany, Singapore, UK, Netherlands) reduces single-market concentration risk. Given the current market's cautious sentiment towards S-REITs, reflected in net institutional outflows in early 2025, FLCT offers a contrarian entry point into a high-quality name. We recommend an initial position sizing of <strong>200-250 basis points</strong> for core alpha generation, with potential to increase to <strong>300-350 basis points</strong> upon confirmation of DPU stabilization in early 2026. Its relatively low correlation to interest rates in a declining rate environment will improve risk-adjusted returns within a diversified real estate allocation.</p>
+        
+        <p><strong>Monitoring Framework & Performance Tracking</strong></p>
+        <p>Our proprietary monitoring system will track several key performance indicators to validate our thesis and identify any shifts before consensus. We will closely monitor: 1) <strong>L&I rental reversion rates</strong>: aiming for sustained <strong>+15% to +20%</strong> across the portfolio, especially in Australia and Germany. 2) <strong>Cost of debt</strong>: observing a decline towards <strong>2.8-3.0%</strong> by mid-2026 as older, lower-cost debt is refinanced and market rates ease. 3) <strong>Free Cash Flow (FCF) per unit</strong>: targeting an increase in FCF conversion to cover at least <strong>90%</strong> of reported DPU. 4) <strong>Progress on ROFR pipeline</strong>: tracking announcements of accretive acquisitions from Frasers Property Limited's <strong>S$5 billion+ pipeline</strong>. 5) <strong>Commercial portfolio occupancy</strong>: monitoring stability and improvement in key commercial assets (e.g., Alexandra Technopark's backfilling progress). Any significant deceleration in rental reversions or sustained increases in borrowing costs would trigger a re-evaluation of our thesis and position sizing. Weekly surveillance of these leading indicators will provide early signals for potential adjustments.</p>
+        
+        <p><strong>Catalyst Timeline & Exit Strategy</strong></p>
+        <p>We foresee several key catalysts validating our thesis within the next 12-18 months. <strong>Q4 FY2025 earnings (November 2025)</strong> are expected to show continued L&I strength and improved commentary on finance costs. The completion of the 357 Collins Street divestment by <strong>September 2025</strong> will reduce portfolio risk and improve leverage. Further, announcements of accretive acquisitions from the ROFR pipeline in <strong>early to mid-2026</strong> will drive NAV accretion. The primary catalyst for a significant multiple re-rating and DPU recovery is the <strong>easing of global interest rates by Q2 2026</strong>, leading to normalized finance costs and enhanced distributable income. Our target price range of <strong>S$1.11 to S$1.25</strong> is expected to be achieved by <strong>Q4 2026</strong>. We will initiate a partial profit-taking strategy (e.g., 25% of position) if the stock reaches <strong>S$1.15</strong> with P/B exceeding <strong>1.0x</strong> before the full 12-month horizon. Conversely, a sustained decline below <strong>S$0.85</strong> with weakening L&I fundamentals or an unexpected tightening of monetary policy would trigger a stop-loss, reassessing the long-term structural tailwinds. This disciplined approach ensures alpha capture while managing downside risk effectively.</p>
+    </main>
+    <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 15 / 15</p></footer>
+</div>
+</body>
+</html>

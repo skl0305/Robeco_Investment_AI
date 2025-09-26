@@ -2056,19 +2056,19 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 **SLIDE 5 - COMPANY DEEP DIVE (FLEXIBLE ALPHA-GENERATING ANALYSIS):**
 - **H3 Title**: Create {company_name} company-specific investment thesis title that captures the unique alpha opportunity (e.g., "5. NVIDIA'S AI INFRASTRUCTURE MONOPOLY: $400B TAM WITH 80% MARKET DOMINANCE", "5. TESLA'S MANUFACTURING REVOLUTION: $25K MODEL UNLOCKING 50M UNIT TAM")
 - **FLEXIBLE SECTION APPROACH - TAILOR TO COMPANY'S ALPHA DRIVERS:**
-  - **IDENTIFY 3-4 MOST CRITICAL ALPHA THEMES** specific to this company's situation and opportunity set
+  - **IDENTIFY 3 MOST CRITICAL ALPHA THEMES** specific to this company's situation and opportunity set for {company_name} as of {datetime.now().strftime("%B %Y")}
   - **NO MANDATORY SECTIONS** - Choose from: Business Model Innovation, Competitive Moat Expansion, Market Disruption, Technology Leadership, Geographic Expansion, Regulatory Advantage, ESG Transformation, Capital Allocation Mastery, Management Transition, Activist Catalyst, Spin-off Value, Cyclical Recovery, etc.
   - **EXAMPLES OF COMPANY-SPECIFIC THEMES:**
     - **NVIDIA**: "AI Infrastructure Monopoly", "Data Center GPU Dominance", "Software Ecosystem Lock-In", "Geopolitical Chip Advantage"
     - **TESLA**: "Manufacturing Cost Leadership", "FSD Technology Moat", "Energy Storage Opportunity", "China Market Penetration" 
     - **APPLE**: "Services Revenue Acceleration", "iPhone Ecosystem Stickiness", "India Market Expansion", "AR/VR Platform Creation"
     - **AMAZON**: "AWS Margin Expansion", "Logistics Network Moat", "Prime Membership Growth", "AI Infrastructure Leadership"
-- **CRITICAL ALPHA GENERATION PRINCIPLES**: 
+- **CRITICAL ALPHA GENERATION PRINCIPLE **: 
   - Each section must identify SPECIFIC opportunity market misunderstands
   - Focus on company's UNIQUE advantages vs peers in current market environment
   - Connect analysis to QUANTIFIED stock price catalysts with timing
   - Use GOOGLE-VERIFIED current data and forward-looking insights
-  - Show why THIS company will outperform in NEXT 12-24 months
+  - Show why THIS company will outperform in NEXT 12-24 months for {company_name} as of {datetime.now().strftime("%B %Y")}
 - **Format**: Each section starts with alpha-insight H4 title and 750-800 word analysis proving why this specific theme creates investment opportunity
 
 **SLIDE 6 - SECTOR INSIGHT (FLEXIBLE MARKET-SPECIFIC ANALYSIS):**
@@ -2102,7 +2102,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 - **CRITICAL COMPETITIVE ALPHA PRINCIPLES**:
   - QUANTIFY each competitive advantage with specific financial metrics
   - Prove advantage is EXPANDING not contracting vs historical periods
-  - Show why competitors CANNOT replicate advantage in next 2-3 years
+  - Show why competitors CANNOT replicate advantage in next 2-3 years for {company_name}
   - Connect moat strength to SPECIFIC pricing power, market share, margin expansion opportunities
   - Use GOOGLE-VERIFIED competitive intelligence and benchmark data
 - **Format**: Each section starts with quantified-moat H4 title and 800-900 words proving sustainable competitive advantage with expansion trajectory
