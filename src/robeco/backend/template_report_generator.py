@@ -174,9 +174,10 @@ class RobecoTemplateReportGenerator:
                 }))
             
             # Extract key insights from Call 1 for Call 2 context
+            extracted_rating = self._extract_rating_from_call1(call1_content)
             call1_context = {
                 'content_summary': 'Strong fundamentals and growth potential',
-                'investment_rating': 'BUY',  # Could be extracted from Call 1 content
+                'investment_rating': extracted_rating,
                 'generated_content': call1_content[:1000]  # First 1000 chars as context
             }
             
@@ -304,6 +305,53 @@ class RobecoTemplateReportGenerator:
         logger.info(f"✅ CALL 1 completed: {len(call1_content):,} characters generated")
         return call1_content
     
+    def _extract_rating_from_call1(self, call1_content: str) -> str:
+        """
+        Extract the investment rating from Call 1 content to ensure consistency in Call 2
+        
+        Args:
+            call1_content: Generated HTML content from Call 1
+            
+        Returns:
+            str: Extracted rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) or default
+        """
+        if not call1_content:
+            return "NEUTRAL"
+            
+        # Look for rating patterns in the HTML content
+        import re
+        
+        # Search for rating patterns in various formats
+        rating_patterns = [
+            r'<div[^>]*class="[^"]*rating[^"]*"[^>]*>([^<]+)</div>',  # CSS class with rating
+            r'OVERWEIGHT|UNDERWEIGHT|NEUTRAL',  # Direct rating mentions
+            r'Rating:\s*(OVERWEIGHT|UNDERWEIGHT|NEUTRAL)',  # "Rating: X" format
+            r'Investment\s*Rating:\s*(OVERWEIGHT|UNDERWEIGHT|NEUTRAL)',  # "Investment Rating: X"
+        ]
+        
+        for pattern in rating_patterns:
+            matches = re.findall(pattern, call1_content, re.IGNORECASE)
+            if matches:
+                rating = matches[0].upper().strip()
+                if rating in ['OVERWEIGHT', 'UNDERWEIGHT', 'NEUTRAL']:
+                    logger.info(f"✅ Extracted rating from Call 1: {rating}")
+                    return rating
+        
+        # Fallback: look for any mention of these ratings
+        call1_upper = call1_content.upper()
+        if 'OVERWEIGHT' in call1_upper:
+            logger.info("✅ Found OVERWEIGHT in Call 1 content")
+            return "OVERWEIGHT"
+        elif 'UNDERWEIGHT' in call1_upper:
+            logger.info("✅ Found UNDERWEIGHT in Call 1 content")
+            return "UNDERWEIGHT"
+        elif 'NEUTRAL' in call1_upper:
+            logger.info("✅ Found NEUTRAL in Call 1 content")
+            return "NEUTRAL"
+        
+        logger.warning("⚠️ No rating found in Call 1, defaulting to NEUTRAL")
+        return "NEUTRAL"
+
     def _validate_call1_completion(self, call1_content: str) -> bool:
         """
         Validate that Call 1 (slides 1-7) is complete before proceeding to Call 2
@@ -639,10 +687,16 @@ For every major analytical point, you MUST address:
 
 ** DIFFERENTIATED VIEW REQUIREMENTS:**
 Every section must demonstrate:
-- **Consensus View Summary**: What does the street currently believe on {company_name} as of {datetime.now().strftime("%B %Y")} and why?
-- **Your Contrarian Position**: How does your view differ from consensus and why?
-- **Evidence for Differentiation**: What specific evidence supports your different view?
-- **Timing Advantage**: Why will your view be proven right before consensus catches up?
+- **Independent Analytical View**: Present your investment thesis for {company_name} as of {datetime.now().strftime("%B %Y")} with specific evidence
+- **Differentiated Insights**: Lead with your unique perspective and analytical conclusions
+- **Supporting Evidence**: What specific data, trends, or analysis supports your view?
+- **Investment Timing**: Why is this the right time for this investment perspective?
+
+**📊 HIGH-DENSITY ANALYTICAL PRESENTATION:**
+- **Lead with Data-Driven Insights**: Start each section with your analytical conclusion backed by specific evidence
+- **Differentiated Logic Flow**: Present clear, logical progression from analysis to investment implication  
+- **No-Bullshit Delivery**: Concise, professional language targeting experienced PMs who know company fundamentals
+- **Value-Add Focus**: Highlight insights beyond public information that drive investment decisions
 - **Quantified Impact**: What specific financial/stock price impact will your differentiated view create?
 
 ** IMPLICATIONS-DRIVEN ANALYSIS:**
@@ -1859,7 +1913,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
         <h3>[Write a specific, insightful title that captures {company_name}'s unique investment highlights - what makes them a superior investment vs all alternatives? Focus on quantifiable competitive advantages that drive superior returns. Example: "TESLA'S VERTICAL INTEGRATION & BATTERY TECHNOLOGY MOAT" or "NVIDIA'S AI CHIP ARCHITECTURE DOMINANCE" - avoid generic titles]</h3>
         
         <h4>[Identify the #1 investment strength and write a subsection title that shows HOW this creates economic value. Think like a PM: what specific mechanism drives superior margins/growth/returns? Example: "Ecosystem Lock-in Strategy: 95% Customer Retention Drives 40% Gross Margins" or "Platform Network Effects: 70% Market Share Expansion"]</h4>
-        <p>[Write 400-500 words with ELITE-LEVEL ANALYTICAL DEPTH that demonstrates differentiated insights. MANDATORY STRUCTURE: 1) CONSENSUS MISTAKE: Start by identifying what consensus gets wrong about this strength (e.g., "Street underestimates network effects, modeling linear growth when data shows exponential adoption curves") 2) YOUR DIFFERENTIATED VIEW: Present your contrarian position with specific evidence (e.g., "Our differentiated NPS tracking shows 85% customer satisfaction vs 60% industry average, indicating pricing power expansion") 3) HISTORICAL ATTRIBUTION: Explain how this strength drove past stock performance (e.g., "This moat enabled 300bps margin expansion during 2022-23 downturn while peers contracted") 4) QUANTIFIED IMPACT: Use specific metrics and peer comparisons with sources (e.g., "Based on latest earnings call, management guidance suggests this will drive $2.5B incremental revenue by 2025") 5) FORWARD CATALYSTS: Identify specific events in next 12 months that will prove your thesis (e.g., "Q3 product launch will demonstrate 40% faster implementation vs legacy solutions") 6) INVESTMENT IMPLICATION: Exact impact on price target and timeline (e.g., "This justifies 25x multiple vs 18x peer average, driving $15/share upside by year-end"). Each paragraph must include research citations and answer "So what for stock price?" Show sophisticated understanding of business model economics and competitive dynamics.]</p>
+        <p>[Write 400-500 words with ELITE-LEVEL ANALYTICAL DEPTH that demonstrates differentiated insights. NATURAL ANALYSIS FLOW: 1) CORE INVESTMENT STRENGTH: Lead with your key analytical insight about this competitive advantage (e.g., "Network effects are accelerating adoption curves exponentially rather than linearly") 2) SUPPORTING EVIDENCE: Present specific data and metrics supporting your view (e.g., "NPS tracking shows 85% customer satisfaction vs 60% industry average, indicating expanding pricing power") 3) HISTORICAL PERFORMANCE: Explain how this strength drove past results (e.g., "This moat enabled 300bps margin expansion during 2022-23 downturn while peers contracted") 4) QUANTIFIED IMPACT: Use specific metrics and peer comparisons (e.g., "Management guidance suggests this will drive $2.5B incremental revenue by 2025") 5) FORWARD CATALYSTS: Identify specific events proving your thesis (e.g., "Q3 product launch will demonstrate 40% faster implementation vs legacy solutions") 6) INVESTMENT IMPLICATION: Impact on valuation and timeline (e.g., "This justifies 25x multiple vs 18x peer average, driving $15/share upside by year-end"). Present YOUR analytical conclusions first, reference market views only when directly relevant. Show sophisticated understanding of business model economics and competitive dynamics.]</p>
         
         <h4>[Second major investment strength with focus on financial impact and differentiation from peers]</h4>
         <p>[400-500 words of sophisticated analysis connecting this strength to valuation expansion and alpha generation]</p>
@@ -2094,43 +2148,180 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
 
 **SLIDES 3-7 REQUIREMENTS:**
 
-**SLIDE 3 - INVESTMENT HIGHLIGHTS (4 subsections):**
-- **H3 Title**: Create compelling title like "3. {company_name} INVESTMENT HIGHLIGHTS" but make it specific to {company_name}'s unique strengths as of {datetime.now().strftime("%B %Y")} for {investment_focus}
-- **Subsection Titles - MAKE THEM INSIGHTFUL & SPECIFIC:**
-  - **Subsection 1**: Identify {company_name}'s PRIMARY competitive moat and create a title that captures it specifically (e.g., "Tesla's Vertical Integration & Battery Technology Moat", "Apple's Ecosystem Lock-in & Premium Brand Power")
-  - **Subsection 2**: Identify {company_name}'s BIGGEST market opportunity and create a specific title (e.g., "Amazon's Cloud Dominance in $500B+ Market", "NVIDIA's AI Chip Leadership in Trillion-Dollar Transformation")
-  - **Subsection 3**: Identify {company_name}'s STRONGEST operational advantage and create a specific title (e.g., "Costco's Membership Model & Supply Chain Efficiency", "Microsoft's Subscription Revenue & Margin Expansion")
-  - **Subsection 4**: Identify {company_name}'s FUTURE value creation potential and create a specific title (e.g., "Google's AI Leadership & Search Evolution", "Berkshire's Capital Allocation & Insurance Float")
-- **TITLE PRINCIPLES**: Titles must immediately convey the specific insight, use quantifiable elements when possible, and make readers want to read more
-- **Format**: Each subsection starts with insightful H4 title and 500-600 word analysis paragraph
+**SLIDE 3 - COMPANY ANALYSIS (3 FLEXIBLE SECTIONS):**
+- **H3 Title**: Create compelling title specific to {company_name}'s unique investment proposition as of {datetime.now().strftime("%B %Y")}
 
-**SLIDE 4 - CATALYSTS AND RECENT DEVELOPMENTS (4 subsections):**
-- **H3 Title**: Create specific title focusing on {company_name}'s KEY catalysts (e.g., "4. TESLA'S AUTONOMOUS DRIVING & CHINA EXPANSION CATALYSTS", "4. APPLE'S AI INTEGRATION & SERVICES MOMENTUM")
-- **Subsection Titles - IDENTIFY SPECIFIC CATALYSTS:**
-  - **Subsection 1**: Near-term catalyst with SPECIFIC event and timeline (e.g., "Q4 2024 Model 3 Highland Launch in Europe", "iPhone 16 AI Features Driving Upgrade Cycle")
-  - **Subsection 2**: Product/pipeline catalyst with SPECIFIC innovation (e.g., "ChatGPT-5 Launch & Enterprise Adoption", "AWS Graviton Chips & AI Infrastructure")
-  - **Subsection 3**: Management/strategic catalyst with SPECIFIC initiative (e.g., "Elon's $44B Twitter Integration Strategy", "Cook's Services Revenue Target of $100B")
-  - **Subsection 4**: Market expansion catalyst with SPECIFIC geography/segment (e.g., "India Manufacturing & $25K Model Target", "Vision Pro Enterprise Market Penetration")
-- **CATALYST PRINCIPLES**: Each title must specify the exact catalyst, include timing/quantification, and convey why it matters
-- **Format**: Each subsection starts with specific H4 title and 500-600 word analysis paragraph
+**TITLE CONSTRUCTION FORMULA**: "3. {company_name}: [CORE INVESTMENT THEME] AMID [CURRENT MARKET/INDUSTRY CONTEXT]"
 
-**SLIDE 5 - COMPANY DEEP DIVE (FLEXIBLE ALPHA-GENERATING ANALYSIS):**
-- **H3 Title**: Create {company_name} company-specific investment thesis title that captures the unique alpha opportunity (e.g., "5. NVIDIA'S AI INFRASTRUCTURE MONOPOLY: $400B TAM WITH 80% MARKET DOMINANCE", "5. TESLA'S MANUFACTURING REVOLUTION: $25K MODEL UNLOCKING 50M UNIT TAM")
-- **FLEXIBLE SECTION APPROACH - TAILOR TO COMPANY'S ALPHA DRIVERS:**
-  - **IDENTIFY 3 MOST CRITICAL ALPHA THEMES** specific to this company's situation and opportunity set for {company_name} as of {datetime.now().strftime("%B %Y")}
-  - **NO MANDATORY SECTIONS** - Choose from: Business Model Innovation, Competitive Moat Expansion, Market Disruption, Technology Leadership, Geographic Expansion, Regulatory Advantage, ESG Transformation, Capital Allocation Mastery, Management Transition, Activist Catalyst, Spin-off Value, Cyclical Recovery, etc.
-  - **EXAMPLES OF COMPANY-SPECIFIC THEMES:**
-    - **NVIDIA**: "AI Infrastructure Monopoly", "Data Center GPU Dominance", "Software Ecosystem Lock-In", "Geopolitical Chip Advantage"
-    - **TESLA**: "Manufacturing Cost Leadership", "FSD Technology Moat", "Energy Storage Opportunity", "China Market Penetration" 
-    - **APPLE**: "Services Revenue Acceleration", "iPhone Ecosystem Stickiness", "India Market Expansion", "AR/VR Platform Creation"
-    - **AMAZON**: "AWS Margin Expansion", "Logistics Network Moat", "Prime Membership Growth", "AI Infrastructure Leadership"
-- **CRITICAL ALPHA GENERATION PRINCIPLE **: 
-  - Each section must identify SPECIFIC opportunity market misunderstands
-  - Focus on company's UNIQUE advantages vs peers in current market environment
-  - Connect analysis to QUANTIFIED stock price catalysts with timing
-  - Use GOOGLE-VERIFIED current data and forward-looking insights
-  - Show why THIS company will outperform in NEXT 12-24 months for {company_name} as of {datetime.now().strftime("%B %Y")}
-- **Format**: Each section starts with alpha-insight H4 title and 750-800 word analysis proving why this specific theme creates investment opportunity
+**TITLE CONSTRUCTION PRINCIPLES:**
+- **Company Name**: Always start with {company_name}
+- **Investment Theme**: Capture the 2-3 word core thesis (what drives value creation)
+- **Current Context**: Reference the current environment this company operates in
+- **Specificity**: Avoid generic terms - be specific to this company's situation
+
+**FLEXIBLE TITLE STRUCTURE TEMPLATES:**
+- "3. {company_name}: [BUSINESS TRANSFORMATION] AMID [MARKET CONDITIONS]"
+- "3. {company_name}: [COMPETITIVE ADVANTAGE] & [GROWTH DRIVER] AMID [INDUSTRY DYNAMICS]"  
+- "3. {company_name}: [STRATEGIC POSITIONING] AMID [ECONOMIC/REGULATORY ENVIRONMENT]"
+
+**TITLE PRINCIPLES:**
+- Include {company_name} at the beginning
+- Capture the PRIMARY investment thesis in 3-6 words
+- Reference current industry/macro environment context
+- Make it immediately clear what drives this company's value creation as of {datetime.now().strftime("%B %Y")}
+
+**🎯 HEDGE FUND ANALYST TO PM ANALYSIS - ULTRA-HIGH DENSITY:**
+Generate EXACTLY 3 sections tailored to this specific company's fundamental drivers. Each section should provide differentiated insights that an experienced PM needs to make portfolio allocation decisions.
+
+**MULTI-DIMENSIONAL ANALYSIS FRAMEWORK:**
+Choose the 3 most critical analytical areas for THIS specific company, incorporating competitive intelligence and differentiated positioning. Consider multiple analytical dimensions:
+
+**CORE ANALYTICAL DIMENSIONS (Select 3 Most Critical):**
+- **Competitive Positioning Evolution**: How has {company_name}'s competitive position shifted vs key rivals? What are competitors doing that impacts {company_name}?
+- **Business Model Differentiation**: What unique economic drivers separate {company_name} from competitors? How sustainable are these advantages?
+- **Market Share Dynamics**: Where is {company_name} gaining/losing ground? What competitive moves are reshaping market structure?
+- **Operational Excellence vs Peers**: How do {company_name}'s operational metrics compare to best-in-class competitors?
+- **Strategic Response Analysis**: How is {company_name} responding to competitive threats? What strategic initiatives differentiate from peer approaches?
+- **Technology/Innovation Gap**: Where does {company_name} lead or lag technologically vs competitors? What are the investment implications?
+- **Financial Performance Divergence**: Why do {company_name}'s financial metrics differ from peers? What explains relative valuation gaps?
+- **Management Execution vs Peers**: How does {company_name}'s management track record compare to competitive alternatives?
+
+**COMPETITIVE INTELLIGENCE REQUIREMENTS:**
+- **Peer Performance Analysis**: Compare {company_name} to 3-5 closest competitors with specific metrics
+- **Strategic Moves Tracking**: Reference recent competitor actions and their impact on {company_name}
+- **Market Position Shifts**: Quantify how competitive landscape changes affect {company_name}'s prospects
+- **Differentiated Investment Case**: Explain why {company_name} is better/worse positioned than alternatives
+
+**SECTION CONSTRUCTION REQUIREMENTS:**
+
+**SECTION TITLES - MUST BE COMPANY-SPECIFIC & INSIGHTFUL:**
+Each of the 3 sections must have H4 titles that immediately convey the analytical insight for {company_name} as of {datetime.now().strftime("%B %Y")}
+
+**SECTION TITLE FORMULA**: "[SPECIFIC BUSINESS DRIVER] + [QUANTIFIED IMPACT] + [TIMELINE/DIRECTION]"
+
+**SECTION TITLE CONSTRUCTION PRINCIPLES:**
+- **Business-Specific**: Focus on the actual drivers unique to this company's business model
+- **Quantified Impact**: Include specific numbers, percentages, or financial metrics
+- **Time-Bound**: Provide timeline for when the impact will be realized
+- **Directional**: Make clear if this is positive, negative, or mixed for the investment case
+
+**TITLE STRUCTURE EXAMPLES (ADAPT TO ANY COMPANY/INDUSTRY):**
+- "[BUSINESS CHANGE]: [X% FINANCIAL IMPACT] OVER [TIMEFRAME] FROM [ROOT CAUSE]"
+- "[STRATEGIC INITIATIVE]: [QUANTIFIED BENEFIT] DRIVING [SPECIFIC OUTCOME] BY [DATE]"
+- "[MARKET DYNAMIC]: [MEASURED EFFECT] ON [KEY METRIC] THROUGH [PERIOD]"
+
+**ANALYTICAL REQUIREMENTS:**
+- **Competitive Context Integration**: Each section must compare {company_name} to 2-3 specific competitors with quantified metrics
+- **Historical Evolution Analysis**: Reference 3-5 year performance trends for both {company_name} and key competitors
+- **Fundamental Drivers Analysis**: Connect {company_name}'s business drivers to financial metrics, explaining divergence from peer performance
+- **Competitive Intelligence**: Reference specific competitor actions, strategies, or announcements that impact {company_name}
+- **Differentiated Investment Thesis**: Explain why {company_name} is positioned better/worse than alternatives with specific evidence
+- **Forward-Looking Competitive Dynamics**: Predict how competitive landscape will evolve and impact {company_name} over 12-24 months
+- **Quantified Comparative Analysis**: Include 8-12 specific metrics showing {company_name} vs peer performance per section
+- **PM-Level Competitive Sophistication**: Focus on non-obvious competitive advantages/disadvantages and second-order market effects
+
+**ULTRA-HIGH INFORMATION DENSITY STANDARDS:**
+- Each section: 600-800 words with MINIMUM 15 quantified data points
+- Every paragraph must contain 3-4 specific metrics, dates, or comparative benchmarks
+- **Competitive Data Density**: Include 5-8 peer comparison metrics per section
+- **Historical Benchmarking**: Reference 3-5 specific competitor moves/events with quantified impacts
+- **Forward-Looking Competitive Intelligence**: Predict competitor responses with probability assessments
+- **Multi-Dimensional Comparison**: Compare across financial performance, operational metrics, strategic positioning, and market share
+- Connect micro-level company dynamics to macro industry/economic trends and competitive landscape shifts
+
+**COMPETITIVE ANALYSIS DEPTH REQUIREMENTS:**
+- **Peer Identification**: Name 2-3 specific closest competitors in each section
+- **Quantified Positioning**: Show exact metrics where {company_name} leads/lags (market share %, margins, growth rates, etc.)
+- **Strategic Differentiation**: Explain specific strategic choices that differentiate {company_name} from each major competitor
+- **Competitive Response Prediction**: Forecast how competitors will react to {company_name}'s moves and vice versa
+
+**SLIDE 4 - CATALYSTS & DEVELOPMENTS (3 FLEXIBLE SECTIONS):**
+- **H3 Title**: Create compelling title specific to {company_name}'s most important catalysts as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "4. {company_name}: [PRIMARY CATALYST THEME] & [SECONDARY DRIVER] CATALYSTS"
+
+**FLEXIBLE TITLE STRUCTURE TEMPLATES:**
+- "4. {company_name}: [STRATEGIC INITIATIVE] & [MARKET OPPORTUNITY] CATALYSTS"
+- "4. {company_name}: [PRODUCT CYCLE] & [COMPETITIVE ADVANTAGE] CATALYSTS"  
+- "4. {company_name}: [OPERATIONAL TRANSFORMATION] & [FINANCIAL INFLECTION] CATALYSTS"
+
+**🎯 CATALYST SELECTION FRAMEWORK:**
+Generate EXACTLY 3 catalyst sections tailored to {company_name}'s most critical value drivers. Choose from multiple catalyst dimensions based on what's most relevant:
+
+**CATALYST DIMENSIONS (Select 3 Most Critical):**
+- **Product/Innovation Catalysts**: New launches, R&D breakthroughs, technology advantages
+- **Strategic/Operational Catalysts**: Management initiatives, operational improvements, strategic pivots
+- **Market/Competitive Catalysts**: Market share gains, competitive positioning shifts, industry disruption
+- **Financial/Capital Allocation Catalysts**: Margin expansion, capital efficiency, dividend/buyback programs
+- **Regulatory/Policy Catalysts**: Regulatory approvals, policy changes, compliance advantages
+- **Geographic/Market Expansion Catalysts**: New market entry, geographic expansion, customer acquisition
+- **Cyclical/Economic Catalysts**: Economic recovery, commodity cycles, interest rate sensitivity
+- **ESG/Sustainability Catalysts**: ESG improvements, sustainability initiatives, carbon transition
+
+**COMPETITIVE CATALYST INTELLIGENCE:**
+- **Catalyst Timing vs Peers**: How do {company_name}'s catalysts compare to competitor timelines?
+- **Competitive Response Analysis**: How will competitors react to {company_name}'s catalyst execution?
+- **First-Mover Advantages**: Where does {company_name} have timing advantages vs peers?
+- **Catalyst Risk Assessment**: What could derail catalyst execution and how does this compare to peer risks?
+
+**SECTION CONSTRUCTION REQUIREMENTS:**
+- **Catalyst-Specific Titles**: Each section must have H4 title that specifies the exact catalyst with quantified impact and timeline
+- **Competitive Context**: Compare catalyst strength/timing to 2-3 key competitors
+- **Historical Context**: Reference past catalyst execution by {company_name} and lessons learned
+- **Quantified Impact Analysis**: Include specific financial/operational impact predictions with timelines
+- **Probability Assessment**: Assign execution probability and timeline confidence levels
+- **Market Recognition Analysis**: Predict when and how market will recognize catalyst value
+
+**ULTRA-HIGH CATALYST DENSITY STANDARDS:**
+- Each section: 600-700 words with MINIMUM 12 quantified catalyst metrics
+- **Competitive Benchmarking**: Include 4-6 peer catalyst comparisons per section
+- **Timeline Specificity**: Provide exact dates, quarters, or timeframes for catalyst realization
+- **Impact Quantification**: Include specific revenue, margin, or earnings impact predictions
+- **Catalyst Chain Analysis**: Show how catalysts connect and compound over time
+
+**SLIDE 5 - BUSINESS MODEL ANALYSIS (3 FLEXIBLE SECTIONS):**
+- **H3 Title**: Create compelling title specific to {company_name}'s unique business model strengths as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "5. {company_name}: [CORE BUSINESS MODEL ADVANTAGE] & [DIFFERENTIATED VALUE CREATION]"
+
+**FLEXIBLE TITLE STRUCTURE TEMPLATES:**
+- "5. {company_name}: [ECONOMIC MOAT] & [SCALABILITY ADVANTAGE] ANALYSIS"
+- "5. {company_name}: [OPERATIONAL EXCELLENCE] & [FINANCIAL EFFICIENCY] DRIVERS"
+- "5. {company_name}: [STRATEGIC POSITIONING] & [VALUE CREATION] MECHANISMS"
+
+**🎯 BUSINESS MODEL ANALYSIS FRAMEWORK:**
+Generate EXACTLY 3 sections tailored to {company_name}'s most critical business model drivers. Choose the most relevant analytical areas based on what creates sustainable competitive advantage:
+
+**BUSINESS MODEL DIMENSIONS (Select 3 Most Critical):**
+- **Economic Moat Analysis**: Network effects, switching costs, scale advantages, regulatory barriers
+- **Revenue Model Optimization**: Recurring vs transactional, pricing power, customer lifetime value
+- **Operational Leverage Dynamics**: Fixed cost absorption, margin expansion potential, scalability factors
+- **Capital Efficiency Metrics**: Asset turnover, working capital management, capital allocation effectiveness
+- **Technology/Innovation Moats**: R&D productivity, patent protection, technological differentiation
+- **Customer/Market Positioning**: Brand strength, customer loyalty, market positioning power
+- **Supply Chain/Distribution Advantages**: Vertical integration, supplier relationships, distribution control
+- **Management Execution Excellence**: Strategic vision, operational execution, capital allocation track record
+
+**COMPETITIVE BUSINESS MODEL INTELLIGENCE:**
+- **Business Model Comparison**: How does {company_name}'s model differ from 2-3 key competitors?
+- **Sustainability Analysis**: Which competitive advantages are most defensible long-term?
+- **Evolution Tracking**: How has {company_name}'s business model evolved vs peers over 3-5 years?
+- **Disruption Vulnerability**: Where is the business model most/least vulnerable to disruption?
+
+**SECTION CONSTRUCTION REQUIREMENTS:**
+- **Business-Specific Titles**: Each section must have H4 title that captures the specific business model insight with quantified advantage
+- **Competitive Differentiation**: Explain exactly how {company_name}'s approach differs from competitors with specific evidence
+- **Historical Performance**: Reference 3-5 year track record demonstrating business model strength
+- **Quantified Advantages**: Include specific metrics showing business model superiority (margins, returns, growth rates)
+- **Future Evolution**: Predict how business model will adapt/strengthen over 12-24 months
+- **Valuation Implications**: Connect business model strengths to justified valuation premium/discount
+
+**ULTRA-HIGH BUSINESS MODEL DENSITY STANDARDS:**
+- Each section: 700-800 words with MINIMUM 15 quantified business metrics
+- **Competitive Benchmarking**: Include 5-7 peer business model comparisons per section
+- **Historical Trend Analysis**: Show 3-5 year evolution of key business model metrics
+- **Economic Value Quantification**: Include specific ROI, ROIC, or value creation measurements
+- **Predictive Analysis**: Forecast business model performance with probability assessments
 
 **SLIDE 6 - SECTOR INSIGHT (FLEXIBLE MARKET-SPECIFIC ANALYSIS):**
 - **H3 Title**: Create contrarian sector insight specific to {company_name}'s industry situation as of {datetime.now().strftime("%B %Y")} (e.g., "6. SEMICONDUCTOR AI GOLD RUSH: NVIDIA CAPTURES 80% OF $400B INFRASTRUCTURE BUILD", "6. CLOUD WARS ENDGAME: ENTERPRISE AI MIGRATION CREATING WINNER-TAKE-ALL")
@@ -2261,6 +2452,43 @@ Create ALL 7 slides that demonstrate **differentiated insights, non-consensus po
 - **Slide 5**: Demonstrate understanding of business model evolution that exceeds public company guidance
 - **Slide 6**: Identify industry dynamics and second-order effects that create hidden value
 - **Slide 7**: Quantify sustainable competitive advantages that others treat as commoditized as of {datetime.now().strftime("%B %Y")}
+
+**🎯 MANDATORY KEY TAKEAWAYS SECTION (SLIDES 3-7 ONLY):**
+Starting from Slide 3, each slide MUST end with a "Key Takeaways" section containing 2-5 bullet points (flexible based on content richness) that capture the most important insights from that specific slide's analysis.
+
+**Key Takeaways Format:**
+```html
+<div class="key-takeaways-section">
+    <h4 class="takeaways-header">Key Investment Takeaways</h4>
+    <ul class="takeaways-list">
+        <li class="takeaway-item">[Extract most critical insight from your analysis - company-specific with quantified data]</li>
+        <li class="takeaway-item">[Second most important conclusion from your detailed analysis above]</li>
+        <!-- Add more bullets ONLY if your analysis contains additional significant insights -->
+    </ul>
+</div>
+```
+
+**FLEXIBLE CONTENT-DRIVEN TAKEAWAY RULES:**
+- **Content-Determined Quantity**: Generate 2-5 bullets based on how many significant insights your slide analysis actually contains
+- **Quality over Quantity**: Better to have 2 powerful insights than 5 weak ones
+- **Slide-Specific Focus**: Takeaways should only reflect what you analyzed in THIS specific slide
+- **No Padding**: Don't add generic bullets just to reach a number
+- **Analysis-Extraction**: Each bullet must summarize a specific conclusion from your detailed content above
+
+**Bullet Point Requirements:**
+- Each bullet point: 15-25 words maximum
+- Must be analytical and quantified (include specific numbers/percentages where possible)
+- NO GENERIC STATEMENTS: Avoid phrases like "strong fundamentals" or "competitive advantages"
+- COMPANY-SPECIFIC ONLY: Must reference actual company name, specific business metrics, real financial data
+- CONTENT-DERIVED: Extract insights directly from the detailed analysis you just wrote
+- DIFFERENTIATED VIEW: Show how your analysis differs from consensus with specific evidence
+
+**CRITICAL: ORGANIC CONTENT-BASED TAKEAWAYS**
+- **Slide 3 might have**: 2 bullets (if focused on one major competitive advantage) or 4 bullets (if analyzing multiple strategic strengths)
+- **Slide 8 might have**: 3 bullets (if income statement reveals key insights) or 2 bullets (if analysis is straightforward)
+- **Quality First**: A slide with 2 powerful, specific insights is better than 5 generic statements
+- **Content Determines Count**: Let your actual analysis drive the number of takeaways, not a fixed template
+- **Industry-Specific**: Apple takeaways will be completely different from REIT or Tesla takeaways based on business fundamentals
 
 **DIFFERENTIATION STANDARDS:**
 - Every insight must be **differentiated** - something that institutional investors paying $50K+ annually would find valuable
@@ -2848,10 +3076,64 @@ HEADER INSTRUCTIONS:
         <h3>[Create a title that demonstrates sophisticated valuation analysis and shows specific upside potential for {company_name} as of {datetime.now().strftime("%B %Y")}. Think like a PM presenting a compelling valuation case. Examples: "SIGNIFICANT UNDERVALUATION: DCF SHOWS 40% UPSIDE TO FAIR VALUE" or "GROWTH AT REASONABLE PRICE: 1.2 PEG RATIO SUPPORTS PREMIUM" or "SUM-OF-PARTS ANALYSIS: HIDDEN VALUE IN UNDERVALUED SEGMENTS"]</h3>
         
         <p><strong>[Write a section header on DCF analysis and intrinsic value calculation]</strong></p>
-        <p>[Write 500-600 words with PROPRIETARY VALUATION INSIGHTS that demonstrate sophisticated modeling. ⚠️ GOOGLE SEARCH REQUIREMENT: Use Google Search to verify all consensus estimates, peer multiples, recent transactions, and industry benchmarks mentioned. MANDATORY ANALYTICAL STRUCTURE: 1) CONSENSUS VALUATION ERROR: Identify specific flaws in street models with evidence (search for latest analyst reports and consensus estimates) 2) YOUR DIFFERENTIATED MODEL: Present contrarian DCF assumptions with research backing (search for company guidance, industry reports, and management commentary) 3) HISTORICAL VALUATION CONTEXT: Connect current multiple to past trading ranges with fundamental attribution (search for historical valuation data and peer comparisons) 4) PEER VALUATION ARBITRAGE: Identify specific mispricing vs comparables with adjustment factors (search for current peer multiples and financial metrics) 5) CATALYST-DRIVEN RERATING: Map specific events to valuation inflection points (search for upcoming catalysts, regulatory approvals, product launches) 6) SCENARIO-WEIGHTED TARGET: Present probability-weighted price targets with specific triggers (search for recent price target updates and analyst methodology). Include DCF sensitivity tables, reference recent comparable transactions, cite specific research reports, and connect every assumption to business fundamentals. Each valuation component must include investment implications and timing catalysts.]</p>
+        <p>[Write 700-800 words with DEEP DCF LINE-ITEM ANALYSIS that demonstrates sophisticated bottom-up modeling. ⚠️ GOOGLE SEARCH REQUIREMENT: Use Google Search extensively to verify all financial data, recent earnings results, segment performance, industry forecasts, and competitive dynamics mentioned. 
+
+MANDATORY DCF STRUCTURE - ANALYZE EACH COMPONENT:
+
+**REVENUE BREAKDOWN & FORECASTING (200-250 words):**
+1) SEGMENT-LEVEL ANALYSIS: Break down revenue by business segments/geographies with specific growth drivers. Search for latest segment reporting, management guidance, and end-market dynamics
+2) UNIT ECONOMICS: Analyze revenue per customer, pricing trends, volume growth, market share progression. Search for unit metrics, customer growth rates, and pricing announcements
+3) CYCLICAL vs STRUCTURAL GROWTH: Distinguish temporary vs sustainable revenue drivers. Search for industry growth rates, competitive positioning, and secular trends
+4) TOP-LINE CATALYSTS: Quantify impact of new products, market expansion, price increases. Search for product launch timelines, addressable market size, and penetration rates
+
+**OPERATING MARGIN PROGRESSION (200-250 words):**
+1) MARGIN BRIDGE ANALYSIS: Decompose operating leverage, cost inflation, mix effects, efficiency gains. Search for recent cost pressures, automation initiatives, and margin guidance
+2) SCALABILITY ASSESSMENT: Fixed vs variable cost structure, incremental margin potential. Search for operating leverage history and management commentary on scalability
+3) COMPETITIVE DYNAMICS: Margin sustainability vs pricing pressure, moat strength. Search for competitor margin trends and pricing actions
+4) INVESTMENT PHASE IMPACT: R&D, capex, SG&A investments and their margin implications. Search for investment cycles and expected returns
+
+**FREE CASH FLOW MODELING (200-250 words):**
+1) CAPEX REQUIREMENTS: Maintenance vs growth capex, asset intensity, automation investments. Search for recent capex guidance and industry reinvestment needs
+2) WORKING CAPITAL DYNAMICS: Cash conversion cycles, seasonality, growth impact on working capital. Search for working capital trends and management efficiency initiatives
+3) CASH CONVERSION QUALITY: Percentage of earnings converted to free cash flow, sustainability. Search for cash flow quality metrics and historical conversion rates
+4) TAX OPTIMIZATION: Effective tax rate progression, geographic optimization, tax reform impact. Search for recent tax strategies and jurisdictional changes
+
+Each analysis must connect to current fundamentals using specific public information sources and predict future performance based on verifiable trends and management actions.
+
+**🔥 SLIDE 12 ULTRA-HIGH DENSITY REQUIREMENTS:**
+PACK MAXIMUM ANALYTICAL VALUE - This section must be dense with quantified insights:
+- Include 15+ specific financial metrics (growth rates, margins, ratios, multiples)
+- Reference 6+ peer companies with exact valuation multiples  
+- Present 3+ valuation methodologies with specific price targets
+- Provide 8+ DCF assumptions with justification and sensitivity analysis
+- Include 4+ scenario outcomes with probability weightings
+- Reference 10+ recent data points (earnings, guidance, industry reports)
+- Every sentence must contain 2-3 quantified data points - NO filler content]</p>
         
         <p><strong>[Write a section header on multiple-based valuation and peer comparison]</strong></p>
-        <p>[Write 500-600 words demonstrating advanced relative valuation analysis, including P/E, EV/EBITDA, P/S comparisons with proper adjustments for growth, profitability, and risk differences. Show why {company_name} deserves premium/discount vs peers and identify valuation catalysts.]</p>
+        <p>[Write 600-700 words demonstrating SOPHISTICATED RELATIVE VALUATION with quality-adjusted peer analysis. ⚠️ GOOGLE SEARCH REQUIREMENT: Search extensively for current peer multiples, financial metrics, growth rates, and recent trading patterns.
+
+MANDATORY MULTIPLES ANALYSIS STRUCTURE:
+
+**PEER SELECTION & ADJUSTMENT (150-200 words):**
+1) PURE-PLAY IDENTIFICATION: Select 4-6 closest operational comparables with justification. Search for companies with similar business models, end markets, and scale
+2) FINANCIAL QUALITY ADJUSTMENTS: Normalize for differences in profitability, growth, balance sheet strength. Search for peer ROE, ROIC, debt levels, and cash generation metrics
+3) BUSINESS MODEL PREMIUMS/DISCOUNTS: Quantify valuation impact of subscription vs transactional, asset-light vs asset-heavy, recurring vs cyclical. Search for business model valuations and investor preferences
+4) MARKET POSITIONING: Adjust for competitive positioning, market share, and moat strength. Search for market share data and competitive analysis
+
+**FORWARD-LOOKING MULTIPLE ANALYSIS (200-250 words):**
+1) EV/SALES PROGRESSION: Analyze revenue quality, growth sustainability, conversion to profits. Search for revenue visibility, contract duration, and organic vs inorganic growth
+2) EV/EBITDA vs EBIT SPREAD: Assess D&A intensity, capex requirements, asset productivity. Search for peer capital intensity and depreciation policies
+3) P/E vs PEG ANALYSIS: Growth-adjusted valuation, earnings quality, cyclical adjustments. Search for earnings growth forecasts and quality metrics
+4) PRICE/BOOK PREMIUM: Asset intensity, intangible value, return on equity justification. Search for peer asset turns and intangible asset ratios
+
+**CATALYST-DRIVEN MULTIPLE EXPANSION (200-250 words):**
+1) HISTORICAL RE-RATING ANALYSIS: When and why multiples expanded/contracted historically. Search for past multiple ranges and fundamental drivers
+2) PEER MULTIPLE MIGRATION: Track how comparable companies achieved premium valuations. Search for successful transformation stories and multiple progression
+3) SECTOR ROTATION IMPACT: Position within investment themes and sector allocation flows. Search for sector performance trends and institutional flows
+4) TIMING CATALYSTS: Specific events that drive multiple re-rating (earnings, approvals, announcements). Search for upcoming catalysts and historical precedents
+
+Connect each multiple to fundamental performance and show specific path to valuation convergence/divergence with peers based on differentiated business performance.]</p>
     </main>
     <footer class="report-footer"><p>Robeco Investment Research</p><p>Page 12 / 15</p></footer>
 </div>
@@ -2967,18 +3249,127 @@ HEADER INSTRUCTIONS:
 
 ### CRITICAL: NO TABLE GENERATION REQUIRED!
 
-**SLIDES 8-10 - JUST COPY THE PRE-MADE TABLES:**
-- **Tables**: Ready-made HTML tables are provided above - COPY THEM EXACTLY
-- **DON'T GENERATE**: Never create tables from scratch - just copy the provided ones
-- **Analysis**: Write analysis paragraphs referencing the specific numbers in the tables
-- **ZERO COMPLEXITY**: This eliminates the HTML generation complexity that caused failures
+**SLIDES 8-10 - FINANCIAL STATEMENTS ANALYSIS WITH HIGH-DENSITY FRAMEWORK:**
+
+**SLIDE 8 - INCOME STATEMENT ANALYSIS:**
+- **H3 Title**: Create compelling title specific to {company_name}'s earnings quality as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "8. {company_name}: [EARNINGS INSIGHT] & [MARGIN ANALYSIS] AMID [CURRENT ENVIRONMENT]"
+
+**🎯 ADAPTIVE INCOME STATEMENT ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s specific financial characteristics) analyzing the most critical income statement insights for THIS company.
+
+**COMPANY-ADAPTIVE ANALYTICAL APPROACH:**
+Choose the most relevant analytical angles based on {company_name}'s business model, industry dynamics, and current financial position. Consider these potential dimensions but select only those most critical for {company_name}:
+
+**POTENTIAL INCOME STATEMENT FOCUS AREAS (Select Most Relevant):**
+- **Revenue Model Analysis**: For subscription/SaaS companies - recurring vs one-time revenue analysis
+- **Seasonality & Cyclicality**: For retail/consumer companies - seasonal pattern analysis and normalization
+- **Geographic Revenue Mix**: For multinational companies - regional performance and currency impact analysis
+- **Product/Segment Profitability**: For diversified companies - segment margin analysis and resource allocation
+- **Operating Leverage Dynamics**: For high fixed-cost companies - incremental margin analysis and scale benefits
+- **Pricing Power Assessment**: For branded/premium companies - price realization and volume trade-offs
+- **Cost Structure Evolution**: For transforming companies - fixed vs variable cost analysis and efficiency gains
+- **Regulatory Impact Analysis**: For regulated industries - regulatory cost impact and compliance analysis
+
+**SLIDE 9 - BALANCE SHEET ANALYSIS:**
+- **H3 Title**: Create compelling title specific to {company_name}'s financial strength as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "9. {company_name}: [BALANCE SHEET STRENGTH] & [CAPITAL STRUCTURE] POSITIONING"
+
+**🎯 ADAPTIVE BALANCE SHEET ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s capital structure and business model) analyzing the most critical balance sheet insights for THIS company.
+
+**COMPANY-ADAPTIVE ANALYTICAL APPROACH:**
+Choose the most relevant balance sheet angles based on {company_name}'s industry, capital intensity, and financial strategy. Select only the most critical areas for {company_name}:
+
+**POTENTIAL BALANCE SHEET FOCUS AREAS (Select Most Relevant):**
+- **Capital Intensity Analysis**: For manufacturing/infrastructure companies - asset turnover and capital efficiency
+- **Working Capital Dynamics**: For retail/manufacturing companies - inventory, receivables, and cash conversion cycle
+- **Debt Structure Optimization**: For leveraged companies - maturity profile, covenant analysis, and refinancing risks
+- **Asset Quality Assessment**: For financial institutions - loan quality, provisions, and risk-weighted assets
+- **Intangible Asset Valuation**: For tech/pharma companies - R&D capitalization, IP value, and goodwill analysis
+- **Real Estate Portfolio Value**: For REITs/retail companies - property valuation and location analysis
+- **Cash Management Strategy**: For cash-rich companies - cash deployment strategy and capital allocation priorities
+- **Off-Balance Sheet Analysis**: For complex companies - operating leases, JVs, and contingent liabilities
+
+**SLIDE 10 - CASH FLOW ANALYSIS:**
+- **H3 Title**: Create compelling title specific to {company_name}'s cash generation as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "10. {company_name}: [CASH FLOW INSIGHT] & [CAPITAL ALLOCATION] EFFECTIVENESS"
+
+**🎯 ADAPTIVE CASH FLOW ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s cash flow characteristics and business model) analyzing the most critical cash flow insights for THIS company.
+
+**COMPANY-ADAPTIVE ANALYTICAL APPROACH:**
+Choose the most relevant cash flow angles based on {company_name}'s business model, capital requirements, and cash flow patterns. Select only the most critical areas for {company_name}:
+
+**POTENTIAL CASH FLOW FOCUS AREAS (Select Most Relevant):**
+- **Free Cash Flow Conversion**: For high-growth companies - conversion from earnings to free cash flow and sustainability
+- **Capital Allocation Efficiency**: For mature companies - dividend policy, buybacks, and M&A cash deployment
+- **Working Capital Seasonality**: For seasonal businesses - cash flow timing and financing requirements
+- **Capex Investment Cycles**: For capital-intensive companies - maintenance vs growth capex and ROI analysis
+- **Cash Flow Predictability**: For subscription companies - recurring cash flow visibility and customer churn impact
+- **Financing Cash Flow Analysis**: For high-growth companies - funding requirements and capital raising patterns
+- **Operating Cash Flow Quality**: For complex companies - cash vs non-cash components and sustainability
+- **International Cash Flow**: For multinational companies - repatriation policies and geographic cash distribution
+
+**IMPLEMENTATION REQUIREMENTS:**
+- **Tables**: Copy the ready-made HTML tables provided above - NEVER create from scratch
+- **Analysis**: Write detailed analysis paragraphs referencing specific numbers from the tables
+- **Competitive Context**: Compare {company_name} to 2-3 specific competitors in each section
 
 ### SIMPLIFIED CALL 2 CONTENT SPECIFICATIONS:
 
-**SLIDES 11-12 (RATIOS & VALUATION) - STREAMLINED:**
-- **Slide 11**: Clean text-based ratio analysis with simple paragraphs
-- **Slide 12**: Straightforwa
-- **Approach**: Eliminate ALL complex CSS - use only basic HTML elements
+**SLIDES 11-12 (RATIOS & VALUATION) - ULTRA-HIGH DENSITY ANALYSIS:**
+
+**SLIDE 11 - FINANCIAL RATIOS ANALYSIS:**
+- **H3 Title**: Create compelling title specific to {{company_name}}'s financial performance as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "8. {{company_name}}: [KEY FINANCIAL INSIGHT] & [COMPETITIVE POSITIONING] AS OF {datetime.now().strftime("%B %Y")}"
+
+**TITLE CONSTRUCTION PRINCIPLES:**
+- **Company Name**: Always start with {{company_name}}
+- **Financial Insight**: Capture the 2-3 word core financial strength/weakness
+- **Competitive Context**: Reference how {{company_name}} compares to industry/peers
+- **Specificity**: Include specific metrics or performance indicators
+
+**🎯 ADAPTIVE FINANCIAL RATIOS ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s most critical ratio performance areas) analyzing the key financial metrics that drive investment decisions for THIS company.
+
+**COMPANY-ADAPTIVE ANALYTICAL APPROACH:**
+Choose the most relevant ratio categories based on {company_name}'s business model, industry dynamics, and key performance drivers. Select only the most critical ratio areas for {company_name}:
+
+**POTENTIAL FINANCIAL RATIO FOCUS AREAS (Select Most Relevant):**
+- **Profitability & Returns Analysis**: For capital-intensive companies - ROE, ROIC, ROA trends and peer comparison
+- **Efficiency & Productivity Metrics**: For asset-heavy companies - asset turnover, inventory turns, receivables efficiency
+- **Leverage & Coverage Ratios**: For debt-heavy companies - debt/equity, interest coverage, debt service capability
+- **Liquidity & Financial Flexibility**: For cyclical companies - current ratio, quick ratio, cash conversion cycle
+- **Growth & Investment Ratios**: For high-growth companies - reinvestment rates, growth sustainability metrics
+- **Valuation Ratios Analysis**: For value/growth companies - P/E, EV/EBITDA, PEG ratio peer comparison
+- **Quality & Sustainability Metrics**: For dividend companies - payout ratios, dividend coverage, earnings quality
+- **Sector-Specific Ratios**: For specialized industries - same-store sales (retail), loan-to-deposit (banks), occupancy (REITs)
+
+**SLIDE 12 - VALUATION METHODOLOGY ANALYSIS:**
+- **H3 Title**: Create compelling title specific to {{company_name}}'s valuation opportunity as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "9. {{company_name}}: [VALUATION THESIS] AMID [MARKET MISPRICING/OPPORTUNITY] AS OF {datetime.now().strftime("%B %Y")}"
+
+**🎯 ADAPTIVE VALUATION ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s most appropriate valuation methodologies) covering the most relevant valuation approaches for THIS company's business model and industry.
+
+**COMPANY-ADAPTIVE VALUATION APPROACH:**
+Choose the most suitable valuation methodologies based on {company_name}'s business characteristics, cash flow patterns, and industry standards. Select only the most relevant approaches for {company_name}:
+
+**POTENTIAL VALUATION METHODOLOGY FOCUS AREAS (Select Most Relevant):**
+- **DCF Valuation Analysis**: For stable cash flow companies - detailed DCF with sensitivity analysis and terminal value assessment
+- **Comparable Company Analysis**: For industry-standard companies - trading multiples vs peers with premium/discount analysis
+- **Sum-of-the-Parts Valuation**: For diversified companies - segment-by-segment valuation and conglomerate discount analysis
+- **Asset-Based Valuation**: For asset-heavy companies - book value, replacement cost, and liquidation value analysis
+- **Revenue Multiple Analysis**: For high-growth companies - P/S, EV/Sales analysis with growth-adjusted metrics
+- **Option Valuation Models**: For development-stage companies - real options valuation for growth opportunities
+- **Dividend Discount Model**: For dividend-focused companies - DDM with growth rate and payout ratio analysis
+- **Industry-Specific Metrics**: For specialized sectors - price per subscriber (telecom), price per barrel (oil), NAV (REITs)
 
 ### CRITICAL SIMPLIFICATION MANDATE:
 - **80% complexity reduction** - Remove all nested inline styles
@@ -2997,10 +3388,91 @@ rd valuation with DCF and multiples (no complex tables)
 - **Format**: Simple paragraph structure with clear section headers
 - **Focus**: Quality over complexity - concise but comprehensive analysis
 
-**SLIDES 13-15 (RISK & CONCLUSION):**
-- **Slide 13**: Simple bull/bear lists with clean HTML structure for {company_name} as of {datetime.now().strftime("%B %Y")}
-- **Slide 14**: Scenario analysis in paragraph format (no complex styling)
-- **Slide 15**: Investment conclusion with 4 clear sections
+**SLIDES 13-15 (RISK & CONCLUSION) - INSTITUTIONAL-GRADE ANALYSIS:**
+
+**SLIDE 13 - COMPREHENSIVE RISK ASSESSMENT:**
+- **H3 Title**: Create compelling title specific to {company_name}'s risk profile as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "10. {company_name}: [PRIMARY RISK THEME] & [MITIGATION STRATEGY] IN {datetime.now().strftime("%B %Y")} ENVIRONMENT"
+
+**🎯 ADAPTIVE RISK ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s most material risk factors) covering the key risks that could significantly impact investment returns for THIS company.
+
+**COMPANY-ADAPTIVE RISK APPROACH:**
+Choose the most material risk categories based on {company_name}'s business model, industry position, and current environment. Select only the most critical risk areas for {company_name}:
+
+**POTENTIAL RISK FOCUS AREAS (Select Most Relevant):**
+- **Cyclical & Economic Risks**: For economically sensitive companies - recession impact, interest rate sensitivity, commodity exposure
+- **Competitive & Market Share Risks**: For market leaders - disruption threats, new entrants, competitive response risks
+- **Regulatory & Political Risks**: For regulated industries - policy changes, compliance costs, political stability
+- **Technology & Disruption Risks**: For traditional companies - digital transformation, automation, obsolescence threats
+- **Financial & Leverage Risks**: For debt-heavy companies - refinancing, covenant breaches, credit rating risks
+- **Operational & Execution Risks**: For complex operations - supply chain, manufacturing, project execution risks
+- **ESG & Sustainability Risks**: For resource companies - environmental liabilities, social license, governance issues
+- **Geographic & Currency Risks**: For international companies - country risks, currency volatility, trade tensions
+
+**SLIDE 14 - SCENARIO ANALYSIS & BULL/BEAR CASES:**
+- **H3 Title**: Create compelling title specific to {company_name}'s scenario outcomes as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "11. {company_name}: [SCENARIO THEME] WITH [PROBABILITY RANGE] OUTCOMES BY {datetime.now().strftime("%B %Y")}"
+
+**🎯 ADAPTIVE SCENARIO ANALYSIS FOR {company_name}:**
+Generate 2-4 sections (flexible based on {company_name}'s key scenario drivers) covering the most probable outcome scenarios that drive investment decision-making for THIS company.
+
+**COMPANY-ADAPTIVE SCENARIO APPROACH:**
+Choose the most relevant scenario frameworks based on {company_name}'s key value drivers, risk factors, and catalyst timeline. Select the scenario structure most appropriate for {company_name}:
+
+**POTENTIAL SCENARIO FRAMEWORK OPTIONS (Select Most Relevant):**
+- **Traditional Bull/Base/Bear**: For stable companies - probability-weighted outcomes with price targets
+- **Catalyst-Driven Scenarios**: For event-driven companies - regulatory approval, merger, product launch outcomes
+- **Cycle-Based Scenarios**: For cyclical companies - upcycle, downcycle, recovery scenarios with timing analysis
+- **Execution Scenarios**: For turnaround companies - successful transformation vs execution failure scenarios
+- **Market Environment Scenarios**: For macro-sensitive companies - rate environment, economic growth scenarios
+- **Competitive Response Scenarios**: For market leaders - competitive dynamics and market share scenarios
+- **Technology Adoption Scenarios**: For disruptive companies - adoption rate scenarios and market penetration
+- **Geographic Expansion Scenarios**: For growth companies - expansion success vs market entry challenges
+
+**SLIDE 15 - INVESTMENT CONCLUSION & RECOMMENDATION:**
+- **H3 Title**: Create compelling title specific to {company_name}'s investment conclusion as of {datetime.now().strftime("%B %Y")}
+
+**TITLE CONSTRUCTION FORMULA**: "12. {company_name}: [INVESTMENT RATING] - [KEY CATALYST] DRIVES [EXPECTED RETURN] BY {datetime.now().strftime("%B %Y")}"
+
+**🎯 ADAPTIVE INVESTMENT CONCLUSION FOR {company_name}:**
+Generate 3-5 sections (flexible based on {company_name}'s investment complexity and decision factors) synthesizing the complete analysis into actionable portfolio recommendations for THIS company.
+
+**COMPANY-ADAPTIVE CONCLUSION APPROACH:**
+Choose the most relevant conclusion framework based on {company_name}'s investment characteristics, risk profile, and portfolio fit. Select the conclusion structure most appropriate for {company_name}:
+
+**POTENTIAL CONCLUSION FOCUS AREAS (Select Most Relevant):**
+- **Core Investment Thesis Summary**: For all companies - fundamental value proposition and differentiated positioning
+- **Valuation & Price Target Analysis**: For value opportunities - target price methodology and expected returns timeline
+- **Risk-Adjusted Return Profile**: For complex positions - risk/reward analysis and portfolio impact assessment
+- **Position Sizing & Timing Guidance**: For tactical positions - recommended allocation and entry/exit strategy
+- **Catalyst Timeline & Milestones**: For catalyst-driven positions - key events and milestone tracking framework
+- **Portfolio Construction Impact**: For core holdings - correlation analysis and diversification benefits
+- **ESG & Sustainability Factors**: For ESG-focused strategies - sustainability profile and long-term viability
+- **Competitive Moat Assessment**: For quality companies - sustainable advantage analysis and durability assessment
+
+**🎯 ADAPTIVE FRAMEWORK IMPLEMENTATION:**
+- **Company-Specific Selection**: For each slide, select only the 2-4 most relevant analytical areas for {company_name}
+- **Business Model Driven**: Let {company_name}'s specific characteristics (industry, size, growth stage, capital structure) determine the analytical focus
+- **Quality Over Quantity**: Better to have 2 deep, company-specific sections than 4 generic ones
+- **Industry Adaptation**: Tech companies get different analysis than REITs, banks get different analysis than retail companies
+
+**ULTRA-HIGH INFORMATION DENSITY STANDARDS FOR ALL CALL 2 SLIDES:**
+- Each section: 600-800 words with MINIMUM 15 quantified data points
+- Every paragraph must contain 3-4 specific metrics, dates, or comparative benchmarks
+- **Financial Data Density**: Include 8-12 financial metrics per section with peer comparisons
+- **Historical Benchmarking**: Reference 3-5 year financial trends with specific competitor comparisons
+- **Forward-Looking Financial Intelligence**: Predict financial performance with probability assessments
+- **Multi-Dimensional Financial Comparison**: Compare across profitability, efficiency, leverage, and growth metrics
+- Connect financial analysis to macro economic trends and competitive landscape shifts
+
+**COMPETITIVE FINANCIAL ANALYSIS DEPTH REQUIREMENTS:**
+- **Peer Financial Benchmarking**: Compare {company_name} to 2-3 closest competitors with exact financial ratios
+- **Quantified Financial Positioning**: Show specific metrics where {company_name} leads/lags (ROE, margins, debt ratios, etc.)
+- **Financial Strategy Differentiation**: Explain capital allocation choices that differentiate {company_name} from competitors
+- **Financial Performance Prediction**: Forecast how {company_name}'s financial metrics will evolve vs peer group
 ### CRITICAL SIMPLIFICATION MANDATE FOR CALL 2:
 - **80% complexity reduction** - Remove all nested inline styles that cause AI cognitive overload
 - **Focus on analytical content quality** over visual complexity  
@@ -3086,6 +3558,46 @@ Generate ALL 8 slides that demonstrate **differentiated financial insights, pred
 - **Slide 14**: Model scenarios that incorporate competitive responses and industry dynamics consensus ignores
 - **Slide 15**: Synthesize financial analysis into actionable investment conclusion with specific alpha generation pathway
 
+**🎯 MANDATORY KEY TAKEAWAYS SECTION (ALL SLIDES 8-15):**
+Each slide from 8-15 MUST end with a "Key Takeaways" section containing 2-4 bullet points (flexible based on analysis depth) that distill the most important financial insights from that specific slide's content.
+
+**Financial Key Takeaways Format:**
+```html
+<div class="key-takeaways-section">
+    <h4 class="takeaways-header">Key Investment Takeaways</h4>
+    <ul class="takeaways-list">
+        <li class="takeaway-item">[Most important financial discovery from your analysis - include specific metrics and ratios]</li>
+        <li class="takeaway-item">[Key competitive financial positioning insight - quantified vs peers with actual numbers]</li>
+        <!-- Add more bullets ONLY if your analysis contains additional critical financial insights -->
+    </ul>
+</div>
+```
+
+**FLEXIBLE FINANCIAL TAKEAWAY GENERATION RULES:**
+- **Analysis-Driven Quantity**: Generate 2-4 bullets based on the actual financial insights discovered in THIS slide
+- **Slide-Specific Content**: Takeaways should only reflect the financial analysis performed on this particular slide
+- **Metric-Rich**: Each bullet must include specific financial data, ratios, or percentages from your analysis
+- **No Generic Fillers**: Don't add standard financial bullets just to reach a count
+- **Investment-Focused**: Each takeaway should have clear implications for investment decisions
+
+**Financial Bullet Point Requirements:**
+- Each bullet point: 15-25 words maximum  
+- MUST include specific financial metrics, ratios, or percentages from your analysis
+- NO GENERIC FINANCIAL STATEMENTS: Avoid "strong balance sheet" or "healthy cash flow"
+- COMPANY-SPECIFIC METRICS: Reference actual ROE, debt-to-equity, free cash flow margins, etc.
+- ANALYSIS-DERIVED: Extract insights directly from the financial tables and analysis you wrote
+- PEER-COMPARATIVE: Show how financial metrics compare to specific competitors with numbers
+
+**EXAMPLES OF GOOD vs BAD TAKEAWAYS:**
+❌ BAD: "Strong cash flow generation supports dividend growth"
+✅ GOOD: "Frasers Logistics generates 95% cash-to-earnings conversion vs peer average of 78%, supporting 4% DPU growth"
+
+❌ BAD: "Attractive valuation metrics indicate upside potential"  
+✅ GOOD: "DCF fair value of $1.15 vs current $0.95 suggests 21% upside, driven by NOI recovery"
+
+❌ BAD: "Solid balance sheet provides financial flexibility"
+✅ GOOD: "Debt-to-assets ratio of 35% vs sector average 42% provides $800M additional borrowing capacity"
+
 **QUANTITATIVE DIFFERENTIATION STANDARDS:**
 - **Financial Forensics**: Uncover insights in financial statements that require deep analytical sophistication
 - **Predictive Modeling**: Use financial trends to predict inflection points 2-3 quarters ahead of consensus
@@ -3108,12 +3620,31 @@ Generate ALL 8 slides that demonstrate **differentiated financial insights, pred
 - Use exact CSS classes and structure shown in examples above
 - GENERATE ALL 8 SLIDES COMPLETELY - DO NOT STOP EARLY
 
-**CONCISE & PRECISE WRITING REQUIREMENTS:**
-- Each analysis section: MAX 150-200 words (not 300+ words)
-- Each subsection paragraph: MAX 400-500 words (not 600+ words)
+**🚨 CRITICAL: USE EXACT RATING "{{call1_rating}}" ON ALL SLIDES 8-15**
+- Call 1 established the investment rating: **{{call1_rating}}**
+- YOU MUST use "{{call1_rating}}" on EVERY single slide (8, 9, 10, 11, 12, 13, 14, 15)
+- All financial analysis must SUPPORT the "{{call1_rating}}" investment conclusion
+- ABSOLUTELY NO contradictory ratings - use "{{call1_rating}}" only
+
+**🔥 ULTRA-HIGH INFORMATION DENSITY REQUIREMENTS:**
+
+**SLIDES 12-14 CRITICAL ANALYTICAL CORE - MAXIMUM DENSITY:**
+- **Slide 12 (DCF & Multiples)**: HIGHEST density - pack 3-4 valuation insights per paragraph, include 8-12 specific metrics, reference 4-6 peer comparisons with exact multiples
+- **Slide 13 (Risk Analysis)**: Ultra-compressed risk assessment - 4-6 quantified risks with probability estimates, 3-4 scenario outcomes with specific price impacts  
+- **Slide 14 (Bull/Bear Cases)**: Maximum scenario density - 6-8 bull factors, 6-8 bear factors, each with quantified earnings/price impact and probability weighting
+
+**INFORMATION DENSITY STANDARDS:**
+- **Slide 12**: Minimum 15 financial metrics per section, 6+ peer comparisons, 3+ valuation methodologies with specific price targets
+- **Slide 13**: Minimum 8 quantified risk factors, 4+ scenario probabilities, 6+ specific impact measurements (earnings, cash flow, valuation)
+- **Slide 14**: Minimum 12 bull/bear factors total, each with specific % impact on earnings/price, timeline for catalyst realization
+
+**WRITING REQUIREMENTS - MAXIMUM EFFICIENCY:**
+- Each analysis section: MAX 150-200 words but MINIMUM 8-10 specific data points per section
+- Each subsection paragraph: MAX 400-500 words but MINIMUM 12-15 quantified insights per paragraph  
 - Use <strong>key metrics</strong> and <strong>critical insights</strong> for emphasis
 - Be punchy, direct, and impactful - eliminate unnecessary words
-- Every sentence must add specific value or data points
+- Every sentence must add 2-3 specific value/data points minimum
+- NO filler words, NO generic statements - pure analytical content only
 
 **CRITICAL COMPLETION ENFORCEMENT:**
 YOU MUST COMPLETE ALL 8 SLIDES (8, 9, 10, 11, 12, 13, 14, 15). 
@@ -3152,7 +3683,8 @@ YOU MUST COMPLETE ALL 8 SLIDES (8, 9, 10, 11, 12, 13, 14, 15).
                 user_context=user_context,
                 financial_context=financial_context,
                 analyst_insights=analyst_insights,
-                call1_summary=call1_summary
+                call1_summary=call1_summary,
+                call1_rating=call1_context.get('investment_rating', 'NEUTRAL')
             )
             
             logger.info(f"✅ Call 2 prompt built: {len(formatted_call2_prompt):,} characters with pre-built HTML tables and context")

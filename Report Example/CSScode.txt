@@ -505,6 +505,35 @@
             opacity: 1 !important;
         }
 
+        /* Key Takeaways Section Styling */
+        .key-takeaways-section {
+            margin: 35px 0 40px 0;
+        }
+
+        .takeaways-header {
+            color: var(--robeco-blue-darker);
+            font-size: 18pt;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .takeaways-list {
+            list-style: disc;
+            margin: 0 0 0 20px;
+            padding: 0;
+        }
+
+        .takeaway-item {
+            margin-bottom: 8px;
+            font-size: 16pt;
+            line-height: 1.4;
+            color: var(--text-dark);
+        }
+
+        .takeaway-item:last-child {
+            margin-bottom: 0;
+        }
+
         /* Ensure footer doesn't overlap content */
         .report-footer {
             position: absolute;
