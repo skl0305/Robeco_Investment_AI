@@ -4134,7 +4134,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
     
     def _save_report_to_file(self, html_content: str, company_name: str, ticker: str) -> str:
         """
-        Save the complete HTML report to a file like Dakin.html, Arista.html, etc.
+        Save the complete HTML report to Example Output directory
         
         Args:
             html_content: Complete HTML report content
@@ -4142,7 +4142,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
             ticker: Stock ticker
             
         Returns:
-            Path to saved file
+            Path to saved file in /Users/skl/Desktop/Robeco Reporting/src/robeco/Example Output/
         """
         try:
             # Clean company name for filename (remove special characters)
@@ -4157,8 +4157,12 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
             else:
                 filename = f"{ticker}.html"
             
-            # Save to the main Robeco Reporting directory (same level as Dakin.html)
-            report_dir = Path(__file__).parent.parent.parent.parent  # Go up to /Users/skl/Desktop/Robeco Reporting
+            # Save to the Example Output directory
+            report_dir = Path(__file__).parent.parent / "Example Output"  # Go to /Users/skl/Desktop/Robeco Reporting/src/robeco/Example Output
+            
+            # Ensure the Example Output directory exists
+            report_dir.mkdir(parents=True, exist_ok=True)
+            
             filepath = report_dir / filename
             
             # Write the HTML file
