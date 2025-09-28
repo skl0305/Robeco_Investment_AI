@@ -28,8 +28,10 @@ class RobecoTemplateReportGenerator:
     """Generate comprehensive investment reports following Robeco template structure"""
     
     def __init__(self):
-        self.template_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/Robeco_InvestmentCase_Template.txt"
-        self.css_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/CSScode.txt"
+        # Use relative paths from the current file location
+        base_dir = Path(__file__).parent.parent.parent.parent  # Go to project root
+        self.template_path = base_dir / "Report Example" / "Robeco_InvestmentCase_Template.txt"
+        self.css_path = base_dir / "Report Example" / "CSScode.txt"
         logger.info("🏗️ Robeco Template Report Generator initialized")
     
     async def generate_report_from_analyses(
@@ -84,8 +86,7 @@ class RobecoTemplateReportGenerator:
             if websocket:
                 try:
                     # Load only the CSS styles (not full HTML structure)
-                    css_file_path = "/Users/skl/Desktop/Robeco Reporting/Report Example/CSScode.txt"
-                    with open(css_file_path, 'r', encoding='utf-8') as f:
+                    with open(self.css_path, 'r', encoding='utf-8') as f:
                         full_css_template = f.read()
                     
                     # Extract ONLY the CSS content inside <style> tags (without <style> wrapper)
@@ -4142,7 +4143,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
             ticker: Stock ticker
             
         Returns:
-            Path to saved file in /Users/skl/Desktop/Robeco Reporting/src/robeco/Example Output/
+            Path to saved file in src/robeco/Example Output/ directory
         """
         try:
             # Clean company name for filename (remove special characters)
@@ -4158,7 +4159,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                 filename = f"{ticker}.html"
             
             # Save to the Example Output directory
-            report_dir = Path(__file__).parent.parent / "Example Output"  # Go to /Users/skl/Desktop/Robeco Reporting/src/robeco/Example Output
+            report_dir = Path(__file__).parent.parent / "Example Output"
             
             # Ensure the Example Output directory exists
             report_dir.mkdir(parents=True, exist_ok=True)

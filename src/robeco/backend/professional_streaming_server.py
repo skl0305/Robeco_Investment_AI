@@ -1908,7 +1908,7 @@ You are generating ONLY THE CONTENT PART of a professional investment report for
 
 ## CRITICAL: CSS IS 100% FIXED - NO STYLING ALLOWED
 
-We already have 100% fixed CSS code at '/Users/skl/Desktop/Robeco Reporting/CSScode.txt'. 
+We already have 100% fixed CSS code at 'Report Example/CSScode.txt'. 
 **ABSOLUTELY NO CSS, STYLING, OR INLINE STYLES ALLOWED.**
 **GENERATE ONLY PURE HTML CONTENT WITH CLASS NAMES - NO STYLE ATTRIBUTES.**
 

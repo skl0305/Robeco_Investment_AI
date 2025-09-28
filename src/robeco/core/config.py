@@ -85,7 +85,7 @@ class Settings:
         if not api_keys:
             try:
                 # Load primary key first  
-                primary_key_file = "/Users/skl/Desktop/Robeco Reporting/src/robeco/backend/api_key/primary_gemini_key.txt"
+                primary_key_file = Path(__file__).parent.parent / "backend" / "api_key" / "primary_gemini_key.txt"
                 
                 if os.path.exists(primary_key_file):
                     with open(primary_key_file, 'r') as f:
@@ -95,7 +95,7 @@ class Settings:
                             print(f"✅ Loaded primary API key: {primary_key[:8]}...")
                 
                 # Load backup pool
-                backup_file = "/Users/skl/Desktop/Robeco Reporting/src/robeco/backend/api_key/gemini_api_keys.txt"
+                backup_file = Path(__file__).parent.parent / "backend" / "api_key" / "gemini_api_keys.txt"
                 
                 if os.path.exists(backup_file):
                     with open(backup_file, 'r') as f:

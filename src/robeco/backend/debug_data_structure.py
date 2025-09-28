@@ -8,7 +8,9 @@ import os
 import json
 
 # Add the backend directory to the path
-sys.path.append('/Users/skl/Desktop/Robeco Reporting/src/robeco/backend')
+from pathlib import Path
+backend_path = Path(__file__).parent
+sys.path.append(str(backend_path))
 
 from pre_calculated_financial_methods import extract_pre_calculated_financial_tables
 
@@ -81,7 +83,7 @@ def debug_data_structure():
         'sample_raw_data': income_statement_annual
     }
     
-    with open('/Users/skl/Desktop/Robeco Reporting/src/robeco/backend/debug_structure.json', 'w') as f:
+    with open(Path(__file__).parent / 'debug_structure.json', 'w') as f:
         json.dump(debug_output, f, indent=2, default=str)
     
     print(f"\n✅ Debug data saved to debug_structure.json")
