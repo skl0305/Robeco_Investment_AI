@@ -64,14 +64,20 @@ echo "📡 Server will be available at: http://0.0.0.0:8005"
 echo "🌍 External access: http://188.95.54.49:8005/"
 echo "⌨️  Press Ctrl+C to stop"
 
-# Check if running in background mode
-if [[ "$1" == "--background" || "$1" == "-b" ]]; then
-    echo "🚀 Starting server in background mode..."
+# Check running mode - DEFAULT to BACKGROUND for better user experience
+if [[ "$1" == "--foreground" || "$1" == "-f" ]]; then
+    echo "💻 Starting server in FOREGROUND mode (interactive)..."
+    python -u run_professional_system.py
+else
+    # DEFAULT: Background mode (most users want persistent server)
+    echo "🔄 Starting server in BACKGROUND mode (survives SSH disconnect)..."
+    echo "💡 Use --foreground if you want interactive mode instead"
     nohup python -u run_professional_system.py > robeco_server.log 2>&1 &
     echo $! > robeco_server.pid
     echo "✅ Server started in background with PID: $(cat robeco_server.pid)"
-    echo "📄 Logs: tail -f robeco_server.log"
-    echo "🛑 Stop: kill $(cat robeco_server.pid)"
-else
-    python -u run_professional_system.py
+    echo "📄 View logs: tail -f robeco_server.log"
+    echo "🛑 Stop: kill $(cat robeco_server.pid) or just restart this script"
+    echo ""
+    echo "🌍 Server is now running persistently!"
+    echo "   📍 Safe to close SSH window now!"
 fi
