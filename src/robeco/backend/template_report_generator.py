@@ -4016,7 +4016,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                     # Enhanced quota/rate limit handling
                     if '429' in str(stream_error) or 'RESOURCE_EXHAUSTED' in str(stream_error):
                         logger.warning(f"🔥 QUOTA/RATE LIMIT for key {api_key[:20]}...")
-                        self.api_manager.mark_key_as_failed(api_key)
+                        # Note: API key management handled by external system
                         
                         if 'quota' in str(stream_error).lower():
                             logger.error(f"💳 QUOTA EXHAUSTED - key unusable for 24h")
