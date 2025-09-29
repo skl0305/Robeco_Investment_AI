@@ -46,6 +46,10 @@ python -c "from robeco.backend.template_report_generator import RobecoTemplateRe
     exit 1
 }
 
+# 5. Set Chrome path for Puppeteer
+export PUPPETEER_EXECUTABLE_PATH=/root/.cache/puppeteer/chrome/linux-140.0.7339.207/chrome-linux64/chrome
+echo "✅ Chrome path configured for Puppeteer"
+
 # 5. Start the server
 echo "🌟 Starting Robeco Professional System..."
 echo "📡 Server will be available at: http://0.0.0.0:8005"
