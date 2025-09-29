@@ -190,7 +190,7 @@ CRITICAL: Use the COMPLETE raw dataset above for industry competitive analysis. 
 Provide sophisticated industry analysis of {company} ({ticker}) with the depth and competitive intelligence expected from a senior hedge fund sector analyst reporting to the CIO."""
 
     @staticmethod
-    def get_technical_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_technical_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Technical Analysis Specialist - Hedge Fund Quality
         """
@@ -263,7 +263,7 @@ CRITICAL: Use the COMPLETE raw dataset above for technical analysis. Access ALL 
 Provide sophisticated technical analysis of {ticker} ({company}) with the depth and market insight expected from a senior hedge fund technical analyst reporting to the CIO."""
 
     @staticmethod
-    def get_risk_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_risk_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Risk Analysis Specialist - Hedge Fund Quality
         """
@@ -337,7 +337,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive risk analysis. Ac
 Provide sophisticated risk analysis of {company} ({ticker}) with the depth and insight expected from a senior hedge fund risk analyst reporting to the CIO."""
 
     @staticmethod
-    def get_esg_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_esg_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced ESG Analysis Specialist - Hedge Fund Quality
         """
@@ -648,7 +648,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive bear case analysi
 Provide sophisticated bear case analysis of {company} ({ticker}) with the analytical rigor and risk assessment expected from a senior hedge fund analyst constructing a compelling short investment thesis for the CIO."""
 
     @staticmethod
-    def get_catalysts_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_catalysts_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Catalysts Analysis Specialist - Hedge Fund Quality
         """
@@ -720,7 +720,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive catalyst analysis
 Provide sophisticated catalyst analysis of {company} ({ticker}) with the precision and timing insight expected from a senior hedge fund analyst specializing in event-driven investment strategies for the CIO."""
 
     @staticmethod
-    def get_drivers_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_drivers_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Business Drivers & Recent Developments Analysis Specialist - Hedge Fund Quality
         """
@@ -884,7 +884,7 @@ CRITICAL: Use the COMPLETE raw dataset above for comprehensive consensus analysi
 Provide sophisticated consensus analysis of {company} ({ticker}) with the market intelligence and sentiment assessment expected from a senior hedge fund analyst reporting to the CIO."""
 
     @staticmethod
-    def get_anti_consensus_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None) -> str:
+    def get_anti_consensus_prompt(company: str, ticker: str, user_query: str = "", financial_data: dict = None, data_sources: dict = None) -> str:
         """
         Advanced Anti-Consensus Analysis Specialist - Hedge Fund Quality
         """

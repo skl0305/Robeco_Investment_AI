@@ -46,9 +46,17 @@ python -c "from robeco.backend.template_report_generator import RobecoTemplateRe
     exit 1
 }
 
-# 5. Set Chrome path for Puppeteer
-export PUPPETEER_EXECUTABLE_PATH=/root/.cache/puppeteer/chrome/linux-140.0.7339.207/chrome-linux64/chrome
-echo "✅ Chrome path configured for Puppeteer"
+# 5. Set Chrome path for Puppeteer (OS-specific)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux (server)
+    export PUPPETEER_EXECUTABLE_PATH=/root/.cache/puppeteer/chrome/linux-140.0.7339.207/chrome-linux64/chrome
+    echo "✅ Chrome path configured for Linux server"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS (local) - let Puppeteer find Chrome automatically
+    echo "✅ Using system Chrome on macOS"
+else
+    echo "⚠️  Unknown OS type: $OSTYPE"
+fi
 
 # 5. Start the server
 echo "🌟 Starting Robeco Professional System..."
@@ -56,4 +64,4 @@ echo "📡 Server will be available at: http://0.0.0.0:8005"
 echo "🌍 External access: http://188.95.54.49:8005/"
 echo "⌨️  Press Ctrl+C to stop"
 
-python run_professional_system.py
+python -u run_professional_system.py
