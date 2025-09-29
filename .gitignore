@@ -62,15 +62,12 @@ claude
 claude-code2
 claude_wrapper.sh
 debug_claude_config.py
-quick_start.sh
-start_claude_local_only.py
 
 # Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
 # Temporary files
 *.tmp
@@ -95,7 +92,6 @@ package-lock.json
 .zsh_history
 .zshrc
 .zprofile
-.gitconfig
 .npm/
 .nvm/
 .conda/
