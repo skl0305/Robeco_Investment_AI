@@ -64,4 +64,14 @@ echo "📡 Server will be available at: http://0.0.0.0:8005"
 echo "🌍 External access: http://188.95.54.49:8005/"
 echo "⌨️  Press Ctrl+C to stop"
 
-python -u run_professional_system.py
+# Check if running in background mode
+if [[ "$1" == "--background" || "$1" == "-b" ]]; then
+    echo "🚀 Starting server in background mode..."
+    nohup python -u run_professional_system.py > robeco_server.log 2>&1 &
+    echo $! > robeco_server.pid
+    echo "✅ Server started in background with PID: $(cat robeco_server.pid)"
+    echo "📄 Logs: tail -f robeco_server.log"
+    echo "🛑 Stop: kill $(cat robeco_server.pid)"
+else
+    python -u run_professional_system.py
+fi
