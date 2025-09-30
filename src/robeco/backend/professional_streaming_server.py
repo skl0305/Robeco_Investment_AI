@@ -2188,21 +2188,45 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
             )
             
         else:
-            # No stored analyses - user needs to run analyses first
-            logger.warning(f"⚠️ No stored analyses found for report generation")
+            # No stored analyses - generate comprehensive report using financial data only
+            logger.info(f"🏗️ No stored analyses found - generating comprehensive investment report for {company} using financial data")
             
-            # Send error message to frontend
+            # Send progress update
             await websocket.send_text(json.dumps({
-                "type": "report_generation_error",
+                "type": "report_generation_progress",
                 "data": {
-                    "error": "No analyses data available",
-                    "message": "Please run multiple agent analyses first before generating a report",
-                    "suggestion": "Use the various analyst tools (Fundamentals, Technical, Risk, etc.) to generate analyses, then try report generation again",
+                    "status": "ai_generating",
+                    "message": f"Generating comprehensive investment report for {company} using available financial data",
                     "connection_id": connection_id,
                     "timestamp": datetime.now().isoformat()
                 }
             }))
-            return
+            
+            # Load the Robeco template for comprehensive report structure
+            template_content = ""
+            try:
+                current_file = Path(__file__)
+                project_root = current_file.parent.parent.parent.parent
+                template_path = project_root / "Report Example" / "Robeco_InvestmentCase_Template.txt"
+                with open(template_path, 'r', encoding='utf-8') as f:
+                    template_content = f.read()
+                logger.info(f"✅ Loaded Robeco template for comprehensive report: {len(template_content)} characters")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not load template file: {e}")
+                template_content = "Template not available"
+            
+            # Generate report using the same system, just with empty analyses data
+            report_content = await generate_report_with_streaming(
+                websocket=websocket,
+                connection_id=connection_id,
+                company_name=company,
+                ticker=ticker,
+                analyses_data={},  # Empty analyses - AI will generate content directly
+                report_focus=report_focus,
+                investment_objective=investment_objective,
+                user_query=user_query,
+                data_sources=data_sources
+            )
         
         # The template_report_generator already returns complete HTML with CSS
         final_report_html = report_content
@@ -2524,6 +2548,7 @@ async def generate_report_with_streaming(
             }
         }))
         raise
+
 
 async def handle_word_report_generation(websocket: WebSocket, connection_id: str, message: Dict):
     """Handle Word document generation from HTML report"""

@@ -4355,7 +4355,9 @@ stockInfoHtml += (stockData.business_summary ?
                     break;
                     
                 case 'report_generation_progress':
-                    console.log('📊 REPORT_GENERATION_PROGRESS received:', message.data);
+                    console.log('📊 REPORT_GENERATION_PROGRESS received at', new Date().toISOString(), ':', message.data);
+                    console.log('📊 Progress data keys:', Object.keys(message.data || {}));
+                    console.log('📊 Status:', message.data?.status, 'Message:', message.data?.message);
                     handleReportGenerationProgress(message.data);
                     break;
                     
@@ -5117,25 +5119,51 @@ stockInfoHtml += (stockData.business_summary ?
         // Real-time Report Generation Handlers
         function handleReportGenerationProgress(data) {
             console.log('📊 Report progress:', data.status, '-', data.message);
+            console.log('🔔 Will display in progress indicator:', data.message || 'fallback message');
             
-            // Show user-friendly notifications for ALL progress updates
+            // Fallback messages for status codes (backend message takes priority)
             const statusMessages = {
                 'initializing': '🏗️ Initializing report template...',
                 'template_loading': '📋 Loading Robeco investment template...',
                 'fetching_data': '📊 Fetching stock market data...',
                 'ai_generating': '🤖 AI generating professional investment report...',
                 'call1_starting': '📊 Generating overview and analysis sections...',
+                'call2_starting': '📊 Generating financial analysis and projections...',
+                'call3_starting': '📊 Generating risk assessment and recommendations...',
+                'retrying': '⏳ API overloaded, retrying with different key...',
                 'processing': '⚙️ Processing analysis data...',
                 'formatting': '🎨 Formatting professional layout...',
                 'finalizing': '✅ Finalizing investment report...'
             };
             
-            // Show notification for current status
+            // Get user-friendly message
             const userMessage = statusMessages[data.status] || data.message || 'Processing...';
-            showUserDebugInfo('Report Generation Progress', userMessage);
             
-            // Update persistent progress indicator
-            updatePersistentProgressIndicator(data.status, userMessage);
+            // Use the exact backend message for precise progress updates
+            let preciseMessage = data.message || userMessage;
+            
+            // Special handling for retry messages - add countdown info
+            if (data.status === 'retrying' && data.retry_attempt && data.max_retries) {
+                const progress = Math.round((data.retry_attempt / data.max_retries) * 100);
+                preciseMessage = `⏳ API overloaded, retrying with key #${data.retry_attempt}/${data.max_retries} (${progress}%)...`;
+                
+                // Show enhanced retry notification
+                showUserDebugWarning('API Retry in Progress', 
+                    `🔄 Attempting retry ${data.retry_attempt} of ${data.max_retries}\n` +
+                    `⏳ Using different API key to bypass overload\n` +
+                    `📊 Progress: ${progress}% through available keys`
+                );
+            }
+            
+            // Use fast message update for rapid progress updates during AI generation
+            if (data.status === 'processing' || data.status === 'ai_generating' || data.status === 'retrying' || data.message) {
+                updateProgressMessage(preciseMessage);
+            } else {
+                // Use full progress indicator update for major phase changes
+                updatePersistentProgressIndicator(data.status, preciseMessage);
+            }
+            
+            // Skip debug info creation for rapid progress updates (handled in showUserDebugInfo)
             
             // DO NOT update raw HTML viewer - preserve accumulated content
             // The raw HTML should only show actual report content, not progress messages
@@ -5720,6 +5748,16 @@ stockInfoHtml += (stockData.business_summary ?
         }
 
         function showUserDebugInfo(title, message) {
+            console.log('📢 showUserDebugInfo called:', title, message);
+            
+            // For report generation progress, use a more efficient approach
+            if (title === 'Report Generation Progress') {
+                // Skip creating multiple info divs for rapid progress updates
+                // Let the persistent indicator handle real-time updates
+                console.log('⚡ Skipping debug info for rapid progress update:', message);
+                return;
+            }
+            
             const infoDiv = document.createElement('div');
             infoDiv.style.cssText = 'position: fixed; top: 160px; right: 20px; background: #ebf8ff; border: 1px solid #90cdf4; border-radius: 6px; padding: 12px; max-width: 280px; z-index: 2000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px;';
             
@@ -5727,42 +5765,47 @@ stockInfoHtml += (stockData.business_summary ?
             
             document.body.appendChild(infoDiv);
             setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 6000);
+            console.log('✨ Debug info notification created');
         }
 
         function updatePersistentProgressIndicator(status, message) {
-            // Remove any existing persistent indicator
-            const existing = document.getElementById('persistent-progress-indicator');
-            if (existing) existing.remove();
+            console.log('🔔 updatePersistentProgressIndicator called:', status, message);
             
-            // Create persistent progress indicator that stays visible
-            const progressDiv = document.createElement('div');
-            progressDiv.id = 'persistent-progress-indicator';
-            progressDiv.style.cssText = `
-                position: fixed; 
-                top: 20px; 
-                right: 20px; 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                color: white; 
-                border-radius: 12px; 
-                padding: 16px 20px; 
-                max-width: 320px; 
-                z-index: 2001; 
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); 
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
-                font-size: 13px;
-                animation: slideInRight 0.3s ease-out;
-            `;
+            // Get or create persistent indicator (don't recreate if exists)
+            let progressDiv = document.getElementById('persistent-progress-indicator');
+            if (!progressDiv) {
+                progressDiv = document.createElement('div');
+                progressDiv.id = 'persistent-progress-indicator';
+                progressDiv.style.cssText = `
+                    position: fixed; 
+                    top: 20px; 
+                    right: 20px; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; 
+                    border-radius: 12px; 
+                    padding: 16px 20px; 
+                    max-width: 320px; 
+                    z-index: 2001; 
+                    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); 
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+                    font-size: 13px;
+                    animation: slideInRight 0.3s ease-out;
+                `;
+                document.body.appendChild(progressDiv);
+                console.log('✨ Created new persistent progress indicator');
+            }
             
             // Add spinning animation for active generation
             const spinner = status === 'ai_generating' ? '<div style="display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; margin-right: 8px;"></div>' : '';
             
+            // Update content only - much faster than recreating
             progressDiv.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                     ${spinner}
                     <strong style="font-size: 14px;">🤖 AI Report Generation</strong>
                     <button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 24px; height: 24px; color: white; cursor: pointer; font-size: 16px;">×</button>
                 </div>
-                <div style="color: rgba(255,255,255,0.9); font-size: 12px; line-height: 1.4;">
+                <div id="progress-message-content" style="color: rgba(255,255,255,0.9); font-size: 12px; line-height: 1.4;">
                     ${message}
                 </div>
                 <div style="background: rgba(255,255,255,0.2); height: 4px; border-radius: 2px; margin-top: 12px; overflow: hidden;">
@@ -5770,7 +5813,33 @@ stockInfoHtml += (stockData.business_summary ?
                 </div>
             `;
             
-            document.body.appendChild(progressDiv);
+            console.log('📱 Progress indicator updated with message:', message);
+        }
+        
+        // Fast message-only updater for real-time progress
+        function updateProgressMessage(message) {
+            const messageElement = document.getElementById('progress-message-content');
+            if (messageElement) {
+                messageElement.textContent = message;
+                console.log('⚡ Fast message update:', message);
+                
+                // Add retry countdown animation for retry messages
+                if (message.includes('retrying with key')) {
+                    messageElement.style.background = 'rgba(255, 193, 7, 0.1)';
+                    messageElement.style.borderLeft = '4px solid #ffc107';
+                    messageElement.style.paddingLeft = '12px';
+                    messageElement.style.animation = 'pulse 2s ease-in-out infinite';
+                } else {
+                    // Reset styling for normal messages
+                    messageElement.style.background = '';
+                    messageElement.style.borderLeft = '';
+                    messageElement.style.paddingLeft = '';
+                    messageElement.style.animation = '';
+                }
+            } else {
+                // Fallback to full update if element doesn't exist
+                updatePersistentProgressIndicator('processing', message);
+            }
             
             // Add CSS animations if not already added
             if (!document.getElementById('progress-animations')) {
@@ -6423,6 +6492,46 @@ stockInfoHtml += (stockData.business_summary ?
             console.log('🎯 typeof currentProject:', typeof currentProject);
             console.log('🎯 currentProject value:', currentProject);
             
+            // ⚡ INSTANT BUTTON FEEDBACK - Change button immediately on click
+            const generateBtn = document.querySelector('.generate-report-btn');
+            if (generateBtn) {
+                generateBtn.innerHTML = '<i class="fas fa-cog fa-spin" style="margin-right: 8px; color: #ffd700;"></i>Processing...';
+                generateBtn.disabled = true;
+                generateBtn.style.opacity = '0.8';
+                generateBtn.style.background = 'rgba(255, 215, 0, 0.2)';
+                generateBtn.style.borderColor = '#ffd700';
+                generateBtn.style.transform = 'scale(0.98)';
+                generateBtn.style.transition = 'all 0.2s ease';
+                console.log('⚡ INSTANT: Button updated immediately on click');
+            }
+            
+            // ⚡ INSTANT VISUAL FEEDBACK - Show large progress indicator immediately
+            updatePersistentProgressIndicator('initializing', '🚀 Starting report generation...');
+            
+            // ⚡ INSTANT NOTIFICATION - Show immediate click response
+            showUserDebugSuccess('Button Clicked', 
+                '✅ Generate Investment Report button activated!\n' +
+                '🔄 Initializing AI report generation system...\n' +
+                '⏳ Please wait while we prepare your comprehensive analysis'
+            );
+            
+            // ⚡ IMMEDIATE: Switch to report page to show the preparation
+            const reportPage = document.getElementById('reportPage');
+            if (reportPage) {
+                // Hide other pages
+                document.querySelectorAll('.analyst-page').forEach(page => {
+                    page.style.display = 'none';
+                });
+                // Show report page immediately
+                reportPage.style.display = 'block';
+                console.log('⚡ INSTANT: Switched to report page');
+            }
+            
+            // ⚡ INSTANT: Add haptic feedback (if supported)
+            if (navigator.vibrate) {
+                navigator.vibrate([50, 30, 50]); // Short vibration pattern
+            }
+            
             console.log('🎯🎯🎯 ABOUT TO CALL showUserDebugInfo...');
             
             // IMMEDIATE USER FEEDBACK - Always show that function was called
@@ -6470,18 +6579,18 @@ stockInfoHtml += (stockData.business_summary ?
                 alert('❌ Error in showUserDebugInfo: ' + error.message);
             }
             
-            // Update button to show processing state
-            console.log('🔍 About to update button state...');
+            // ⚡ SECONDARY BUTTON UPDATE - Further customize button appearance
+            console.log('🔍 About to update button state further...');
             showUserDebugInfo('Initializing UI', '🔄 Updating button state and preparing interface...');
             
-            const generateBtn = document.querySelector('.generate-report-btn');
+            // Use the same generateBtn variable from above, just update it further
             console.log('🔍 generateBtn found:', !!generateBtn);
             if (generateBtn) {
                 generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating Report...';
-                generateBtn.disabled = true;
                 generateBtn.style.opacity = '0.7';
-                console.log('✅ Button state updated');
-                showUserDebugSuccess('Button Updated', '✅ Generate button now shows processing state');
+                generateBtn.style.background = 'rgba(255, 215, 0, 0.3)'; // More prominent yellow
+                console.log('✅ Button state updated with enhanced styling');
+                showUserDebugSuccess('Button Updated', '✅ Generate button now shows enhanced processing state');
             }
             
             // Clear accumulated raw HTML for new report generation
@@ -6489,10 +6598,42 @@ stockInfoHtml += (stockData.business_summary ?
             window.lastAccumulatedContent = '';
             window.call1Content = '';
             
-            // Clear raw HTML display
+            // ⚡ IMMEDIATE UI FEEDBACK - Update report display areas
             const rawHtmlCode = document.getElementById('rawHtmlCode');
             if (rawHtmlCode) {
-                rawHtmlCode.textContent = 'Raw HTML Code Generation\n\n<!-- 🤖 Report Generation Starting... -->';
+                rawHtmlCode.textContent = '<!-- 🚀 GENERATING INVESTMENT REPORT... -->\n' +
+                    '<!-- ⏳ Please wait while AI creates your comprehensive analysis -->\n' +
+                    '<!-- 📊 Report will appear here in real-time -->\n\n' +
+                    '🤖 AI Report Generation Started...';
+                rawHtmlCode.style.color = '#666';
+                rawHtmlCode.style.fontStyle = 'italic';
+            }
+            
+            // ⚡ INSTANT: Update rendered report viewer with preparation message
+            const renderedReportViewer = document.getElementById('renderedReportViewer');
+            if (renderedReportViewer) {
+                renderedReportViewer.innerHTML = `
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 30px;
+                        border-radius: 12px;
+                        text-align: center;
+                        margin: 20px 0;
+                        animation: pulse 2s ease-in-out infinite;
+                    ">
+                        <div style="font-size: 24px; margin-bottom: 10px;">🚀</div>
+                        <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+                            AI Investment Report Generation Started
+                        </div>
+                        <div style="font-size: 14px; opacity: 0.9;">
+                            Preparing comprehensive analysis for ${currentProject.company} (${currentProject.ticker})
+                        </div>
+                        <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+                            ⏳ Estimated time: 1-2 minutes
+                        </div>
+                    </div>
+                `;
             }
             
             console.log('📋 Generating template-based report for', currentProject.ticker);

@@ -3937,7 +3937,8 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                                     if contains_html_end:
                                         progress = 95  # Near completion when HTML end detected
                                     
-                                    await websocket.send_text(json.dumps({
+                                    # Create message data first
+                                    message_data = {
                                         "type": "report_generation_streaming",
                                         "data": {
                                             "status": f"streaming_html_{call_phase}",
@@ -3961,7 +3962,11 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                                                 "recent_content_sample": accumulated_response[-100:] if len(accumulated_response) > 100 else accumulated_response
                                             }
                                         }
-                                    }))
+                                    }
+                                    
+                                    # Send the message using imported json module
+                                    await websocket.send_text(json.dumps(message_data))
+                                    
                                 except Exception as ws_error:
                                     logger.warning(f"WebSocket streaming failed: {ws_error}")
                                     # Continue without websocket streaming
@@ -4054,6 +4059,29 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                     raise api_error
                 
                 logger.info(f"🔄 Retrying report generation (attempt {attempt+2}/{max_retries})")
+                
+                # Send retry notification to frontend via WebSocket
+                if websocket and connection_id:
+                    try:
+                        retry_message = {
+                            "type": "report_generation_progress",
+                            "data": {
+                                "status": "retrying",
+                                "message": f"⏳ API overloaded, retrying with different key (attempt {attempt+2}/{max_retries})...",
+                                "retry_attempt": attempt + 2,
+                                "max_retries": max_retries,
+                                "connection_id": connection_id,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        }
+                        await websocket.send_text(json.dumps(retry_message))
+                        logger.info(f"📤 Sent retry notification to frontend: attempt {attempt+2}")
+                    except Exception as ws_error:
+                        logger.warning(f"⚠️ Could not send retry notification: {ws_error}")
+                
+                # Add a small delay before retry to avoid immediate rate limiting
+                import asyncio
+                await asyncio.sleep(2)
         
         raise Exception("Report generation failed after all retries")
     
