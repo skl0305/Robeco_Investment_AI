@@ -2312,7 +2312,7 @@
                         Step 1: Generate HTML report → Step 2: Convert to Word/PDF document
                     </div>
                     <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                        <button class="generate-report-btn" onclick="generateTemplateReport()" style="
+                        <button class="generate-report-btn" onclick="console.log('🎯 BUTTON CLICKED - generateTemplateReport'); generateTemplateReport()" style="
                             background: rgba(255,255,255,0.2); 
                             color: white; 
                             border: 2px solid rgba(255,255,255,0.3); 
@@ -2679,9 +2679,26 @@
         let chatHistory = {}; // Chat history per analyst
         let currentChatSession = null;
         
+        // Global Session Management for Multi-User Support
+        let userSession = {
+            id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 12)}_${Math.floor(Math.random() * 1000000)}`,
+            connectionId: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+            startTime: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            clientIP: 'unknown', // Will be set by server
+            isolated: true // Ensure complete isolation
+        };
+        
         // Initialize Professional System with DEBUG LOGGING
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Robeco Professional Investment Platform Initializing...');
+            console.log('🆔 Initializing with Session ID:', userSession.id);
+            
+            // Initialize analysis persistence with session isolation
+            if (window.initAnalysisPersistence) {
+                window.initAnalysisPersistence(userSession.id);
+            }
+            
             console.log('DEBUG: JavaScript loaded successfully to line 2208');
             try {
                 initWebSocket();
@@ -2707,6 +2724,25 @@
             
             ws.onopen = function() {
                 console.log('✅ Professional WebSocket connected');
+                console.log('🆔 Session ID:', userSession.id);
+                console.log('🔗 Connection ID:', userSession.connectionId);
+                
+                // Send session info to server for isolation
+                ws.send(JSON.stringify({
+                    type: 'session_init',
+                    data: {
+                        session_id: userSession.id,
+                        connection_id: userSession.connectionId,
+                        start_time: userSession.startTime,
+                        user_agent: userSession.userAgent,
+                        client_info: {
+                            timestamp: Date.now(),
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            language: navigator.language
+                        }
+                    }
+                }));
+                
                 updateConnectionStatus('Connected');
                 updateApiStatus('ready');
             };
@@ -4021,6 +4057,8 @@ stockInfoHtml += (stockData.business_summary ?
             // Send analysis request with data sources
             const analysisRequest = {
                 type: 'start_analysis',
+                session_id: userSession.id,
+                connection_id: userSession.connectionId,
                 analyst: specialistType,
                 company: currentProject.company,
                 ticker: currentProject.ticker,
@@ -4301,6 +4339,11 @@ stockInfoHtml += (stockData.business_summary ?
                     break;
                     
                 // Report Generation Messages
+                case 'generate_report_acknowledged':
+                    console.log('✅ GENERATE_REPORT_ACKNOWLEDGED received:', message.data);
+                    handleReportGenerationAcknowledged(message.data);
+                    break;
+                    
                 case 'report_generation_started':
                     console.log('📋 REPORT_GENERATION_STARTED received:', message.data);
                     handleReportGenerationStarted(message.data);
@@ -4661,6 +4704,27 @@ stockInfoHtml += (stockData.business_summary ?
             }
         }
 
+        function handleReportGenerationAcknowledged(data) {
+            console.log('✅ Report generation acknowledged by server:', data.message);
+            
+            // Update user with immediate feedback
+            showUserDebugSuccess('Request Acknowledged', 
+                '✅ Server confirmed report generation request\n' +
+                '🔄 Processing is starting...\n' +
+                '📊 Estimated time: 1-2 minutes'
+            );
+        }
+        
+        function restoreGenerateButton() {
+            // Restore the generate button to normal state
+            const generateBtn = document.querySelector('.generate-report-btn');
+            if (generateBtn) {
+                generateBtn.innerHTML = '<i class="fas fa-magic" style="margin-right: 8px;"></i>Generate HTML Report';
+                generateBtn.disabled = false;
+                generateBtn.style.opacity = '1';
+            }
+        }
+
         function handleReportGenerationStarted(data) {
             console.log('📋 Report generation started for', data.ticker);
             
@@ -5018,6 +5082,9 @@ stockInfoHtml += (stockData.business_summary ?
             // Clear report generation mode
             isGeneratingReport = false;
             
+            // Restore the generate button to normal state
+            restoreGenerateButton();
+            
             // Clear any stored HTML report and disable Word button
             latestHtmlReport = null;
             const wordBtn = document.getElementById('generateWordBtn');
@@ -5034,13 +5101,15 @@ stockInfoHtml += (stockData.business_summary ?
             // Update raw HTML viewer to show error
             document.getElementById('rawHtmlCode').textContent = '// Report generation failed: ' + data.error;
             
+            // Show user-friendly error message
             showUserDebugError('Report Generation Failed', 
                 'Failed to generate investment report: ' + data.error,
                 [
                     'Make sure you have run multiple agent analyses first',
-                    'Check that the backend server has working API keys',
+                    'Check that the backend server has working API keys', 
                     'Try running analyses again before generating report',
-                    'Check browser console for detailed error information'
+                    'Check browser console for detailed error information',
+                    '🔄 You can try again by clicking "Generate HTML Report"'
                 ]
             );
         }
@@ -5048,6 +5117,25 @@ stockInfoHtml += (stockData.business_summary ?
         // Real-time Report Generation Handlers
         function handleReportGenerationProgress(data) {
             console.log('📊 Report progress:', data.status, '-', data.message);
+            
+            // Show user-friendly notifications for ALL progress updates
+            const statusMessages = {
+                'initializing': '🏗️ Initializing report template...',
+                'template_loading': '📋 Loading Robeco investment template...',
+                'fetching_data': '📊 Fetching stock market data...',
+                'ai_generating': '🤖 AI generating professional investment report...',
+                'call1_starting': '📊 Generating overview and analysis sections...',
+                'processing': '⚙️ Processing analysis data...',
+                'formatting': '🎨 Formatting professional layout...',
+                'finalizing': '✅ Finalizing investment report...'
+            };
+            
+            // Show notification for current status
+            const userMessage = statusMessages[data.status] || data.message || 'Processing...';
+            showUserDebugInfo('Report Generation Progress', userMessage);
+            
+            // Update persistent progress indicator
+            updatePersistentProgressIndicator(data.status, userMessage);
             
             // DO NOT update raw HTML viewer - preserve accumulated content
             // The raw HTML should only show actual report content, not progress messages
@@ -5629,6 +5717,80 @@ stockInfoHtml += (stockData.business_summary ?
             
             document.body.appendChild(warningDiv);
             setTimeout(() => { if (warningDiv.parentNode) warningDiv.remove(); }, 10000);
+        }
+
+        function showUserDebugInfo(title, message) {
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'position: fixed; top: 160px; right: 20px; background: #ebf8ff; border: 1px solid #90cdf4; border-radius: 6px; padding: 12px; max-width: 280px; z-index: 2000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px;';
+            
+            infoDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;"><span style="color: #3182ce; font-size: 12px;">ℹ️</span><strong style="color: #2c5282; font-size: 12px;">' + title + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 14px; cursor: pointer; color: #2c5282;">×</button></div><div style="color: #2c5282; font-size: 11px;">' + message + '</div>';
+            
+            document.body.appendChild(infoDiv);
+            setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 6000);
+        }
+
+        function updatePersistentProgressIndicator(status, message) {
+            // Remove any existing persistent indicator
+            const existing = document.getElementById('persistent-progress-indicator');
+            if (existing) existing.remove();
+            
+            // Create persistent progress indicator that stays visible
+            const progressDiv = document.createElement('div');
+            progressDiv.id = 'persistent-progress-indicator';
+            progressDiv.style.cssText = `
+                position: fixed; 
+                top: 20px; 
+                right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; 
+                border-radius: 12px; 
+                padding: 16px 20px; 
+                max-width: 320px; 
+                z-index: 2001; 
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+                font-size: 13px;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            // Add spinning animation for active generation
+            const spinner = status === 'ai_generating' ? '<div style="display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; margin-right: 8px;"></div>' : '';
+            
+            progressDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    ${spinner}
+                    <strong style="font-size: 14px;">🤖 AI Report Generation</strong>
+                    <button onclick="this.parentElement.parentElement.remove()" style="margin-left: auto; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 24px; height: 24px; color: white; cursor: pointer; font-size: 16px;">×</button>
+                </div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 12px; line-height: 1.4;">
+                    ${message}
+                </div>
+                <div style="background: rgba(255,255,255,0.2); height: 4px; border-radius: 2px; margin-top: 12px; overflow: hidden;">
+                    <div style="background: white; height: 100%; width: 70%; border-radius: 2px; animation: pulse 2s ease-in-out infinite;"></div>
+                </div>
+            `;
+            
+            document.body.appendChild(progressDiv);
+            
+            // Add CSS animations if not already added
+            if (!document.getElementById('progress-animations')) {
+                const style = document.createElement('style');
+                style.id = 'progress-animations';
+                style.textContent = `
+                    @keyframes slideInRight {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         }
 
         // Citation-free markdown processing for streaming (prevents double conversion)
@@ -6256,9 +6418,70 @@ stockInfoHtml += (stockData.business_summary ?
         }
 
         function generateTemplateReport() {
+            console.log('🎯🎯🎯 FUNCTION ENTRY: generateTemplateReport() called');
+            console.log('🎯 JavaScript execution path reached');
+            console.log('🎯 typeof currentProject:', typeof currentProject);
+            console.log('🎯 currentProject value:', currentProject);
+            
+            console.log('🎯🎯🎯 ABOUT TO CALL showUserDebugInfo...');
+            
+            // IMMEDIATE USER FEEDBACK - Always show that function was called
+            try {
+                showUserDebugInfo('Report Generation Starting', 
+                    '🚀 Report generation function has been called\n' +
+                    '📋 Checking project setup and system status...\n' +
+                    '⏳ Please wait while we initialize the process'
+                );
+                console.log('🎯🎯🎯 showUserDebugInfo completed successfully!');
+            } catch (error) {
+                console.error('❌ ERROR in showUserDebugInfo:', error);
+                alert('Error in showUserDebugInfo: ' + error.message);
+            }
+            
             if (!currentProject) {
-                showUserDebugError('No Project', 'Please set up a project first before generating a report.');
+                console.log('❌ No currentProject found - showing error');
+                showUserDebugError('No Project Setup', 'Please set up a project first before generating a report.');
                 return;
+            }
+            
+            console.log('✅ currentProject exists, proceeding...');
+            console.log('🎯 DEBUG: About to show success message...');
+            console.log('🎯🎯🎯 CHECKPOINT A: Before showUserDebugSuccess');
+            
+            // Update user that project is found
+            showUserDebugSuccess('Project Found', 
+                `✅ Project: ${currentProject.company} (${currentProject.ticker})\n` +
+                '🔄 Proceeding with report generation setup...'
+            );
+            
+            console.log('🎯🎯🎯 CHECKPOINT B: After showUserDebugSuccess');
+            
+            // ✨ IMMEDIATE USER FEEDBACK - Show loading state immediately
+            console.log('🔍 About to call showUserDebugInfo...');
+            try {
+                showUserDebugInfo('Report Generation Started', 
+                    '🚀 Initiating AI report generation for ' + currentProject.company + ' (' + currentProject.ticker + ')...\n\n' +
+                    '📊 Preparing comprehensive investment analysis report\n' +
+                    '🔄 This may take 1-2 minutes to complete'
+                );
+                console.log('✅ showUserDebugInfo completed successfully');
+            } catch (error) {
+                console.error('❌ Error in showUserDebugInfo:', error);
+                alert('❌ Error in showUserDebugInfo: ' + error.message);
+            }
+            
+            // Update button to show processing state
+            console.log('🔍 About to update button state...');
+            showUserDebugInfo('Initializing UI', '🔄 Updating button state and preparing interface...');
+            
+            const generateBtn = document.querySelector('.generate-report-btn');
+            console.log('🔍 generateBtn found:', !!generateBtn);
+            if (generateBtn) {
+                generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating Report...';
+                generateBtn.disabled = true;
+                generateBtn.style.opacity = '0.7';
+                console.log('✅ Button state updated');
+                showUserDebugSuccess('Button Updated', '✅ Generate button now shows processing state');
             }
             
             // Clear accumulated raw HTML for new report generation
@@ -6275,11 +6498,27 @@ stockInfoHtml += (stockData.business_summary ?
             console.log('📋 Generating template-based report for', currentProject.ticker);
             
             // Collect all stored analyses from the persistence system
-            const storedAnalyses = window.robecoAnalysisPersistence.getAnalysesByTicker(currentProject.ticker);
+            console.log('🔍 Checking for stored analyses...');
+            showUserDebugInfo('Checking Data', '🔍 Searching for stored analyses...');
+            console.log('🔍 window.robecoAnalysisPersistence exists:', !!window.robecoAnalysisPersistence);
             
-            if (storedAnalyses.length === 0) {
-                showUserDebugWarning('No Analyses Available', 'Please run some agent analyses first before generating a report.');
+            let storedAnalyses = [];
+            try {
+                storedAnalyses = window.robecoAnalysisPersistence.getAnalysesByTicker(currentProject.ticker);
+                console.log('✅ Successfully retrieved analyses:', storedAnalyses);
+                showUserDebugSuccess('Data Retrieved', `✅ Found ${storedAnalyses.length} stored analyses`);
+            } catch (error) {
+                console.error('❌ Error getting stored analyses:', error);
+                showUserDebugError('Data Error', '❌ Error getting stored analyses: ' + error.message);
                 return;
+            }
+            
+            // Allow report generation even without stored analyses - will generate basic report
+            if (storedAnalyses.length === 0) {
+                console.log('⚠️ No stored analyses found - will generate basic report');
+                showUserDebugWarning('No Prior Analyses', 'No stored analyses found. Will generate basic investment report...');
+            } else {
+                showUserDebugSuccess('Analyses Found', `✅ Using ${storedAnalyses.length} existing analyses for comprehensive report`);
             }
             
             console.log('📊 Found ' + storedAnalyses.length + ' stored analyses for report generation');
@@ -6301,9 +6540,20 @@ stockInfoHtml += (stockData.business_summary ?
             showUserDebugSuccess('Report Generation Started', 'Generating investment report using ' + Object.keys(analysesData).join(', ') + ' analyses');
             
             // Send report generation request via WebSocket
+            console.log('🎯🎯🎯 REACHED WEBSOCKET SECTION!');
+            console.log('🔍 WebSocket status check:');
+            showUserDebugInfo('Connecting to Server', '🔌 Checking WebSocket connection status...');
+            console.log('🔍 ws exists:', !!ws);
+            console.log('🔍 ws.readyState:', ws ? ws.readyState : 'N/A');
+            console.log('🔍 WebSocket.OPEN:', WebSocket.OPEN);
+            
             if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log('✅ WebSocket is connected, sending message...');
+                showUserDebugSuccess('Connected', '✅ WebSocket connected - sending report request...');
                 const reportRequest = {
                     type: 'generate_report',
+                    session_id: userSession.id,
+                    connection_id: userSession.connectionId,
                     data: {
                         company_name: currentProject.company,
                         ticker: currentProject.ticker,
@@ -6316,11 +6566,27 @@ stockInfoHtml += (stockData.business_summary ?
                 };
                 
                 console.log('🔍 FRONTEND DEBUG: Sending report request with context:', reportRequest.data.data_sources);
-                
                 console.log('📤 Sending report generation request:', reportRequest);
-                ws.send(JSON.stringify(reportRequest));
+                
+                try {
+                    ws.send(JSON.stringify(reportRequest));
+                    console.log('✅ WebSocket message sent successfully');
+                    showUserDebugSuccess('Request Sent', 
+                        '✅ Report generation request sent to server!\n' +
+                        '⏳ Waiting for server response...\n' +
+                        '📊 This may take 1-2 minutes to complete'
+                    );
+                } catch (error) {
+                    console.error('❌ Error sending WebSocket message:', error);
+                    showUserDebugError('Send Error', '❌ Error sending WebSocket message: ' + error.message);
+                }
             } else {
-                showUserDebugError('Connection Error', 'WebSocket connection not available. Please refresh and try again.');
+                const connectionStatus = ws ? `ReadyState: ${ws.readyState}` : 'WebSocket not initialized';
+                showUserDebugError('Connection Error', 
+                    'WebSocket connection not available.\n' +
+                    `Status: ${connectionStatus}\n` +
+                    'Please refresh and try again.'
+                );
             }
         }
 

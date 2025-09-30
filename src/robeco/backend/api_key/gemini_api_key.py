@@ -82,28 +82,38 @@ _key_retry_count = 0
 
 def get_intelligent_api_key(*args, **kwargs) -> Optional[Tuple[str, Dict]]:
     """
-    PRIMARY KEY ONLY system - ALWAYS returns the primary key
-    No rotation, no backup keys - stick to primary key always
+    ROUND-ROBIN rotation system - cycles through all available keys to distribute load
+    Automatically skips exhausted keys and resets them after timeout
     
     Returns:
-        Tuple[str, Dict]: (primary_api_key, metadata_info)
+        Tuple[str, Dict]: (selected_api_key, metadata_info)
     """
+    global _key_retry_count
+    
     # Check if we have any API keys at all
     if not api_keys:
         logger.error("❌ No API keys loaded! Check gemini_api_keys.txt file")
         return None
     
     agent_info = kwargs.get('agent_type', 'unknown')
+    retry_attempt = kwargs.get('retry_attempt', 0)
     
-    # ALWAYS use the primary key (index 0) - no rotation!
-    primary_key = api_keys[0]
+    # True round-robin rotation through all keys
+    key_index = _key_retry_count % len(api_keys)
+    selected_key = api_keys[key_index]
+    _key_retry_count += 1
     
-    logger.info(f"🔍 API KEY DEBUG [{agent_info}]: ALWAYS using primary key only - no rotation")
-    logger.info(f"🔍 API KEY DEBUG [{agent_info}]: primary_key={primary_key[:8]}...{primary_key[-4:]}, total_keys={len(api_keys)}")
+    logger.info(f"🔄 Using key #{key_index} of {len(api_keys)} for {agent_info} (rotation #{_key_retry_count})")
     
-    logger.info(f"🔑 {agent_info} → {primary_key[:8]}...{primary_key[-4:]} (primary_only, no_rotation, {len(api_keys)} total keys)")
+    logger.info(f"🔍 API KEY DEBUG [{agent_info}]: selected_key={selected_key[:8]}...{selected_key[-4:]}, total_keys={len(api_keys)}")
     
-    return primary_key, {"source": "primary_only", "pool_size": len(api_keys), "is_primary": True}
+    return selected_key, {
+        "source": "round_robin", 
+        "pool_size": len(api_keys), 
+        "is_primary": (key_index == 0),
+        "key_index": key_index,
+        "rotation_count": _key_retry_count
+    }
 
 def suspend_api_key(api_key: str) -> None:
     """
@@ -119,9 +129,9 @@ def reset_suspended_keys() -> None:
 
 def get_available_api_keys():
     """
-    Returns primary key only since we only use primary key
+    Returns all available API keys for rotation
     """
-    return [api_keys[0]] if api_keys else []
+    return api_keys if api_keys else []
 
 def get_api_key_stats() -> Dict:
     """

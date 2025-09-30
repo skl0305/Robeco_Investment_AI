@@ -5,9 +5,10 @@
  */
 
 class RobecoAnalysisPersistence {
-    constructor() {
-        this.storageKey = 'robeco_professional_analyses';
-        this.currentSession = this.generateSessionId();
+    constructor(sessionId = null) {
+        // Use provided session ID or generate new one
+        this.currentSession = sessionId || this.generateSessionId();
+        this.storageKey = `robeco_analyses_${this.currentSession}`;
         this.init();
     }
 
@@ -15,7 +16,10 @@ class RobecoAnalysisPersistence {
         console.log('📁 Initializing Robeco Analysis Persistence System');
         console.log('🆔 Session ID:', this.currentSession);
         
-        // Load existing analyses
+        // Clear old sessions (keep only current session)
+        this.clearOldSessions();
+        
+        // Load existing analyses (should be empty for new session)
         this.loadExistingAnalyses();
         
         // Setup UI for analysis history
@@ -24,6 +28,26 @@ class RobecoAnalysisPersistence {
 
     generateSessionId() {
         return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    clearOldSessions() {
+        // Remove all old robeco analysis sessions from localStorage
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('robeco_analyses_session_') && key !== this.storageKey) {
+                keysToRemove.push(key);
+            }
+        }
+        
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('🗑️ Removed old session:', key);
+        });
+        
+        if (keysToRemove.length > 0) {
+            console.log(`🧹 Cleared ${keysToRemove.length} old analysis sessions`);
+        }
     }
 
     saveAnalysis(analysisData) {
@@ -404,8 +428,14 @@ class RobecoAnalysisPersistence {
     }
 }
 
-// Global instance
-window.robecoAnalysisPersistence = new RobecoAnalysisPersistence();
+// Global instance - will be initialized with session ID from main page
+window.robecoAnalysisPersistence = null;
+
+// Function to initialize with session ID
+window.initAnalysisPersistence = function(sessionId) {
+    window.robecoAnalysisPersistence = new RobecoAnalysisPersistence(sessionId);
+    console.log('🔧 Analysis persistence initialized with session:', sessionId);
+};
 
 // Add CSS animations
 const style = document.createElement('style');

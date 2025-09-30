@@ -70,10 +70,13 @@ if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
     logger.info(f"✅ Static files mounted from {static_path}")
 
-# Active WebSocket connections and chat sessions
-active_connections: Set[WebSocket] = set()
+# Session-isolated WebSocket connections and data
+active_connections: Dict[str, WebSocket] = {}  # session_id -> websocket
+session_data: Dict[str, Dict] = {}  # session_id -> {connection_id, start_time, client_info, etc}
 connection_counter = 0
-chat_sessions = {}  # Store chat history per connection and analyst
+chat_sessions: Dict[str, Dict] = {}  # session_id -> {analyst -> chat_history}
+session_projects: Dict[str, Dict] = {}  # session_id -> project_data
+session_analyses: Dict[str, Dict] = {}  # session_id -> {analysis_id -> analysis_data}
 
 # Document conversion request model
 class DocumentConversionRequest(BaseModel):
@@ -162,15 +165,18 @@ async def serve_workbench():
 
 @app.websocket("/ws/professional")
 async def websocket_endpoint(websocket: WebSocket):
-    """Professional WebSocket endpoint for real-time analysis streaming"""
+    """Professional WebSocket endpoint for real-time analysis streaming with session isolation"""
     global connection_counter
     connection_counter += 1
-    connection_id = f"robeco_client_{connection_counter}"
+    temp_connection_id = f"robeco_client_{connection_counter}"
     
     await websocket.accept()
-    active_connections.add(websocket)
     
-    logger.info(f"🔗 New professional connection: {connection_id}")
+    # Wait for session initialization message
+    session_id = None
+    connection_id = None
+    
+    logger.info(f"🔗 New professional connection: {temp_connection_id} (waiting for session init)")
     
     # Send initial connection confirmation
     await websocket.send_text(json.dumps({
@@ -195,7 +201,63 @@ async def websocket_endpoint(websocket: WebSocket):
             message = json.loads(data)
             message_type = message.get('type', 'unknown')
             
-            logger.info(f"📨 Message from {connection_id}: {message_type}")
+            # Handle session initialization first
+            if message_type == 'session_init' and session_id is None:
+                session_id = message.get('data', {}).get('session_id')
+                connection_id = message.get('data', {}).get('connection_id', temp_connection_id)
+                
+                if session_id:
+                    # Register session-isolated connection
+                    active_connections[session_id] = websocket
+                    session_data[session_id] = {
+                        'connection_id': connection_id,
+                        'start_time': message.get('data', {}).get('start_time'),
+                        'client_info': message.get('data', {}).get('client_info', {}),
+                        'temp_connection_id': temp_connection_id
+                    }
+                    
+                    # Initialize session-specific data stores
+                    if session_id not in chat_sessions:
+                        chat_sessions[session_id] = {}
+                    if session_id not in session_projects:
+                        session_projects[session_id] = {}
+                    if session_id not in session_analyses:
+                        session_analyses[session_id] = {}
+                    
+                    logger.info(f"🆔 Session {session_id} initialized for connection {connection_id}")
+                    
+                    # Send confirmation
+                    await websocket.send_text(json.dumps({
+                        "type": "session_confirmed",
+                        "data": {
+                            "session_id": session_id,
+                            "connection_id": connection_id,
+                            "message": "Session isolation activated"
+                        }
+                    }))
+                continue
+            
+            # Skip processing if session not initialized
+            if session_id is None:
+                logger.warning(f"⚠️ Message {message_type} received before session initialization")
+                continue
+                
+            logger.info(f"📨 Message from session {session_id}: {message_type}")
+            
+            # IMPORTANT: Log the EXACT message structure for debugging
+            logger.info(f"🔍 EXACT MESSAGE DEBUG: {json.dumps(message, indent=2, default=str)[:500]}...")
+            
+            # IMMEDIATE ACKNOWLEDGMENT for generate_report
+            if message_type == 'generate_report':
+                logger.info(f"🎯 GENERATE_REPORT MESSAGE RECEIVED! Sending immediate acknowledgment...")
+                await websocket.send_text(json.dumps({
+                    "type": "generate_report_acknowledged", 
+                    "data": {
+                        "message": "📝 Report generation request received and processing...",
+                        "connection_id": connection_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                }))
             
             if message_type == 'start_analysis':
                 # Handle real-time analysis request
@@ -236,16 +298,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning(f"⚠️ Unhandled message type: {message_type}")
                 
     except WebSocketDisconnect:
-        active_connections.discard(websocket)
-        # Clean up chat sessions for this connection
-        keys_to_remove = [key for key in chat_sessions.keys() if key.startswith(connection_id)]
-        for key in keys_to_remove:
-            del chat_sessions[key]
-        logger.info(f"❌ Connection closed: {connection_id} (cleaned up {len(keys_to_remove)} chat sessions)")
+        # Clean up session-based data
+        if session_id:
+            active_connections.pop(session_id, None)
+            session_data.pop(session_id, None)
+            session_projects.pop(session_id, None)
+            session_analyses.pop(session_id, None)
+            chat_sessions.pop(session_id, None)
+            logger.info(f"❌ Session {session_id} disconnected and cleaned up")
+        else:
+            logger.info(f"❌ Connection {temp_connection_id} closed (no session)")
         
     except Exception as e:
-        logger.error(f"❌ WebSocket error for {connection_id}: {e}")
-        active_connections.discard(websocket)
+        logger.error(f"❌ WebSocket error for session {session_id or temp_connection_id}: {e}")
+        if session_id:
+            active_connections.pop(session_id, None)
 
 async def fetch_stock_data_internal(ticker: str) -> Dict:
     """Internal function to fetch stock data for agent analysis"""
@@ -2043,6 +2110,9 @@ async def _generate_template_guided_content(prompt: str) -> str:
 async def handle_report_generation(websocket: WebSocket, connection_id: str, message: Dict):
     """Handle comprehensive AI investment report generation with streaming"""
     
+    logger.info(f"🎯 ENTERED handle_report_generation function for {connection_id}")
+    logger.info(f"🎯 Message keys: {list(message.keys())}")
+    
     try:
         # Extract report parameters - they should be in message.data
         data = message.get('data', {})
@@ -2138,6 +2208,10 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
         final_report_html = report_content
         
         # Send final report completion message with proper type
+        logger.info(f"🔍 DEBUG: About to send final report completion message")
+        logger.info(f"🔍 DEBUG: report_content length: {len(report_content) if report_content else 'None'}")
+        logger.info(f"🔍 DEBUG: final_report_html length: {len(final_report_html) if final_report_html else 'None'}")
+        
         await websocket.send_text(json.dumps({
             "type": "report_generation_completed",
             "data": {
@@ -2146,14 +2220,15 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 "ticker": ticker,
                 "company_name": company,
                 "template_used": "Robeco Professional Template",
-                "analyses_count": len(analyses_data),
-                "content_length": len(report_content),
-                "final_length": len(final_report_html),
+                "analyses_count": len(analyses_data) if analyses_data else 0,
+                "content_length": len(report_content) if report_content else 0,
+                "final_length": len(final_report_html) if final_report_html else 0,
                 "connection_id": connection_id,
                 "timestamp": datetime.now().isoformat()
             }
         }))
         
+        logger.info(f"✅ SUCCESS: Final report completion message sent to WebSocket")
         logger.info(f"✅ Report generation completed for {connection_id}: {len(report_content)} characters")
         
     except Exception as e:
@@ -2402,6 +2477,8 @@ async def generate_report_with_streaming(
         }))
         
         # Generate the report with real streaming from AI (uses 2-call architecture internally)
+        logger.info(f"🔍 DEBUG: About to call generate_report_with_websocket_streaming")
+        
         report_content = await generator.generate_report_with_websocket_streaming(
             company_name=company_name,
             ticker=ticker,
@@ -2414,6 +2491,8 @@ async def generate_report_with_streaming(
             user_query=user_query,
             data_sources=data_sources
         )
+        
+        logger.info(f"🔍 DEBUG: generate_report_with_websocket_streaming completed, content length: {len(report_content) if report_content else 'None'}")
         
         # Send final processing status
         await websocket.send_text(json.dumps({

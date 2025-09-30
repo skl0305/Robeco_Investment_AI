@@ -1830,7 +1830,7 @@ As a top-tier hedge fund Portfolio Manager, your **first phase objective** is to
             </div>
         </div>
         <div class="analysis-sections">
-            [CREATE 4 analysis-item blocks with these EXACT titles and sophisticated PM-level focus areas - ALL Google Search verified as of {datetime.now().strftime("%B %Y")}:]
+            [CREATE 4 analysis-item blocks with these EXACT titles and sophisticated PM-level focus areas with high info density and concise and precise - ALL Google Search verified as of {datetime.now().strftime("%B %Y")}:]
             
             [ANALYSIS ITEM 1 - REASON TO ANALYZE: Write like a top PM explaining to a CIO why this is worth portfolio allocation. Focus on: market dislocation, timing catalyst, asymmetric risk/reward, differentiated insight that others miss. USE GOOGLE SEARCH to verify current market positioning, recent stock performance, and analyst sentiment. Show what consensus gets wrong with specific evidence. 150 words max.]
             
