@@ -583,7 +583,23 @@ async def fetch_stock_data_internal(ticker: str) -> Dict:
         except Exception as e:
             logger.error(f"❌ Error fetching 3-statements: {e}")
         
-        return {"success": True, "data": stock_data}
+        # Clean NaN values before JSON serialization
+        def clean_nan_values(obj):
+            """Recursively clean NaN/inf values from nested dictionaries and lists"""
+            import math
+            if isinstance(obj, dict):
+                return {k: clean_nan_values(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_nan_values(item) for item in obj]
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return obj
+            else:
+                return obj
+        
+        clean_stock_data = clean_nan_values(stock_data)
+        return {"success": True, "data": clean_stock_data}
         
     except Exception as e:
         logger.error(f"❌ Internal stock fetch error: {e}")
@@ -1565,8 +1581,24 @@ async def get_stock_data(ticker: str):
             "last_updated": datetime.now().isoformat()
         }
         
+        # Clean NaN values before returning
+        def clean_nan_values(obj):
+            """Recursively clean NaN/inf values from nested dictionaries and lists"""
+            import math
+            if isinstance(obj, dict):
+                return {k: clean_nan_values(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_nan_values(item) for item in obj]
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return obj
+            else:
+                return obj
+        
+        clean_stock_data = clean_nan_values(stock_data)
         logger.info(f"✅ Successfully fetched data for {ticker}: ${current_price}")
-        return stock_data
+        return clean_stock_data
         
     except Exception as e:
         logger.error(f"❌ Error fetching stock data for {ticker}: {e}")
