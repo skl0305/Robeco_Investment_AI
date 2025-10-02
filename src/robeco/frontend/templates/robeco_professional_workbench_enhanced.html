@@ -6885,14 +6885,23 @@ stockInfoHtml += (stockData.business_summary ?
                 }
 
                 if (data.status === 'success') {
-                    // Show success message with download option
-                    showUserDebugSuccess('PDF Document Ready', 
-                        `PDF document generated successfully for ${currentProject.company}! Click to download.`,
+                    // Auto-download the PDF immediately
+                    const downloadUrl = `/api/download/pdf?file_path=${encodeURIComponent(data.file_path)}`;
+                    
+                    // Create a temporary download link and click it
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = downloadUrl;
+                    downloadLink.download = data.file_path.split('/').pop(); // Extract filename
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    // Also show success message with option to download again
+                    showUserDebugSuccess('PDF Downloaded Successfully!', 
+                        `PDF document for ${currentProject.company} has been downloaded automatically. Need another copy?`,
                         [{
-                            text: 'Download PDF Document',
+                            text: 'Download Again',
                             action: () => {
-                                // Trigger download
-                                const downloadUrl = `/api/download/pdf?file_path=${encodeURIComponent(data.file_path)}`;
                                 window.open(downloadUrl, '_blank');
                             }
                         }]
