@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Robeco Gemini API Key Management
-Centralized API key pool and intelligent rotation system - File-based loading
+Centralized API key pool and PRIMARY-FIRST system - File-based loading
 """
 
 import logging
@@ -13,7 +13,7 @@ from typing import Tuple, Dict, Set, List, Optional
 # Setup logging
 logger = logging.getLogger(__name__)
 
-# Pure rotation system - no suspension tracking
+# Primary-first system - always tries primary key first, then backup rotation
 
 def load_api_keys_from_file() -> List[str]:
     """
@@ -82,8 +82,7 @@ _key_retry_count = 0
 
 def get_intelligent_api_key(*args, **kwargs) -> Optional[Tuple[str, Dict]]:
     """
-    ROUND-ROBIN rotation system - cycles through all available keys to distribute load
-    Automatically skips exhausted keys and resets them after timeout
+    PRIMARY-FIRST system - always tries primary key first, then rotates through backups if primary fails
     
     Returns:
         Tuple[str, Dict]: (selected_api_key, metadata_info)
@@ -98,34 +97,50 @@ def get_intelligent_api_key(*args, **kwargs) -> Optional[Tuple[str, Dict]]:
     agent_info = kwargs.get('agent_type', 'unknown')
     retry_attempt = kwargs.get('retry_attempt', 0)
     
-    # True round-robin rotation through all keys
-    key_index = _key_retry_count % len(api_keys)
-    selected_key = api_keys[key_index]
+    # PRIMARY-FIRST LOGIC: Always try primary key first (index 0)
+    if retry_attempt == 0:
+        # First attempt: always use primary key
+        selected_key = api_keys[0]
+        key_index = 0
+        logger.info(f"🥇 Using PRIMARY key for {agent_info} (first attempt)")
+    else:
+        # Retry attempts: rotate through backup keys (skip primary)
+        if len(api_keys) == 1:
+            # Only primary key available, keep using it
+            selected_key = api_keys[0]
+            key_index = 0
+            logger.info(f"🔄 Using PRIMARY key for {agent_info} (retry #{retry_attempt}, no backup keys)")
+        else:
+            # Rotate through backup keys (index 1, 2, 3, etc.)
+            backup_index = ((retry_attempt - 1) % (len(api_keys) - 1)) + 1
+            selected_key = api_keys[backup_index]
+            key_index = backup_index
+            logger.info(f"🔄 Using BACKUP key #{backup_index} for {agent_info} (retry #{retry_attempt})")
+    
     _key_retry_count += 1
     
-    logger.info(f"🔄 Using key #{key_index} of {len(api_keys)} for {agent_info} (rotation #{_key_retry_count})")
-    
-    logger.info(f"🔍 API KEY DEBUG [{agent_info}]: selected_key={selected_key[:8]}...{selected_key[-4:]}, total_keys={len(api_keys)}")
+    logger.info(f"🔍 API KEY DEBUG [{agent_info}]: selected_key={selected_key[:8]}...{selected_key[-4:]}, key_index={key_index}, total_keys={len(api_keys)}")
     
     return selected_key, {
-        "source": "round_robin", 
+        "source": "primary_first", 
         "pool_size": len(api_keys), 
         "is_primary": (key_index == 0),
         "key_index": key_index,
+        "retry_attempt": retry_attempt,
         "rotation_count": _key_retry_count
     }
 
 def suspend_api_key(api_key: str) -> None:
     """
-    No-op function - primary key only system never suspends keys
+    No-op function - primary-first system never suspends keys
     """
-    logger.info(f"🔑 PRIMARY KEY ONLY system - always using primary key, no suspension: {api_key[:8]}...{api_key[-4:]}")
+    logger.info(f"🔑 PRIMARY-FIRST system - no suspension, will retry with backup keys: {api_key[:8]}...{api_key[-4:]}")
 
 def reset_suspended_keys() -> None:
     """
-    No-op function - primary key only system has no suspended keys
+    No-op function - primary-first system has no suspended keys
     """
-    logger.info("🔑 PRIMARY KEY ONLY system - no suspended keys to reset, always using primary key")
+    logger.info("🔑 PRIMARY-FIRST system - no suspended keys to reset, always tries primary first")
 
 def get_available_api_keys():
     """
