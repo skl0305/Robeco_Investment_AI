@@ -77,6 +77,25 @@ connection_counter = 0
 chat_sessions: Dict[str, Dict] = {}  # session_id -> {analyst -> chat_history}
 session_projects: Dict[str, Dict] = {}  # session_id -> project_data
 session_analyses: Dict[str, Dict] = {}  # session_id -> {analysis_id -> analysis_data}
+session_reports: Dict[str, Dict] = {}  # session_id -> {report_content, status, progress}
+
+async def send_websocket_safe(websocket: WebSocket, message_data: dict) -> bool:
+    """Safely send WebSocket message, handling disconnections gracefully"""
+    if not websocket:
+        return False
+    
+    try:
+        # Check if WebSocket is still open
+        if websocket.client_state.name != 'CONNECTED':
+            logger.warning("⚠️ WebSocket not connected, skipping message")
+            return False
+            
+        await websocket.send_text(json.dumps(message_data))
+        return True
+    except Exception as e:
+        # Log the error but don't crash the generation process
+        logger.warning(f"WebSocket streaming failed: {e}")
+        return False
 
 # Document conversion request model
 class DocumentConversionRequest(BaseModel):
@@ -2164,8 +2183,38 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
         logger.info(f"🔍 DEBUG: Full message structure: {json.dumps(message, indent=2, default=str)[:1000]}...")
         logger.info(f"🔍 DEBUG: analyses_data type: {type(analyses_data)}, length: {len(analyses_data) if analyses_data else 0}")
         
+        # Get session ID to save report state
+        session_id = message.get('session_id', 'unknown')
+        
+        # Check if there's an existing report for this session
+        if session_id in session_reports:
+            existing_report = session_reports[session_id]
+            if existing_report.get('status') == 'completed':
+                logger.info(f"🔄 Found completed report for session {session_id}, sending existing content")
+                await send_websocket_safe(websocket, {
+                    "type": "report_generation_complete",
+                    "data": {
+                        "status": "completed",
+                        "report_content": existing_report['content'],
+                        "message": "✅ Report restored from previous generation",
+                        "progress": 100,
+                        "connection_id": connection_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                return
+        
+        # Initialize report state for this session
+        session_reports[session_id] = {
+            "status": "generating",
+            "progress": 0,
+            "start_time": datetime.now().isoformat(),
+            "company": company,
+            "ticker": ticker
+        }
+        
         # Send report generation started message
-        await websocket.send_text(json.dumps({
+        await send_websocket_safe(websocket, {
             "type": "report_generation_started",
             "data": {
                 "ticker": ticker,
@@ -2174,7 +2223,7 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 "message": f"📊 Generating comprehensive AI investment report for {company}...",
                 "timestamp": datetime.now().isoformat()
             }
-        }))
+        })
         
         # Report generation using template and all analyst outputs with streaming
         
@@ -2268,7 +2317,18 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
         logger.info(f"🔍 DEBUG: report_content length: {len(report_content) if report_content else 'None'}")
         logger.info(f"🔍 DEBUG: final_report_html length: {len(final_report_html) if final_report_html else 'None'}")
         
-        await websocket.send_text(json.dumps({
+        # Save completed report to session state
+        if session_id in session_reports:
+            session_reports[session_id].update({
+                "status": "completed",
+                "content": final_report_html,
+                "raw_content": report_content,
+                "completion_time": datetime.now().isoformat(),
+                "progress": 100
+            })
+            logger.info(f"💾 Saved completed report for session {session_id}")
+        
+        await send_websocket_safe(websocket, {
             "type": "report_generation_completed",
             "data": {
                 "report_html": final_report_html,
@@ -2282,7 +2342,7 @@ async def handle_report_generation(websocket: WebSocket, connection_id: str, mes
                 "connection_id": connection_id,
                 "timestamp": datetime.now().isoformat()
             }
-        }))
+        })
         
         logger.info(f"✅ SUCCESS: Final report completion message sent to WebSocket")
         logger.info(f"✅ Report generation completed for {connection_id}: {len(report_content)} characters")
@@ -2551,7 +2611,7 @@ async def generate_report_with_streaming(
         logger.info(f"🔍 DEBUG: generate_report_with_websocket_streaming completed, content length: {len(report_content) if report_content else 'None'}")
         
         # Send final processing status
-        await websocket.send_text(json.dumps({
+        await send_websocket_safe(websocket, {
             "type": "report_generation_progress",
             "data": {
                 "status": "finalizing",
@@ -2560,7 +2620,7 @@ async def generate_report_with_streaming(
                 "connection_id": connection_id,
                 "timestamp": datetime.now().isoformat()
             }
-        }))
+        })
         
         logger.info(f"✅ Streaming report generation completed: {len(report_content):,} characters in {total_chunks} chunks")
         return report_content

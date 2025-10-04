@@ -34,6 +34,24 @@ class RobecoTemplateReportGenerator:
         self.css_path = base_dir / "Report Example" / "CSScode.txt"
         logger.info("🏗️ Robeco Template Report Generator initialized")
     
+    async def _send_websocket_safe(self, websocket, message_data: dict) -> bool:
+        """Safely send WebSocket message, handling disconnections gracefully"""
+        if not websocket:
+            return False
+        
+        try:
+            # Check if WebSocket is still open
+            if websocket.client_state.name != 'CONNECTED':
+                logger.warning("⚠️ WebSocket not connected, skipping message")
+                return False
+                
+            await websocket.send_text(json.dumps(message_data))
+            return True
+        except Exception as e:
+            # Log the error but don't crash the generation process
+            logger.warning(f"WebSocket streaming failed: {e}")
+            return False
+    
     async def generate_report_from_analyses(
         self, 
         company_name: str,
@@ -101,7 +119,7 @@ class RobecoTemplateReportGenerator:
                         css_styles_only = "<style>\n/* CSS extraction failed */\n</style>"
                     
                     # Send only CSS styles (not full HTML structure)
-                    await websocket.send_text(json.dumps({
+                    await self._send_websocket_safe(websocket, {
                         "type": "report_generation_streaming",
                         "data": {
                             "status": "css_template_loaded",
@@ -112,14 +130,14 @@ class RobecoTemplateReportGenerator:
                             "connection_id": connection_id,
                             "timestamp": datetime.now().isoformat()
                         }
-                    }))
+                    })
                     logger.info("📄 CSS template content sent via WebSocket")
                 except Exception as e:
                     logger.warning(f"⚠️ Could not load CSS template: {e}")
             
             # Send progress update for Call 1
             if websocket:
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_progress",
                     "data": {
                         "status": "call1_starting", 
@@ -128,7 +146,7 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             # CALL 1: Generate slides 1-7 (Overview, Company, Industry Analysis)
             call1_content = await self._generate_combined_overview_and_analysis_section(
@@ -143,7 +161,7 @@ class RobecoTemplateReportGenerator:
             if not call1_validation:
                 # Send failure signal if Call 1 is incomplete
                 if websocket:
-                    await websocket.send_text(json.dumps({
+                    await self._send_websocket_safe(websocket, {
                         "type": "report_generation_streaming", 
                         "data": {
                             "status": "call1_incomplete",
@@ -154,14 +172,14 @@ class RobecoTemplateReportGenerator:
                             "connection_id": connection_id,
                             "timestamp": datetime.now().isoformat()
                         }
-                    }))
+                    })
                 logger.error(f"🚨 CALL 1 VALIDATION FAILED - proceeding anyway for debugging")
                 # Note: Not raising exception to allow debugging, but this should be fixed
             
             # Send Call 1 completion signal with its content
             if websocket:
                 logger.info(f"📤 Sending Call 1 completion: {len(call1_content):,} chars")
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_streaming",
                     "data": {
                         "status": "call1_complete",
@@ -172,7 +190,7 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             # Extract key insights from Call 1 for Call 2 context
             extracted_rating = self._extract_rating_from_call1(call1_content)
@@ -184,7 +202,7 @@ class RobecoTemplateReportGenerator:
             
             # Send progress update for Call 2  
             if websocket:
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_progress",
                     "data": {
                         "status": "call2_starting",
@@ -193,7 +211,7 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             # CALL 2: Generate slides 8-15 (Financial Analysis & Valuation)
             call2_content = await self._generate_industry_and_financial_section(
@@ -206,7 +224,7 @@ class RobecoTemplateReportGenerator:
             # Send Call 2 completion signal
             if websocket:
                 logger.info(f"📤 Sending Call 2 completion: {len(call2_content):,} chars")
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_streaming",
                     "data": {
                         "status": "call2_complete",
@@ -217,11 +235,11 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             # Send progress update for combining
             if websocket:
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_progress", 
                     "data": {
                         "status": "combining",
@@ -230,7 +248,7 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             # Combine Call 1 + Call 2 content
             combined_slides_content = self._combine_call1_and_call2_content(call1_content, call2_content)
@@ -244,7 +262,7 @@ class RobecoTemplateReportGenerator:
             # Send final completion signal with complete report
             if websocket:
                 logger.info(f"📤 Sending final completion: {len(final_report_html):,} chars")
-                await websocket.send_text(json.dumps({
+                await self._send_websocket_safe(websocket, {
                     "type": "report_generation_streaming",
                     "data": {
                         "status": "final_complete",
@@ -255,7 +273,7 @@ class RobecoTemplateReportGenerator:
                         "connection_id": connection_id,
                         "timestamp": datetime.now().isoformat()
                     }
-                }))
+                })
             
             logger.info("✅ 2-Call Architecture: Report generated and combined successfully")
             return final_report_html
@@ -3964,8 +3982,8 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                                         }
                                     }
                                     
-                                    # Send the message using imported json module
-                                    await websocket.send_text(json.dumps(message_data))
+                                    # Send the message using safe WebSocket method
+                                    await self._send_websocket_safe(websocket, message_data)
                                     
                                 except Exception as ws_error:
                                     logger.warning(f"WebSocket streaming failed: {ws_error}")
@@ -4074,7 +4092,7 @@ Determine CONSISTENT investment rating (OVERWEIGHT/NEUTRAL/UNDERWEIGHT) based on
                                 "timestamp": datetime.now().isoformat()
                             }
                         }
-                        await websocket.send_text(json.dumps(retry_message))
+                        await self._send_websocket_safe(websocket, retry_message)
                         logger.info(f"📤 Sent retry notification to frontend: attempt {attempt+2}")
                     except Exception as ws_error:
                         logger.warning(f"⚠️ Could not send retry notification: {ws_error}")
