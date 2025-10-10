@@ -17,6 +17,10 @@
     <!-- Analysis Persistence System -->
     <script src="/static/js/analysis_persistence.js"></script>
     
+    <!-- 🌊 STREAMING COMPLETION HANDLERS -->
+    <script src="/static/js/streaming_completion_handler.js"></script>
+    <script src="/static/js/quick_fix.js"></script>
+    
     <style>
         :root {
             /* Robeco Professional Brand Colors - PROPER BLUE */
@@ -5506,6 +5510,12 @@ stockInfoHtml += (stockData.business_summary ?
                 showUserDebugSuccess('Live Report Generation', 
                     `${data.message} | Progress: ${data.progress}%`);
             }
+            
+            // 🌊 STREAMING COMPLETION INTEGRATION
+            // Process chunk for completion detection using the global streaming handler
+            if (window.globalStreamingHandler) {
+                window.globalStreamingHandler.processChunk(data);
+            }
         }
 
         // Refresh Analysis
@@ -6717,6 +6727,16 @@ stockInfoHtml += (stockData.business_summary ?
                         '⏳ Waiting for server response...\n' +
                         '📊 This may take 1-2 minutes to complete'
                     );
+                    
+                    // 🌊 INITIALIZE STREAMING COMPLETION HANDLER
+                    if (window.globalStreamingHandler) {
+                        console.log('🌊 Initializing streaming completion handler...');
+                        const loadingElement = document.querySelector('.generate-report-btn');
+                        const previewElement = document.getElementById('renderedReportViewer');
+                        
+                        window.globalStreamingHandler.startMonitoring(loadingElement, previewElement);
+                        console.log('✅ Streaming completion handler initialized');
+                    }
                 } catch (error) {
                     console.error('❌ Error sending WebSocket message:', error);
                     showUserDebugError('Send Error', '❌ Error sending WebSocket message: ' + error.message);
